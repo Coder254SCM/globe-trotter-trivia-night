@@ -1,14 +1,11 @@
+
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import countries from "../data/countries";
 import { Country } from "../types/quiz";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import { Globe as GlobeIcon, MapPin } from "lucide-react";
-import dynamic from 'next/dynamic';
-
-const Museum = dynamic(() => import('lucide-react/icons/museum'));
-const Football = dynamic(() => import('lucide-react/icons/football'));
+import { Globe as GlobeIcon, MapPin, Landmark, Football } from "lucide-react";
 
 interface GlobeProps {
   onCountrySelect: (country: Country) => void;
@@ -23,6 +20,7 @@ const Globe = ({ onCountrySelect }: GlobeProps) => {
   const markerRefs = useRef<Map<string, THREE.Mesh>>(new Map());
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [rotating, setRotating] = useState(true);
+  const animationFrameIdRef = useRef<number>(0);
 
   useEffect(() => {
     // Generate stars
@@ -220,10 +218,8 @@ const Globe = ({ onCountrySelect }: GlobeProps) => {
     containerRef.current.addEventListener("click", handleClick);
 
     // Animation loop with smoother rotation
-    let animationFrameId: number;
-    
     const animate = () => {
-      animationFrameId = requestAnimationFrame(animate);
+      animationFrameIdRef.current = requestAnimationFrame(animate);
       
       if (rotating && globeRef.current) {
         globeRef.current.rotation.y += 0.0005; // Slower rotation
@@ -244,8 +240,8 @@ const Globe = ({ onCountrySelect }: GlobeProps) => {
 
     // Cleanup
     return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
+      if (animationFrameIdRef.current) {
+        cancelAnimationFrame(animationFrameIdRef.current);
       }
       
       if (rendererRef.current && rendererRef.current.domElement && containerRef.current) {
@@ -274,7 +270,7 @@ const Globe = ({ onCountrySelect }: GlobeProps) => {
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
-      <div ref={containerRef} className="globe-container">
+      <div ref={containerRef} className="globe-container w-full h-full">
         {/* Stars will be dynamically added here */}
       </div>
       
@@ -311,8 +307,8 @@ const Globe = ({ onCountrySelect }: GlobeProps) => {
           <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" onClick={handleCloseCard}></div>
           <Card className="w-full max-w-md p-6 relative z-20 border-primary/20 shadow-lg shadow-primary/20">
             <div className="flex items-center gap-4 mb-6">
-              {/* Updated icon usage */}
-              {selectedCountry.categories.includes('Museum') && <Museum className="inline-block mr-1" size={24} />}
+              {/* Using standard lucide-react icons */}
+              {selectedCountry.categories.includes('Museum') && <Landmark className="inline-block mr-1" size={24} />}
               {selectedCountry.categories.includes('Sports') && <Football className="inline-block mr-1" size={24} />}
               
               {selectedCountry.flagImageUrl && (
