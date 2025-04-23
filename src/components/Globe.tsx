@@ -4,7 +4,11 @@ import countries from "../data/countries";
 import { Country } from "../types/quiz";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import { Globe as GlobeIcon, MapPin, Museum, Football } from "lucide-react";
+import { Globe as GlobeIcon, MapPin } from "lucide-react";
+import dynamic from 'next/dynamic';
+
+const Museum = dynamic(() => import('lucide-react/icons/museum'));
+const Football = dynamic(() => import('lucide-react/icons/football'));
 
 interface GlobeProps {
   onCountrySelect: (country: Country) => void;
@@ -307,6 +311,10 @@ const Globe = ({ onCountrySelect }: GlobeProps) => {
           <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" onClick={handleCloseCard}></div>
           <Card className="w-full max-w-md p-6 relative z-20 border-primary/20 shadow-lg shadow-primary/20">
             <div className="flex items-center gap-4 mb-6">
+              {/* Updated icon usage */}
+              {selectedCountry.categories.includes('Museum') && <Museum className="inline-block mr-1" size={24} />}
+              {selectedCountry.categories.includes('Sports') && <Football className="inline-block mr-1" size={24} />}
+              
               {selectedCountry.flagImageUrl && (
                 <img 
                   src={selectedCountry.flagImageUrl} 
