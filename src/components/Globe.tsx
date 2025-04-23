@@ -1,11 +1,10 @@
-
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import countries from "../data/countries";
 import { Country } from "../types/quiz";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import { Globe as GlobeIcon, MapPin } from "lucide-react";
+import { Globe as GlobeIcon, MapPin, Museum, Football } from "lucide-react";
 
 interface GlobeProps {
   onCountrySelect: (country: Country) => void;
@@ -37,21 +36,21 @@ const Globe = ({ onCountrySelect }: GlobeProps) => {
       }
     }
 
-    // Initialize Three.js
+    // Initialize Three.js with improved lighting and materials
     if (!containerRef.current) return;
     
     const scene = new THREE.Scene();
     sceneRef.current = scene;
     
-    // Adjust camera settings for better view
+    // Improved camera settings
     const camera = new THREE.PerspectiveCamera(
-      45, // Reduced FOV for less distortion
+      45,
       window.innerWidth / window.innerHeight,
       1,
       1000
     );
     cameraRef.current = camera;
-    camera.position.z = 300; // Moved camera back for better perspective
+    camera.position.z = 300;
     
     const renderer = new THREE.WebGLRenderer({ 
       antialias: true, 
@@ -63,7 +62,7 @@ const Globe = ({ onCountrySelect }: GlobeProps) => {
     renderer.setSize(window.innerWidth, window.innerHeight);
     containerRef.current.appendChild(renderer.domElement);
 
-    // Add lighting for better visibility
+    // Enhanced lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
@@ -71,12 +70,11 @@ const Globe = ({ onCountrySelect }: GlobeProps) => {
     directionalLight.position.set(100, 100, 100);
     scene.add(directionalLight);
 
-    // Create globe
+    // Create globe with improved materials
     const globe = new THREE.Group();
     globeRef.current = globe;
     scene.add(globe);
 
-    // Earth sphere with improved materials
     const earthGeometry = new THREE.SphereGeometry(100, 64, 64);
     const earthMaterial = new THREE.MeshPhongMaterial({
       color: 0x1f2937,
@@ -87,6 +85,45 @@ const Globe = ({ onCountrySelect }: GlobeProps) => {
     });
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
     globe.add(earth);
+
+    // Add museum and sports venue markers
+    const addPointOfInterest = (lat: number, lng: number, type: 'museum' | 'sports') => {
+      const phi = (90 - lat) * (Math.PI / 180);
+      const theta = (lng + 180) * (Math.PI / 180);
+      
+      const x = -100 * Math.sin(phi) * Math.cos(theta);
+      const y = 100 * Math.cos(phi);
+      const z = 100 * Math.sin(phi) * Math.sin(theta);
+      
+      const markerGeometry = new THREE.SphereGeometry(1.5, 16, 16);
+      const markerMaterial = new THREE.MeshPhongMaterial({
+        color: type === 'museum' ? 0x9333ea : 0x2563eb,
+        emissive: type === 'museum' ? 0x6b21a8 : 0x1d4ed8,
+        emissiveIntensity: 0.3,
+        transparent: true,
+        opacity: 0.9,
+      });
+      
+      const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+      marker.position.set(x, y, z);
+      globe.add(marker);
+      
+      return marker;
+    };
+
+    // Add some notable museums and sports venues
+    const pointsOfInterest = [
+      { lat: 48.8606, lng: 2.3376, type: 'museum' as const }, // Louvre
+      { lat: 40.7794, lng: -73.9632, type: 'museum' as const }, // Met
+      { lat: 51.4967, lng: -0.1764, type: 'museum' as const }, // Natural History Museum
+      { lat: 51.5033, lng: -0.1195, type: 'sports' as const }, // Wembley
+      { lat: 40.7505, lng: -73.9934, type: 'sports' as const }, // Madison Square Garden
+      { lat: 48.8413, lng: 2.2530, type: 'sports' as const }, // Roland Garros
+    ];
+
+    pointsOfInterest.forEach(poi => {
+      addPointOfInterest(poi.lat, poi.lng, poi.type);
+    });
 
     // Country markers
     countries.forEach((country) => {
@@ -178,8 +215,8 @@ const Globe = ({ onCountrySelect }: GlobeProps) => {
     
     containerRef.current.addEventListener("click", handleClick);
 
-    // Adjust animation for smoother rotation
-    let animationFrameId: number; // Declare the variable here
+    // Animation loop with smoother rotation
+    let animationFrameId: number;
     
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
