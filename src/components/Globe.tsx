@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import countries from "../data/countries";
@@ -43,30 +42,47 @@ const Globe = ({ onCountrySelect }: GlobeProps) => {
     const scene = new THREE.Scene();
     sceneRef.current = scene;
     
+    // Adjust camera settings for better view
     const camera = new THREE.PerspectiveCamera(
-      60,
+      45, // Reduced FOV for less distortion
       window.innerWidth / window.innerHeight,
-      0.1,
+      1,
       1000
     );
     cameraRef.current = camera;
-    camera.position.z = 200;
+    camera.position.z = 300; // Moved camera back for better perspective
     
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: true, 
+      alpha: true,
+      powerPreference: "high-performance" 
+    });
     rendererRef.current = renderer;
+    renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     containerRef.current.appendChild(renderer.domElement);
+
+    // Add lighting for better visibility
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(100, 100, 100);
+    scene.add(directionalLight);
 
     // Create globe
     const globe = new THREE.Group();
     globeRef.current = globe;
     scene.add(globe);
 
-    // Earth sphere
+    // Earth sphere with improved materials
     const earthGeometry = new THREE.SphereGeometry(100, 64, 64);
-    const earthMaterial = new THREE.MeshBasicMaterial({
+    const earthMaterial = new THREE.MeshPhongMaterial({
       color: 0x1f2937,
       wireframe: true,
+      wireframeLinewidth: 0.5,
+      transparent: true,
+      opacity: 0.8
     });
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
     globe.add(earth);
@@ -161,23 +177,21 @@ const Globe = ({ onCountrySelect }: GlobeProps) => {
     
     containerRef.current.addEventListener("click", handleClick);
 
-    // Animation loop
-    let animationFrameId: number;
-    
+    // Adjust animation for smoother rotation
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
       
       if (rotating && globeRef.current) {
-        globeRef.current.rotation.y += 0.001;
+        globeRef.current.rotation.y += 0.0005; // Slower rotation
       }
       
       if (rendererRef.current && sceneRef.current && cameraRef.current) {
         rendererRef.current.render(sceneRef.current, cameraRef.current);
       }
       
-      // Animate markers
+      // Animate markers with smoother pulsing
       markerRefs.current.forEach((marker) => {
-        const scale = 1 + Math.sin(Date.now() * 0.003) * 0.1;
+        const scale = 1 + Math.sin(Date.now() * 0.002) * 0.1;
         marker.scale.set(scale, scale, scale);
       });
     };
