@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import countries from "../data/countries";
@@ -178,6 +179,8 @@ const Globe = ({ onCountrySelect }: GlobeProps) => {
     containerRef.current.addEventListener("click", handleClick);
 
     // Adjust animation for smoother rotation
+    let animationFrameId: number; // Declare the variable here
+    
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
       
