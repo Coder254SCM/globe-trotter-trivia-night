@@ -1,4 +1,3 @@
-
 import { Country } from "../types/quiz";
 
 const countries: Country[] = [
@@ -22,6 +21,30 @@ const countries: Country[] = [
       "Tribes",
     ],
     flagImageUrl: "https://flagcdn.com/ke.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Kenya_relief_location_map.svg/800px-Kenya_relief_location_map.svg.png",
+    iconType: "landmark"
+  },
+  {
+    id: "usa",
+    name: "United States",
+    code: "US",
+    position: {
+      lat: 37.0902,
+      lng: -95.7129,
+    },
+    difficulty: "easy",
+    categories: [
+      "History",
+      "Culture",
+      "Geography",
+      "Food",
+      "Music",
+      "Sports",
+      "Language",
+    ],
+    flagImageUrl: "https://flagcdn.com/us.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/USA_relief_location_map.svg/800px-USA_relief_location_map.svg.png",
+    iconType: "landmark"
   },
   {
     id: "japan",
@@ -102,26 +125,6 @@ const countries: Country[] = [
       "Language",
     ],
     flagImageUrl: "https://flagcdn.com/in.svg",
-  },
-  {
-    id: "usa",
-    name: "United States",
-    code: "US",
-    position: {
-      lat: 37.0902,
-      lng: -95.7129,
-    },
-    difficulty: "easy",
-    categories: [
-      "History",
-      "Culture",
-      "Geography",
-      "Food",
-      "Music",
-      "Sports",
-      "Language",
-    ],
-    flagImageUrl: "https://flagcdn.com/us.svg",
   },
 ];
 

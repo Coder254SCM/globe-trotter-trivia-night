@@ -5,6 +5,8 @@ import Quiz from "../components/Quiz";
 import QuizResult from "../components/QuizResult";
 import { Country, QuizResult as QuizResultType } from "../types/quiz";
 import kenyaQuestions from "../data/kenyaQuestions";
+import usaQuestions from "../data/usaQuestions";
+import globalQuestions from "../data/globalQuestions";
 
 const Index = () => {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
@@ -28,13 +30,20 @@ const Index = () => {
     setQuizResult(null);
   };
 
-  // For now, we only have Kenya questions
   const getQuestions = () => {
-    if (selectedCountry?.id === "kenya") {
-      return kenyaQuestions;
-    }
-    // For other countries, use Kenya questions as a placeholder
-    return kenyaQuestions;
+    // Mix global questions with country-specific questions
+    const countryQuestions = {
+      kenya: kenyaQuestions,
+      usa: usaQuestions,
+      // Add more country questions here as they're created
+    }[selectedCountry?.id || ''] || [];
+
+    // Combine country-specific questions with global questions and shuffle
+    const allQuestions = [...countryQuestions, ...globalQuestions]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 10); // Take 10 random questions
+
+    return allQuestions;
   };
 
   return (

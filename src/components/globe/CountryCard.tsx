@@ -2,7 +2,7 @@
 import { Country } from "@/types/quiz";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MapPin, Landmark, Trophy } from "lucide-react";
+import { MapPin, Landmark, Trophy, Globe } from "lucide-react";
 
 interface CountryCardProps {
   country: Country;
@@ -11,13 +11,23 @@ interface CountryCardProps {
 }
 
 export const CountryCard = ({ country, onClose, onStartQuiz }: CountryCardProps) => {
+  const getIcon = () => {
+    switch (country.iconType) {
+      case 'landmark':
+        return <Landmark className="inline-block mr-1" size={24} />;
+      case 'trophy':
+        return <Trophy className="inline-block mr-1" size={24} />;
+      default:
+        return <Globe className="inline-block mr-1" size={24} />;
+    }
+  };
+
   return (
     <div className="absolute inset-0 flex items-center justify-center z-10 animate-fade-in">
       <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" onClick={onClose}></div>
       <Card className="w-full max-w-md p-6 relative z-20 border-primary/20 shadow-lg shadow-primary/20">
         <div className="flex items-center gap-4 mb-6">
-          {country.categories.includes('Museum') && <Landmark className="inline-block mr-1" size={24} />}
-          {country.categories.includes('Sports') && <Trophy className="inline-block mr-1" size={24} />}
+          {getIcon()}
           
           {country.flagImageUrl && (
             <img 
@@ -35,6 +45,16 @@ export const CountryCard = ({ country, onClose, onStartQuiz }: CountryCardProps)
           </div>
         </div>
         
+        {country.mapImageUrl && (
+          <div className="mb-6">
+            <img 
+              src={country.mapImageUrl} 
+              alt={`${country.name} map`}
+              className="w-full rounded-lg shadow-md"
+            />
+          </div>
+        )}
+
         <div className="mb-6">
           <h3 className="font-semibold mb-2">Categories:</h3>
           <div className="flex flex-wrap gap-2">
