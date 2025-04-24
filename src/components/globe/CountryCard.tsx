@@ -2,10 +2,7 @@
 import { Country } from "@/types/quiz";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MapPin, Landmark } from "lucide-react";
-import dynamic from "next/dynamic";
-
-const Football = dynamic(() => import("lucide-react").then(mod => mod.Football));
+import { MapPin, Landmark, Football } from "lucide-react";
 
 interface CountryCardProps {
   country: Country;
@@ -67,4 +64,3 @@ export const CountryCard = ({ country, onClose, onStartQuiz }: CountryCardProps)
     </div>
   );
 };
-

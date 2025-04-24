@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import countries from "../data/countries";
 import { Country } from "../types/quiz";
-import { Globe as GlobeIcon } from "lucide-react";
+import { Globe as GlobeIcon, MapPin, Landmark, Football } from "lucide-react";
 import { setupScene, setupCamera, setupRenderer } from "../utils/threeSetup";
 import { createCountryMarker, createPOIMarker } from "./globe/GlobeMarkers";
 import { StarsBackground } from "./globe/StarsBackground";
@@ -44,11 +44,11 @@ const Globe = ({ onCountrySelect }: GlobeProps) => {
 
     const earthGeometry = new THREE.SphereGeometry(100, 64, 64);
     const earthMaterial = new THREE.MeshPhongMaterial({
-      color: 0x1f2937,
+      color: 0xaaaaaa, // Light gray color for better visibility
       wireframe: true,
-      wireframeLinewidth: 0.5,
+      wireframeLinewidth: 1.0,
       transparent: true,
-      opacity: 0.8
+      opacity: 0.9
     });
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
     globe.add(earth);
@@ -202,4 +202,3 @@ const Globe = ({ onCountrySelect }: GlobeProps) => {
 };
 
 export default Globe;
-

@@ -14,7 +14,7 @@ export const createCountryMarker = (
   const y = 100 * Math.cos(phi);
   const z = 100 * Math.sin(phi) * Math.sin(theta);
   
-  const markerGeometry = new THREE.SphereGeometry(2, 16, 16);
+  const markerGeometry = new THREE.SphereGeometry(3, 16, 16); // Larger markers
   
   let markerColor;
   switch (difficulty) {
@@ -31,10 +31,12 @@ export const createCountryMarker = (
       markerColor = 0x8b5cf6;
   }
   
-  const markerMaterial = new THREE.MeshBasicMaterial({
+  const markerMaterial = new THREE.MeshPhongMaterial({
     color: markerColor,
+    emissive: markerColor,
+    emissiveIntensity: 0.3,
     transparent: true,
-    opacity: 0.8,
+    opacity: 0.9,
   });
   
   const marker = new THREE.Mesh(markerGeometry, markerMaterial);
@@ -54,11 +56,12 @@ export const createPOIMarker = (
   const y = 100 * Math.cos(phi);
   const z = 100 * Math.sin(phi) * Math.sin(theta);
   
-  const markerGeometry = new THREE.SphereGeometry(1.5, 16, 16);
+  // Create more visible and distinct markers
+  const markerGeometry = new THREE.SphereGeometry(2.5, 16, 16);
   const markerMaterial = new THREE.MeshPhongMaterial({
-    color: type === 'museum' ? 0x9333ea : 0x2563eb,
-    emissive: type === 'museum' ? 0x6b21a8 : 0x1d4ed8,
-    emissiveIntensity: 0.3,
+    color: type === 'museum' ? 0xd946ef : 0x3b82f6,
+    emissive: type === 'museum' ? 0xd946ef : 0x3b82f6,
+    emissiveIntensity: 0.5,
     transparent: true,
     opacity: 0.9,
   });
@@ -67,4 +70,3 @@ export const createPOIMarker = (
   marker.position.set(x, y, z);
   return marker;
 };
-

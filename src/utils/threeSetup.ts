@@ -3,13 +3,21 @@ import * as THREE from "three";
 
 export const setupScene = () => {
   const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0a0a); // Very dark background
   
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+  // Add stronger ambient light
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
   scene.add(ambientLight);
 
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  // Add stronger directional light
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
   directionalLight.position.set(100, 100, 100);
   scene.add(directionalLight);
+
+  // Add second directional light from another angle
+  const secondLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  secondLight.position.set(-100, -100, -100);
+  scene.add(secondLight);
 
   return scene;
 };
@@ -35,4 +43,3 @@ export const setupRenderer = () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
   return renderer;
 };
-
