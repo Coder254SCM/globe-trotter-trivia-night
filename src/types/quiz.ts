@@ -5,7 +5,7 @@ export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 
 export type QuestionCategory = 'History' | 'Culture' | 'Geography' | 'Food' | 'Music' | 'Sports' | 
   'Language' | 'Politics' | 'Science' | 'Art' | 'Literature' | 'Technology' | 'Economy' | 'Wildlife' | 'Environment' | 
-  'Tribes' | 'Landmarks' | 'Famous People' | 'Traditions' | 'Achievements';
+  'Tribes' | 'Landmarks' | 'Famous People' | 'Traditions' | 'Achievements' | 'Religion';
 
 export interface Choice {
   id: string;
@@ -49,6 +49,7 @@ export interface QuizResult {
   score: number;
   timeTaken: number;
   failedQuestionIds?: string[]; // Track which questions the user failed
+  correctQuestions?: number[]; // Track which questions were answered correctly
 }
 
 export interface QuestionSet {
