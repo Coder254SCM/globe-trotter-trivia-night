@@ -1,11 +1,34 @@
-
 export type QuestionType = 'multiple-choice' | 'image' | 'true-false' | 'fill-blank' | 'audio';
 
 export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 
-export type QuestionCategory = 'History' | 'Culture' | 'Geography' | 'Food' | 'Music' | 'Sports' | 
-  'Language' | 'Politics' | 'Science' | 'Art' | 'Literature' | 'Technology' | 'Economy' | 'Wildlife' | 'Environment' | 
-  'Tribes' | 'Landmarks' | 'Famous People' | 'Traditions' | 'Achievements' | 'Religion';
+export type QuestionCategory = 
+  // Culture & Society
+  'History' | 'Culture' | 'Traditions' | 'Religion' | 'Language' | 'Fashion' |
+  'Festivals' | 'Customs' | 'Mythology' | 'Social Norms' |
+  
+  // Geography & Nature
+  'Geography' | 'Wildlife' | 'Environment' | 'Climate' | 'Natural Wonders' |
+  'Ecosystems' | 'Conservation' | 'Natural Resources' |
+  
+  // Arts & Entertainment
+  'Art' | 'Music' | 'Dance' | 'Cinema' | 'Literature' | 'Theater' |
+  'Architecture' | 'Crafts' | 'Photography' | 'Media' |
+  
+  // People & Society
+  'Famous People' | 'Tribes' | 'Demographics' | 'Social Movements' |
+  'Women Achievements' | 'Youth Culture' | 'Migration' |
+  
+  // Modern Life
+  'Technology' | 'Economy' | 'Urban Life' | 'Transportation' |
+  'Education' | 'Healthcare' | 'Innovation' |
+  
+  // Lifestyle
+  'Food' | 'Sports' | 'Fashion' | 'Lifestyle' | 'Recreation' |
+  
+  // Government & Heritage
+  'Politics' | 'Landmarks' | 'Military History' | 'Achievements' |
+  'International Relations' | 'Heritage Sites';
 
 export interface Choice {
   id: string;
@@ -25,7 +48,7 @@ export interface Country {
   categories: QuestionCategory[];
   flagImageUrl?: string;
   mapImageUrl?: string;
-  iconType?: 'landmark' | 'trophy' | 'globe';
+  iconType?: 'landmark' | 'trophy' | 'globe' | 'culture' | 'nature';
   continent: string;
 }
 

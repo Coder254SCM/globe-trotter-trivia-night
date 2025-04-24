@@ -1,11 +1,11 @@
-
 import * as THREE from "three";
-import { POIMarker } from "./types";
+import { DifficultyLevel } from "@/types/quiz";
 
 export const createCountryMarker = (
   lat: number, 
   lng: number, 
-  difficulty: string
+  difficulty: DifficultyLevel,
+  iconType: 'landmark' | 'trophy' | 'globe' | 'culture' | 'nature' = 'globe'
 ): THREE.Mesh => {
   const phi = (90 - lat) * (Math.PI / 180);
   const theta = (lng + 180) * (Math.PI / 180);
@@ -14,8 +14,26 @@ export const createCountryMarker = (
   const y = 100 * Math.cos(phi);
   const z = 100 * Math.sin(phi) * Math.sin(theta);
   
-  const markerGeometry = new THREE.SphereGeometry(3, 16, 16); // Larger markers
+  // Different geometries for different icon types
+  let markerGeometry;
+  switch (iconType) {
+    case 'landmark':
+      markerGeometry = new THREE.ConeGeometry(2, 4, 6);
+      break;
+    case 'trophy':
+      markerGeometry = new THREE.OctahedronGeometry(2);
+      break;
+    case 'culture':
+      markerGeometry = new THREE.TorusGeometry(2, 0.5, 8, 16);
+      break;
+    case 'nature':
+      markerGeometry = new THREE.DodecahedronGeometry(2);
+      break;
+    default:
+      markerGeometry = new THREE.SphereGeometry(2, 16, 16);
+  }
   
+  // Colors based on difficulty
   let markerColor;
   switch (difficulty) {
     case 'easy':
@@ -27,8 +45,6 @@ export const createCountryMarker = (
     case 'hard':
       markerColor = 0xef4444;
       break;
-    default:
-      markerColor = 0x8b5cf6;
   }
   
   const markerMaterial = new THREE.MeshPhongMaterial({
@@ -41,6 +57,13 @@ export const createCountryMarker = (
   
   const marker = new THREE.Mesh(markerGeometry, markerMaterial);
   marker.position.set(x, y, z);
+  
+  // Rotate cone markers to point outward
+  if (iconType === 'landmark') {
+    marker.lookAt(0, 0, 0);
+    marker.rotateX(Math.PI / 2);
+  }
+  
   return marker;
 };
 

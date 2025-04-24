@@ -1,24 +1,42 @@
 
-import { Country } from "@/types/quiz";
+import { Country, DifficultyLevel } from "@/types/quiz";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MapPin, Landmark, Trophy, Globe } from "lucide-react";
+import { MapPin, Landmark, Trophy, Globe, Leaf, Palette } from "lucide-react";
+import { useState } from "react";
 
 interface CountryCardProps {
   country: Country;
   onClose: () => void;
-  onStartQuiz: () => void;
+  onStartQuiz: (difficulty: DifficultyLevel) => void;
 }
 
 export const CountryCard = ({ country, onClose, onStartQuiz }: CountryCardProps) => {
+  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>(country.difficulty);
+
   const getIcon = () => {
     switch (country.iconType) {
       case 'landmark':
         return <Landmark className="inline-block mr-1" size={24} />;
       case 'trophy':
         return <Trophy className="inline-block mr-1" size={24} />;
+      case 'culture':
+        return <Palette className="inline-block mr-1" size={24} />;
+      case 'nature':
+        return <Leaf className="inline-block mr-1" size={24} />;
       default:
         return <Globe className="inline-block mr-1" size={24} />;
+    }
+  };
+
+  const getDifficultyColor = (difficulty: DifficultyLevel) => {
+    switch (difficulty) {
+      case 'easy':
+        return 'bg-green-500';
+      case 'medium':
+        return 'bg-yellow-500';
+      case 'hard':
+        return 'bg-red-500';
     }
   };
 
@@ -40,7 +58,7 @@ export const CountryCard = ({ country, onClose, onStartQuiz }: CountryCardProps)
             <h2 className="text-2xl font-bold">{country.name}</h2>
             <p className="text-muted-foreground">
               <MapPin className="inline-block mr-1" size={16} />
-              Quiz {country.difficulty} difficulty
+              Select quiz difficulty
             </p>
           </div>
         </div>
@@ -56,7 +74,26 @@ export const CountryCard = ({ country, onClose, onStartQuiz }: CountryCardProps)
         )}
 
         <div className="mb-6">
-          <h3 className="font-semibold mb-2">Categories:</h3>
+          <h3 className="font-semibold mb-3">Select Difficulty:</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {(['easy', 'medium', 'hard'] as DifficultyLevel[]).map((difficulty) => (
+              <button
+                key={difficulty}
+                onClick={() => setSelectedDifficulty(difficulty)}
+                className={`p-3 rounded-md border-2 transition-all capitalize
+                  ${selectedDifficulty === difficulty ? 
+                    `${getDifficultyColor(difficulty)} text-white border-transparent` : 
+                    'border-border hover:border-primary/50'
+                  }`}
+              >
+                {difficulty}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <h3 className="font-semibold mb-2">Available Categories:</h3>
           <div className="flex flex-wrap gap-2">
             {country.categories.map((category) => (
               <span 
@@ -69,8 +106,11 @@ export const CountryCard = ({ country, onClose, onStartQuiz }: CountryCardProps)
           </div>
         </div>
         
-        <Button onClick={onStartQuiz} className="w-full">
-          Start {country.name} Quiz
+        <Button 
+          onClick={() => onStartQuiz(selectedDifficulty)} 
+          className="w-full"
+        >
+          Start {country.name} Quiz ({selectedDifficulty})
         </Button>
         
         <Button 
