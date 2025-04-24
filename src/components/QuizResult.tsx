@@ -3,41 +3,56 @@ import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Progress } from "./ui/progress";
 import { QuizResult as QuizResultType } from "../types/quiz";
-import { Clock, Globe, Trophy } from "lucide-react";
+import { Clock, Globe, Trophy, Flag } from "lucide-react";
 
 interface QuizResultProps {
   result: QuizResultType;
   countryName: string;
   onRestart: () => void;
   onBackToGlobe: () => void;
+  isWeeklyChallenge?: boolean;
 }
 
-const QuizResult = ({ result, countryName, onRestart, onBackToGlobe }: QuizResultProps) => {
+const QuizResult = ({ 
+  result, 
+  countryName, 
+  onRestart, 
+  onBackToGlobe,
+  isWeeklyChallenge = false
+}: QuizResultProps) => {
   const { totalQuestions, correctAnswers, score, timeTaken } = result;
   
   const getFeedback = () => {
     if (score >= 90) {
       return {
-        title: "Cultural Expert!",
-        message: `Amazing! You're practically a ${countryName} native! Your knowledge of global cultures is impressive.`,
+        title: isWeeklyChallenge ? "Challenge Master!" : "Cultural Expert!",
+        message: isWeeklyChallenge 
+          ? "Outstanding! You've mastered the most challenging questions!"
+          : `Amazing! You're practically a ${countryName} native! Your knowledge of global cultures is impressive.`,
         icon: "🏆"
       };
     } else if (score >= 70) {
       return {
-        title: "Cultural Enthusiast!",
-        message: `Great job! You know ${countryName} quite well. Keep exploring to become a true expert.`,
+        title: isWeeklyChallenge ? "Challenge Champion!" : "Cultural Enthusiast!",
+        message: isWeeklyChallenge
+          ? "Great job tackling these difficult questions!"
+          : `Great job! You know ${countryName} quite well. Keep exploring to become a true expert.`,
         icon: "🌟"
       };
     } else if (score >= 50) {
       return {
-        title: "Cultural Learner",
-        message: `Good effort! You have some knowledge about ${countryName}, but there's more to discover.`,
+        title: isWeeklyChallenge ? "Challenge Apprentice" : "Cultural Learner",
+        message: isWeeklyChallenge
+          ? "Good effort on these challenging questions. Keep practicing!"
+          : `Good effort! You have some knowledge about ${countryName}, but there's more to discover.`,
         icon: "📚"
       };
     } else {
       return {
-        title: "Cultural Novice",
-        message: `You've taken your first steps into learning about ${countryName}. Keep exploring to improve your score!`,
+        title: isWeeklyChallenge ? "Challenge Novice" : "Cultural Novice",
+        message: isWeeklyChallenge
+          ? "These were tough questions! Keep trying to improve your score."
+          : `You've taken your first steps into learning about ${countryName}. Keep exploring to improve your score!`,
         icon: "🌱"
       };
     }
@@ -89,7 +104,7 @@ const QuizResult = ({ result, countryName, onRestart, onBackToGlobe }: QuizResul
             Try Again
           </Button>
           <Button onClick={onBackToGlobe} className="flex items-center gap-2">
-            <Globe size={16} />
+            {isWeeklyChallenge ? <Trophy size={16} /> : <Globe size={16} />}
             Explore More
           </Button>
         </div>

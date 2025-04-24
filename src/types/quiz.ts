@@ -1,6 +1,11 @@
+
 export type QuestionType = 'multiple-choice' | 'image' | 'true-false' | 'fill-blank' | 'audio';
 
 export type DifficultyLevel = 'easy' | 'medium' | 'hard';
+
+export type QuestionCategory = 'History' | 'Culture' | 'Geography' | 'Food' | 'Music' | 'Sports' | 
+  'Language' | 'Politics' | 'Science' | 'Art' | 'Literature' | 'Technology' | 'Economy' | 'Wildlife' | 'Environment' | 
+  'Tribes' | 'Landmarks' | 'Famous People' | 'Traditions' | 'Achievements';
 
 export interface Choice {
   id: string;
@@ -17,10 +22,11 @@ export interface Country {
     lng: number;
   };
   difficulty: DifficultyLevel;
-  categories: string[];
+  categories: QuestionCategory[];
   flagImageUrl?: string;
   mapImageUrl?: string;
   iconType?: 'landmark' | 'trophy' | 'globe';
+  continent: string;
 }
 
 export interface Question {
@@ -30,9 +36,11 @@ export interface Question {
   imageUrl?: string;
   audioUrl?: string;
   choices: Choice[];
-  category: string;
+  category: QuestionCategory;
   explanation: string;
   difficulty: DifficultyLevel;
+  lastUpdated?: string; // Track when questions were last updated
+  failureRate?: number; // Track how often this question is failed
 }
 
 export interface QuizResult {
@@ -40,4 +48,13 @@ export interface QuizResult {
   correctAnswers: number;
   score: number;
   timeTaken: number;
+  failedQuestionIds?: string[]; // Track which questions the user failed
+}
+
+export interface QuestionSet {
+  country?: string;
+  continent?: string;
+  isGlobal?: boolean;
+  questions: Question[];
+  lastUpdated: string;
 }

@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import countries from "../data/countries";
@@ -9,12 +8,14 @@ import { createCountryMarker, createPOIMarker } from "./globe/GlobeMarkers";
 import { StarsBackground } from "./globe/StarsBackground";
 import { CountryCard } from "./globe/CountryCard";
 import { pointsOfInterest } from "./globe/types";
+import { Button } from "./ui/button";
 
 interface GlobeProps {
   onCountrySelect: (country: Country) => void;
+  onStartWeeklyChallenge?: () => void;
 }
 
-const Globe = ({ onCountrySelect }: GlobeProps) => {
+const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<THREE.Group | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -42,16 +43,26 @@ const Globe = ({ onCountrySelect }: GlobeProps) => {
     globeRef.current = globe;
     scene.add(globe);
 
+    // Use more visible colors for the globe
     const earthGeometry = new THREE.SphereGeometry(100, 64, 64);
     const earthMaterial = new THREE.MeshPhongMaterial({
-      color: 0xaaaaaa, // Light gray color for better visibility
+      color: 0x3366cc, // Use a blue color for better visibility
       wireframe: true,
-      wireframeLinewidth: 1.0,
+      wireframeLinewidth: 1.5,
       transparent: true,
-      opacity: 0.9
+      opacity: 0.8
     });
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
     globe.add(earth);
+
+    // Add ambient light for better visibility
+    const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+    scene.add(ambientLight);
+
+    // Add directional light for better visibility
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(1, 1, 1);
+    scene.add(directionalLight);
 
     // Add POI markers
     pointsOfInterest.forEach(poi => {
@@ -172,8 +183,20 @@ const Globe = ({ onCountrySelect }: GlobeProps) => {
         </p>
       </div>
       
+      {onStartWeeklyChallenge && (
+        <div className="absolute top-4 right-4 z-10">
+          <Button 
+            onClick={onStartWeeklyChallenge}
+            className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white"
+          >
+            <Trophy size={18} />
+            Weekly Challenge
+          </Button>
+        </div>
+      )}
+      
       <div className="absolute bottom-8 left-0 right-0 flex justify-center">
-        <div className="flex items-center gap-4 px-6 py-3 bg-muted/50 backdrop-blur-sm rounded-full">
+        <div className="flex items-center gap-4 px-6 py-3 bg-muted/90 backdrop-blur-sm rounded-full">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-green-500"></div>
             <span>Easy</span>

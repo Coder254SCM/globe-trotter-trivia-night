@@ -1,72 +1,117 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Globe from "../components/Globe";
 import Quiz from "../components/Quiz";
 import QuizResult from "../components/QuizResult";
-import { Country, QuizResult as QuizResultType } from "../types/quiz";
-import kenyaQuestions from "../data/kenyaQuestions";
-import usaQuestions from "../data/usaQuestions";
-import globalQuestions from "../data/globalQuestions";
+import { Country, QuizResult as QuizResultType, Question } from "../types/quiz";
+import { getQuizQuestions, recordQuizResults, getMostFailedQuestions } from "../utils/quizDataManager";
+import { toast } from "@/components/ui/use-toast";
 
 const Index = () => {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [quizResult, setQuizResult] = useState<QuizResultType | null>(null);
+  const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
+  const [weeklyChallenge, setWeeklyChallenge] = useState<Question[]>([]);
+  const [isWeeklyChallenge, setIsWeeklyChallenge] = useState(false);
+
+  // Check if weekly challenge needs to be updated
+  useEffect(() => {
+    const lastChallengeDate = localStorage.getItem('lastChallengeDate');
+    const currentDate = new Date().toISOString().split('T')[0];
+    
+    if (!lastChallengeDate || lastChallengeDate !== currentDate) {
+      // Get most failed questions for weekly challenge
+      const weeklyQuestions = getMostFailedQuestions(10);
+      if (weeklyQuestions.length > 0) {
+        setWeeklyChallenge(weeklyQuestions);
+        localStorage.setItem('lastChallengeDate', currentDate);
+      }
+    }
+  }, []);
 
   const handleCountrySelect = (country: Country) => {
     setSelectedCountry(country);
     setQuizResult(null);
+    setIsWeeklyChallenge(false);
+    
+    // Get appropriate questions for the selected country
+    const questions = getQuizQuestions(country.id, country.continent, 10, true);
+    setQuizQuestions(questions);
+    
+    toast({
+      title: `${country.name} Quiz`,
+      description: `Loading ${questions.length} questions about ${country.name} and world knowledge.`,
+    });
+  };
+
+  const handleStartWeeklyChallenge = () => {
+    setSelectedCountry(null);
+    setQuizResult(null);
+    setIsWeeklyChallenge(true);
+    setQuizQuestions(weeklyChallenge.length > 0 ? weeklyChallenge : getMostFailedQuestions(10));
+    
+    toast({
+      title: "Weekly Challenge",
+      description: "Test yourself on the most challenging questions from around the world!",
+    });
   };
 
   const handleQuizFinish = (result: QuizResultType) => {
     setQuizResult(result);
+    
+    // Track failed questions for future challenges
+    recordQuizResults({
+      ...result,
+      failedQuestionIds: quizQuestions
+        .filter((_, index) => !result.correctQuestions?.includes(index))
+        .map(q => q.id)
+    }, quizQuestions);
   };
 
   const handleBackToGlobe = () => {
     setSelectedCountry(null);
     setQuizResult(null);
+    setIsWeeklyChallenge(false);
   };
 
   const handleRestartQuiz = () => {
     setQuizResult(null);
-  };
-
-  const getQuestions = () => {
-    // Mix global questions with country-specific questions
-    const countryQuestions = {
-      kenya: kenyaQuestions,
-      usa: usaQuestions,
-      // Add more country questions here as they're created
-    }[selectedCountry?.id || ''] || [];
-
-    // Combine country-specific questions with global questions and shuffle
-    const allQuestions = [...countryQuestions, ...globalQuestions]
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 10); // Take 10 random questions
-
-    return allQuestions;
+    
+    // Refresh questions to get new ones
+    if (selectedCountry) {
+      const questions = getQuizQuestions(selectedCountry.id, selectedCountry.continent, 10, true);
+      setQuizQuestions(questions);
+    } else if (isWeeklyChallenge) {
+      setQuizQuestions(weeklyChallenge.length > 0 ? weeklyChallenge : getMostFailedQuestions(10));
+    }
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {!selectedCountry && (
-        <Globe onCountrySelect={handleCountrySelect} />
-      )}
-
-      {selectedCountry && !quizResult && (
-        <Quiz 
-          country={selectedCountry}
-          questions={getQuestions()}
-          onFinish={handleQuizFinish}
-          onBack={handleBackToGlobe}
+      {!selectedCountry && !isWeeklyChallenge && (
+        <Globe 
+          onCountrySelect={handleCountrySelect}
+          onStartWeeklyChallenge={weeklyChallenge.length > 0 ? handleStartWeeklyChallenge : undefined}
         />
       )}
 
-      {selectedCountry && quizResult && (
+      {(selectedCountry || isWeeklyChallenge) && !quizResult && (
+        <Quiz 
+          country={selectedCountry}
+          questions={quizQuestions}
+          onFinish={handleQuizFinish}
+          onBack={handleBackToGlobe}
+          isWeeklyChallenge={isWeeklyChallenge}
+        />
+      )}
+
+      {(selectedCountry || isWeeklyChallenge) && quizResult && (
         <QuizResult 
           result={quizResult}
-          countryName={selectedCountry.name}
+          countryName={selectedCountry?.name || "Global Challenge"}
           onRestart={handleRestartQuiz}
           onBackToGlobe={handleBackToGlobe}
+          isWeeklyChallenge={isWeeklyChallenge}
         />
       )}
     </div>

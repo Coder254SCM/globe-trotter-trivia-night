@@ -4,20 +4,22 @@ import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Progress } from "./ui/progress";
 import { Choice, Country, Question, QuizResult } from "../types/quiz";
-import { ArrowLeft, Clock, Globe, MapPin } from "lucide-react";
+import { ArrowLeft, Clock, Globe, MapPin, Trophy, Flag } from "lucide-react";
 
 interface QuizProps {
-  country: Country;
+  country: Country | null;
   questions: Question[];
   onFinish: (result: QuizResult) => void;
   onBack: () => void;
+  isWeeklyChallenge?: boolean;
 }
 
-const Quiz = ({ country, questions, onFinish, onBack }: QuizProps) => {
+const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false }: QuizProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [correctAnswers, setCorrectAnswers] = useState(0);
+  const [correctQuestions, setCorrectQuestions] = useState<number[]>([]);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [totalTime, setTotalTime] = useState(0);
   const [startTime] = useState(Date.now());
@@ -77,6 +79,7 @@ const Quiz = ({ country, questions, onFinish, onBack }: QuizProps) => {
     
     if (correct) {
       setCorrectAnswers((prev) => prev + 1);
+      setCorrectQuestions((prev) => [...prev, currentQuestionIndex]);
     }
   };
 
@@ -98,6 +101,7 @@ const Quiz = ({ country, questions, onFinish, onBack }: QuizProps) => {
         correctAnswers,
         score,
         timeTaken,
+        correctQuestions,
       });
     }
   };
@@ -119,6 +123,26 @@ const Quiz = ({ country, questions, onFinish, onBack }: QuizProps) => {
     
     return "border-border opacity-50";
   };
+
+  const getHeaderIcon = () => {
+    if (isWeeklyChallenge) {
+      return <Trophy size={20} className="text-amber-500" />;
+    }
+    
+    if (country) {
+      return <Flag size={20} className="text-primary" />;
+    }
+    
+    return <Globe size={20} className="text-primary" />;
+  };
+
+  const getHeaderTitle = () => {
+    if (isWeeklyChallenge) {
+      return "Weekly Challenge";
+    }
+    
+    return country ? `${country.name} Quiz` : "Global Quiz";
+  };
   
   return (
     <div className="min-h-screen w-full p-4 flex flex-col gap-8 max-w-4xl mx-auto">
@@ -135,8 +159,8 @@ const Quiz = ({ country, questions, onFinish, onBack }: QuizProps) => {
         </Button>
         
         <div className="flex items-center gap-2">
-          <MapPin size={16} className="text-primary" />
-          <span className="font-medium">{country.name} Quiz</span>
+          {getHeaderIcon()}
+          <span className="font-medium">{getHeaderTitle()}</span>
         </div>
         
         <div className="flex items-center gap-2">
@@ -168,6 +192,15 @@ const Quiz = ({ country, questions, onFinish, onBack }: QuizProps) => {
                 alt="Question visual"
                 className="max-w-full rounded-md shadow-md max-h-60 object-contain"
               />
+            </div>
+          )}
+          
+          {currentQuestion?.audioUrl && (
+            <div className="mt-4 mb-6 flex justify-center">
+              <audio controls className="w-full max-w-md">
+                <source src={currentQuestion.audioUrl} type="audio/mpeg" />
+                Your browser does not support the audio element.
+              </audio>
             </div>
           )}
         </div>
