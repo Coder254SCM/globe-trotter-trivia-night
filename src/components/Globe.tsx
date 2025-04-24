@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import countries from "../data/countries";
 import { Country } from "../types/quiz";
-import { Globe as GlobeIcon, MapPin, Landmark, Football } from "lucide-react";
+import { Globe as GlobeIcon, MapPin, Landmark, Trophy } from "lucide-react";
 import { setupScene, setupCamera, setupRenderer } from "../utils/threeSetup";
 import { createCountryMarker, createPOIMarker } from "./globe/GlobeMarkers";
 import { StarsBackground } from "./globe/StarsBackground";

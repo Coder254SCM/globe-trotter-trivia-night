@@ -2,7 +2,7 @@
 import { Country } from "@/types/quiz";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MapPin, Landmark, Football } from "lucide-react";
+import { MapPin, Landmark, Trophy } from "lucide-react";
 
 interface CountryCardProps {
   country: Country;
@@ -17,7 +17,7 @@ export const CountryCard = ({ country, onClose, onStartQuiz }: CountryCardProps)
       <Card className="w-full max-w-md p-6 relative z-20 border-primary/20 shadow-lg shadow-primary/20">
         <div className="flex items-center gap-4 mb-6">
           {country.categories.includes('Museum') && <Landmark className="inline-block mr-1" size={24} />}
-          {country.categories.includes('Sports') && <Football className="inline-block mr-1" size={24} />}
+          {country.categories.includes('Sports') && <Trophy className="inline-block mr-1" size={24} />}
           
           {country.flagImageUrl && (
             <img 
