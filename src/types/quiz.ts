@@ -1,3 +1,4 @@
+
 export type QuestionType = 'multiple-choice' | 'image' | 'true-false' | 'fill-blank' | 'audio';
 
 export type DifficultyLevel = 'easy' | 'medium' | 'hard';
@@ -21,7 +22,7 @@ export type QuestionCategory =
   
   // Modern Life
   'Technology' | 'Economy' | 'Urban Life' | 'Transportation' |
-  'Education' | 'Healthcare' | 'Innovation' |
+  'Education' | 'Healthcare' | 'Innovation' | 'Science' |
   
   // Lifestyle
   'Food' | 'Sports' | 'Fashion' | 'Lifestyle' | 'Recreation' |
