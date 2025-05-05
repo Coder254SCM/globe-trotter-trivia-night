@@ -3,13 +3,34 @@ import globalQuestions from "../data/questions/globalQuestions";
 import africaQuestions from "../data/questions/continents/africaQuestions";
 import kenyaQuestions from "../data/questions/countries/kenyaQuestions";
 import usaQuestions from "../data/questions/countries/usaQuestions";
+import japanQuestions from "../data/questions/countries/japanQuestions";
+import brazilQuestions from "../data/questions/countries/brazilQuestions";
+import italyQuestions from "../data/questions/countries/italyQuestions";
+import indiaQuestions from "../data/questions/countries/indiaQuestions";
+import australiaQuestions from "../data/questions/countries/australiaQuestions";
+import franceQuestions from "../data/questions/countries/franceQuestions";
+import chinaQuestions from "../data/questions/countries/chinaQuestions";
+import southAfricaQuestions from "../data/questions/countries/southAfricaQuestions";
+import mexicoQuestions from "../data/questions/countries/mexicoQuestions";
+import egyptQuestions from "../data/questions/countries/egyptQuestions";
+import germanyQuestions from "../data/questions/countries/germanyQuestions";
 import countries from "../data/countries";
 
 // This would be expanded as more question sets are added
 const countryQuestions: Record<string, Question[]> = {
   "kenya": kenyaQuestions,
   "usa": usaQuestions,
-  // Add more country questions as they're created
+  "japan": japanQuestions,
+  "brazil": brazilQuestions,
+  "italy": italyQuestions,
+  "india": indiaQuestions,
+  "australia": australiaQuestions,
+  "france": franceQuestions,
+  "china": chinaQuestions,
+  "south-africa": southAfricaQuestions,
+  "mexico": mexicoQuestions,
+  "egypt": egyptQuestions,
+  "germany": germanyQuestions
 };
 
 const continentQuestions: Record<string, Question[]> = {
