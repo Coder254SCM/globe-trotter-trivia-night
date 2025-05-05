@@ -1,3 +1,4 @@
+
 import { Question, QuizResult } from "../types/quiz";
 import globalQuestions from "../data/questions/globalQuestions";
 import africaQuestions from "../data/questions/continents/africaQuestions";
@@ -30,7 +31,16 @@ const countryQuestions: Record<string, Question[]> = {
   "south-africa": southAfricaQuestions,
   "mexico": mexicoQuestions,
   "egypt": egyptQuestions,
-  "germany": germanyQuestions
+  "germany": germanyQuestions,
+  // For new countries, we'll use global questions until we create specific ones
+  "canada": globalQuestions.filter(q => q.category === "Geography" || q.category === "History").slice(0, 10),
+  "russia": globalQuestions.filter(q => q.category === "History" || q.category === "Geography").slice(0, 10),
+  "argentina": globalQuestions.filter(q => q.category === "Geography" || q.category === "Culture").slice(0, 10),
+  "spain": globalQuestions.filter(q => q.category === "History" || q.category === "Culture").slice(0, 10),
+  "thailand": globalQuestions.filter(q => q.category === "Geography" || q.category === "Culture").slice(0, 10),
+  "nigeria": globalQuestions.filter(q => q.category === "Geography" || q.category === "History").slice(0, 10),
+  "united-kingdom": globalQuestions.filter(q => q.category === "History" || q.category === "Culture").slice(0, 10),
+  "new-zealand": globalQuestions.filter(q => q.category === "Geography" || q.category === "Wildlife").slice(0, 10),
 };
 
 const continentQuestions: Record<string, Question[]> = {
