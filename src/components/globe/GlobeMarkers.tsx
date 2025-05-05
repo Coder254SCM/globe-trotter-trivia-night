@@ -1,4 +1,3 @@
-
 import * as THREE from "three";
 import { DifficultyLevel } from "@/types/quiz";
 
@@ -132,10 +131,11 @@ export const createCountryMarker = (
   return group;
 };
 
+// Updated to accept all POI types
 export const createPOIMarker = (
   lat: number,
   lng: number,
-  type: 'museum' | 'sports',
+  type: 'museum' | 'sports' | 'landmark' | 'nature' | 'cultural',
   name?: string
 ): THREE.Group => {
   const phi = (90 - lat) * (Math.PI / 180);
@@ -151,9 +151,32 @@ export const createPOIMarker = (
   
   // Create more visible and distinct markers
   const markerGeometry = new THREE.SphereGeometry(2.5, 16, 16);
+  
+  // Use different colors based on POI type
+  let markerColor;
+  switch (type) {
+    case 'museum':
+      markerColor = 0xd946ef; // Purple
+      break;
+    case 'sports':
+      markerColor = 0x3b82f6; // Blue
+      break;
+    case 'landmark':
+      markerColor = 0xf97316; // Orange
+      break;
+    case 'nature':
+      markerColor = 0x10b981; // Green
+      break;
+    case 'cultural':
+      markerColor = 0xec4899; // Pink
+      break;
+    default:
+      markerColor = 0x6366f1; // Indigo (fallback)
+  }
+  
   const markerMaterial = new THREE.MeshPhongMaterial({
-    color: type === 'museum' ? 0xd946ef : 0x3b82f6,
-    emissive: type === 'museum' ? 0xd946ef : 0x3b82f6,
+    color: markerColor,
+    emissive: markerColor,
     emissiveIntensity: 0.5,
     transparent: true,
     opacity: 0.9,
