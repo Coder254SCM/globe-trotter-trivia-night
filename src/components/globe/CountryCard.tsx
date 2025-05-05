@@ -95,7 +95,7 @@ export const CountryCard = ({ country, onClose, onStartQuiz }: CountryCardProps)
         <div className="mb-6">
           <h3 className="font-semibold mb-2">Available Categories:</h3>
           <div className="flex flex-wrap gap-2">
-            {country.categories.map((category) => (
+            {country.categories.slice(0, 8).map((category) => (
               <span 
                 key={category}
                 className="px-2 py-1 bg-secondary text-secondary-foreground rounded-md text-sm"
@@ -103,12 +103,17 @@ export const CountryCard = ({ country, onClose, onStartQuiz }: CountryCardProps)
                 {category}
               </span>
             ))}
+            {country.categories.length > 8 && (
+              <span className="px-2 py-1 bg-secondary text-secondary-foreground rounded-md text-sm">
+                +{country.categories.length - 8} more
+              </span>
+            )}
           </div>
         </div>
         
         <Button 
           onClick={() => onStartQuiz(selectedDifficulty)} 
-          className="w-full"
+          className={`w-full ${getDifficultyColor(selectedDifficulty)} hover:opacity-90 transition-opacity`}
         >
           Start {country.name} Quiz ({selectedDifficulty})
         </Button>

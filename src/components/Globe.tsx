@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import countries from "../data/countries";
@@ -21,9 +22,10 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const markerRefs = useRef<Map<string, THREE.Mesh>>(new Map());
+  const markerRefs = useRef<Map<string, THREE.Object3D>>(new Map());
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [rotating, setRotating] = useState(true);
+  const [showLabels, setShowLabels] = useState(true);
   const animationFrameIdRef = useRef<number>(0);
 
   useEffect(() => {
@@ -66,14 +68,20 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
 
     // Add POI markers
     pointsOfInterest.forEach(poi => {
-      const marker = createPOIMarker(poi.lat, poi.lng, poi.type);
+      const marker = createPOIMarker(poi.lat, poi.lng, poi.type, poi.name);
       globe.add(marker);
     });
 
-    // Add country markers
+    // Add country markers with labels
     countries.forEach((country) => {
       const { lat, lng } = country.position;
-      const marker = createCountryMarker(lat, lng, country.difficulty);
+      const marker = createCountryMarker(
+        lat, 
+        lng, 
+        country.difficulty, 
+        country.iconType,
+        showLabels ? country.name : undefined
+      );
       marker.userData = { countryId: country.id };
       globe.add(marker);
       markerRefs.current.set(country.id, marker);
@@ -94,20 +102,27 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
     const mouse = new THREE.Vector2();
 
     const handleClick = (event: MouseEvent) => {
-      if (!camera || !scene) return;
+      if (!camera || !scene || !globe) return;
       
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
       
       raycaster.setFromCamera(mouse, camera);
       
-      const intersects = raycaster.intersectObjects(
-        Array.from(markerRefs.current.values())
-      );
+      // Check all objects in the scene for intersections
+      const intersects = raycaster.intersectObjects(globe.children, true);
       
       if (intersects.length > 0) {
-        const clickedMarker = intersects[0].object;
-        const countryId = clickedMarker.userData?.countryId;
+        // Find the first ancestor with userData
+        let obj: THREE.Object3D | null = intersects[0].object;
+        let countryId = null;
+        
+        while (obj && !countryId) {
+          if (obj.userData?.countryId) {
+            countryId = obj.userData.countryId;
+          }
+          obj = obj.parent;
+        }
         
         if (countryId) {
           const country = countries.find((c) => c.id === countryId);
@@ -136,7 +151,13 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
       // Animate markers
       markerRefs.current.forEach((marker) => {
         const scale = 1 + Math.sin(Date.now() * 0.002) * 0.1;
-        marker.scale.set(scale, scale, scale);
+        
+        // Scale the actual marker, not the label
+        if (marker instanceof THREE.Group && marker.children.length > 0) {
+          marker.children[0].scale.set(scale, scale, scale);
+        } else {
+          marker.scale.set(scale, scale, scale);
+        }
       });
     };
     
@@ -154,17 +175,26 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
       window.removeEventListener("resize", handleResize);
       containerRef.current?.removeEventListener("click", handleClick);
     };
-  }, []);
+  }, [showLabels]);
 
-  const handleStartQuiz = () => {
+  const handleStartQuiz = (difficulty: string) => {
     if (selectedCountry) {
-      onCountrySelect(selectedCountry);
+      // Use the selected difficulty for the quiz
+      const countryWithDifficulty = {
+        ...selectedCountry,
+        difficulty: difficulty as 'easy' | 'medium' | 'hard'
+      };
+      onCountrySelect(countryWithDifficulty);
     }
   };
 
   const handleCloseCard = () => {
     setSelectedCountry(null);
     setRotating(true);
+  };
+
+  const toggleLabels = () => {
+    setShowLabels(!showLabels);
   };
 
   return (
@@ -183,8 +213,17 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
         </p>
       </div>
       
-      {onStartWeeklyChallenge && (
-        <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-4 right-4 z-10 flex gap-2">
+        <Button 
+          onClick={toggleLabels}
+          className="flex items-center gap-2"
+          variant="outline"
+        >
+          <MapPin size={18} />
+          {showLabels ? "Hide Labels" : "Show Labels"}
+        </Button>
+        
+        {onStartWeeklyChallenge && (
           <Button 
             onClick={onStartWeeklyChallenge}
             className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white"
@@ -192,8 +231,8 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
             <Trophy size={18} />
             Weekly Challenge
           </Button>
-        </div>
-      )}
+        )}
+      </div>
       
       <div className="absolute bottom-8 left-0 right-0 flex justify-center">
         <div className="flex items-center gap-4 px-6 py-3 bg-muted/90 backdrop-blur-sm rounded-full">
@@ -209,7 +248,7 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
             <div className="w-3 h-3 rounded-full bg-red-500"></div>
             <span>Hard</span>
           </div>
-          <p className="ml-4">Click on a location to start a quiz</p>
+          <p className="ml-4">Click on a country to start a quiz</p>
         </div>
       </div>
       
