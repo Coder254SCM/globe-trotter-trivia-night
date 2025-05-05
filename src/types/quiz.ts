@@ -1,4 +1,3 @@
-
 export type QuestionType = 'multiple-choice' | 'image' | 'true-false' | 'fill-blank' | 'audio';
 
 export type DifficultyLevel = 'easy' | 'medium' | 'hard';
@@ -6,7 +5,7 @@ export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 export type QuestionCategory = 
   // Culture & Society
   'History' | 'Culture' | 'Traditions' | 'Religion' | 'Language' | 'Fashion' |
-  'Festivals' | 'Customs' | 'Mythology' | 'Social Norms' |
+  'Festivals' | 'Customs' | 'Mythology' | 'Social Norms' | 'Languages' |
   
   // Geography & Nature
   'Geography' | 'Wildlife' | 'Environment' | 'Climate' | 'Natural Wonders' |
@@ -18,7 +17,7 @@ export type QuestionCategory =
   
   // People & Society
   'Famous People' | 'Tribes' | 'Demographics' | 'Social Movements' |
-  'Women Achievements' | 'Youth Culture' | 'Migration' |
+  'Women Achievements' | 'Youth Culture' | 'Migration' | 'Indigenous Culture' |
   
   // Modern Life
   'Technology' | 'Economy' | 'Urban Life' | 'Transportation' |
@@ -29,7 +28,8 @@ export type QuestionCategory =
   
   // Government & Heritage
   'Politics' | 'Landmarks' | 'Military History' | 'Achievements' |
-  'International Relations' | 'Heritage Sites';
+  'International Relations' | 'Heritage Sites' | 'Ancient History' | 'Archaeology' | 
+  'Philosophy' | 'Industry';
 
 export interface Choice {
   id: string;

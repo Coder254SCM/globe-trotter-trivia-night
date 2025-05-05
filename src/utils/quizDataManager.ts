@@ -1,9 +1,9 @@
-
 import { Question, QuizResult } from "../types/quiz";
 import globalQuestions from "../data/questions/globalQuestions";
 import africaQuestions from "../data/questions/continents/africaQuestions";
 import kenyaQuestions from "../data/questions/countries/kenyaQuestions";
 import usaQuestions from "../data/questions/countries/usaQuestions";
+import countries from "../data/countries";
 
 // This would be expanded as more question sets are added
 const countryQuestions: Record<string, Question[]> = {
@@ -39,8 +39,8 @@ export const getQuizQuestions = (
     questionPool.push(...continentQuestions[continentId]);
   }
   
-  // Add global questions if requested
-  if (includeGlobal) {
+  // Add global questions if requested and we need more questions
+  if (includeGlobal && questionPool.length < count) {
     questionPool.push(...globalQuestions);
   }
   
@@ -49,7 +49,18 @@ export const getQuizQuestions = (
     return questionPool;
   }
   
-  // Shuffle the question pool and take the requested number
+  // Prioritize country-specific questions
+  const countrySpecificQuestions = questionPool.filter(q => 
+    countryId && countryQuestions[countryId] && 
+    countryQuestions[countryId].some(cq => cq.id === q.id)
+  );
+  
+  // If we have enough country-specific questions, use those
+  if (countrySpecificQuestions.length >= count) {
+    return shuffleArray(countrySpecificQuestions).slice(0, count);
+  }
+  
+  // Otherwise, shuffle the entire pool and take the requested number
   return shuffleArray(questionPool).slice(0, count);
 };
 
@@ -112,6 +123,16 @@ export const getRecentlyUpdatedQuestions = (since: Date, count: number = 10): Qu
     });
   
   return recentQuestions.slice(0, count);
+};
+
+// Check if questions exist for a country
+export const hasQuestionsForCountry = (countryId: string): boolean => {
+  return !!countryQuestions[countryId] && countryQuestions[countryId].length > 0;
+};
+
+// Get the number of questions available for a country
+export const getQuestionCountForCountry = (countryId: string): number => {
+  return countryQuestions[countryId]?.length || 0;
 };
 
 // Helper function to shuffle an array
