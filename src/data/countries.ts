@@ -453,7 +453,7 @@ const countries: Country[] = [
       "Culture",
       "History",
       "Music",
-      "Film",
+      "Cinema",
       "Food",
       "Languages",
       "Literature"
