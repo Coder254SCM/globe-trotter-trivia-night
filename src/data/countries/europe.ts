@@ -143,6 +143,51 @@ const europeCountries: Country[] = [
     mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/United_Kingdom_relief_location_map.jpg/800px-United_Kingdom_relief_location_map.jpg",
     iconType: "landmark",
     continent: "Europe"
+  },
+  {
+    id: "sweden",
+    name: "Sweden",
+    code: "SE",
+    position: {
+      lat: 60.1282,
+      lng: 18.6435,
+    },
+    difficulty: "medium",
+    categories: [
+      "History",
+      "Culture",
+      "Geography",
+      "Design",
+      "Music",
+      "Technology"
+    ],
+    flagImageUrl: "https://flagcdn.com/se.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Sweden_relief_location_map.jpg/800px-Sweden_relief_location_map.jpg",
+    iconType: "culture",
+    continent: "Europe"
+  },
+  {
+    id: "greece",
+    name: "Greece",
+    code: "GR",
+    position: {
+      lat: 39.0742,
+      lng: 21.8243,
+    },
+    difficulty: "medium",
+    categories: [
+      "Ancient History",
+      "Philosophy",
+      "Mythology",
+      "Architecture",
+      "Geography",
+      "Food",
+      "Art"
+    ],
+    flagImageUrl: "https://flagcdn.com/gr.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Greece_relief_location_map.jpg/800px-Greece_relief_location_map.jpg",
+    iconType: "landmark",
+    continent: "Europe"
   }
 ];
 

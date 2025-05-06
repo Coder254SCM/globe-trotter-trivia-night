@@ -98,6 +98,51 @@ const africaCountries: Country[] = [
     mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Nigeria_relief_location_map.jpg/800px-Nigeria_relief_location_map.jpg",
     iconType: "culture",
     continent: "Africa"
+  },
+  {
+    id: "morocco",
+    name: "Morocco",
+    code: "MA",
+    position: {
+      lat: 31.7917,
+      lng: -7.0926,
+    },
+    difficulty: "medium",
+    categories: [
+      "Culture",
+      "History",
+      "Food",
+      "Geography",
+      "Architecture",
+      "Traditions",
+      "Art"
+    ],
+    flagImageUrl: "https://flagcdn.com/ma.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Morocco_relief_location_map.jpg/800px-Morocco_relief_location_map.jpg",
+    iconType: "culture",
+    continent: "Africa"
+  },
+  {
+    id: "ghana",
+    name: "Ghana",
+    code: "GH",
+    position: {
+      lat: 7.9465,
+      lng: -1.0232,
+    },
+    difficulty: "medium",
+    categories: [
+      "Culture",
+      "History",
+      "Music",
+      "Food",
+      "Sports",
+      "Geography"
+    ],
+    flagImageUrl: "https://flagcdn.com/gh.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Ghana_relief_location_map.jpg/800px-Ghana_relief_location_map.jpg",
+    iconType: "culture",
+    continent: "Africa"
   }
 ];
 

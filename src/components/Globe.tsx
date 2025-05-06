@@ -27,6 +27,7 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
   const [rotating, setRotating] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
   const animationFrameIdRef = useRef<number>(0);
+  const globeTextureLoaded = useRef<boolean>(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -45,26 +46,53 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
     globeRef.current = globe;
     scene.add(globe);
 
-    // Use more visible colors for the globe
+    // Create colorful Earth globe with continents
     const earthGeometry = new THREE.SphereGeometry(100, 64, 64);
-    const earthMaterial = new THREE.MeshPhongMaterial({
-      color: 0x3366cc, // Use a blue color for better visibility
-      wireframe: true,
-      wireframeLinewidth: 1.5,
-      transparent: true,
-      opacity: 0.8
+    
+    // Load Earth texture with continents and oceans
+    const textureLoader = new THREE.TextureLoader();
+    const earthTexture = textureLoader.load('/lovable-uploads/02bfe633-4bdd-46b1-bc0b-76cba6322120.png', () => {
+      globeTextureLoaded.current = true;
     });
+    
+    // Add bump map for 3D effect (optional)
+    const bumpMap = textureLoader.load('https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Equirectangular_projection_SW.jpg/2560px-Equirectangular_projection_SW.jpg');
+    
+    const earthMaterial = new THREE.MeshPhongMaterial({
+      map: earthTexture,
+      bumpMap: bumpMap,
+      bumpScale: 2,
+      specular: new THREE.Color(0x333333),
+      shininess: 5,
+    });
+    
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
     globe.add(earth);
+    
+    // Add a subtle atmosphere glow effect
+    const atmosphereGeometry = new THREE.SphereGeometry(103, 64, 64);
+    const atmosphereMaterial = new THREE.MeshPhongMaterial({
+      color: 0x3366cc,
+      transparent: true,
+      opacity: 0.1,
+      side: THREE.BackSide
+    });
+    const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+    globe.add(atmosphere);
 
     // Add ambient light for better visibility
-    const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+    const ambientLight = new THREE.AmbientLight(0x404040, 2);
     scene.add(ambientLight);
 
     // Add directional light for better visibility
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
     directionalLight.position.set(1, 1, 1);
     scene.add(directionalLight);
+    
+    // Add a grid helper for longitude/latitude reference
+    const gridHelper = new THREE.GridHelper(250, 20, 0xaaaaaa, 0x444444);
+    gridHelper.rotation.x = Math.PI / 2;
+    scene.add(gridHelper);
 
     // Add POI markers
     pointsOfInterest.forEach(poi => {

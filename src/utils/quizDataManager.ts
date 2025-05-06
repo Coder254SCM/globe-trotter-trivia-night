@@ -1,4 +1,3 @@
-
 import { Question, QuizResult } from "../types/quiz";
 import globalQuestions from "../data/questions/globalQuestions";
 import africaQuestions from "../data/questions/continents/africaQuestions";
@@ -41,6 +40,11 @@ const countryQuestions: Record<string, Question[]> = {
   "nigeria": globalQuestions.filter(q => q.category === "Geography" || q.category === "History").slice(0, 10),
   "united-kingdom": globalQuestions.filter(q => q.category === "History" || q.category === "Culture").slice(0, 10),
   "new-zealand": globalQuestions.filter(q => q.category === "Geography" || q.category === "Wildlife").slice(0, 10),
+  // Add newly added countries
+  "morocco": globalQuestions.filter(q => q.category === "Geography" || q.category === "Culture").slice(0, 10),
+  "ghana": globalQuestions.filter(q => q.category === "Geography" || q.category === "History").slice(0, 10),
+  "sweden": globalQuestions.filter(q => q.category === "Geography" || q.category === "Culture").slice(0, 10),
+  "greece": globalQuestions.filter(q => q.category === "History" || q.category === "Art").slice(0, 10),
 };
 
 const continentQuestions: Record<string, Question[]> = {
