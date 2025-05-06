@@ -83,51 +83,52 @@ export const useGlobe = ({
     // Load Earth texture with continents and oceans
     const textureLoader = new THREE.TextureLoader();
     
-    // Use the texture
-    const earthTexture = textureLoader.load('/lovable-uploads/94c703e9-6c52-4f7b-826f-0de74dd8bcdf.png', () => {
+    // First, load a normal map for that 3D terrain feel
+    const normalMap = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_normal_2048.jpg');
+    
+    // Load Earth texture (better quality)
+    const earthTexture = textureLoader.load('/lovable-uploads/600c2c58-a99e-4652-8e24-5959f1631910.png', () => {
       globeTextureLoaded.current = true;
     });
     
-    // Add bump map for 3D effect
-    const bumpMap = textureLoader.load('https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Equirectangular_projection_SW.jpg/2560px-Equirectangular_projection_SW.jpg');
+    // Load cloud layer for more realism
+    const cloudTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_clouds_1024.jpg');
     
+    // Create the main Earth material
     const earthMaterial = new THREE.MeshPhongMaterial({
       map: earthTexture,
-      bumpMap: bumpMap,
-      bumpScale: 4,
-      specular: new THREE.Color(0x333333),
-      shininess: 15,
+      normalMap: normalMap,
+      normalScale: new THREE.Vector2(0.8, 0.8),
+      shininess: 20,
     });
     
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
     earthRef.current = earth;
     globe.add(earth);
     
+    // Add subtle cloud layer
+    const cloudGeometry = new THREE.SphereGeometry(101, 64, 64);
+    const cloudMaterial = new THREE.MeshPhongMaterial({
+      map: cloudTexture,
+      transparent: true,
+      opacity: 0.15,
+      blending: THREE.AdditiveBlending,
+    });
+    
+    const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
+    globe.add(clouds);
+    
     // Add atmosphere glow effect
     const atmosphereGeometry = new THREE.SphereGeometry(103, 64, 64);
     const atmosphereMaterial = new THREE.MeshPhongMaterial({
       color: 0x3366cc,
       transparent: true,
-      opacity: 0.15,
+      opacity: 0.12,
       side: THREE.BackSide
     });
     const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
     globe.add(atmosphere);
 
-    // Add lighting for better visibility
-    const ambientLight = new THREE.AmbientLight(0x606060, 2);
-    scene.add(ambientLight);
-
-    // Add directional light to create shadows and highlights on the globe
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
-    directionalLight.position.set(1, 1, 1);
-    scene.add(directionalLight);
-    
-    // Add a secondary light from another angle
-    const secondaryLight = new THREE.DirectionalLight(0xffffff, 1.5);
-    secondaryLight.position.set(-1, 0.5, -1);
-    scene.add(secondaryLight);
-    
     // Add points of interest markers
     pointsOfInterest.forEach(poi => {
       const marker = createPOIMarker(poi.lat, poi.lng, poi.type, poi.name);
@@ -191,23 +192,19 @@ export const useGlobe = ({
       
       if (rotating && globeRef.current) {
         globeRef.current.rotation.y += 0.0005;
+        
+        // Rotate cloud layer slightly faster for a dynamic effect
+        if (clouds) {
+          clouds.rotation.y += 0.0001;
+        }
       }
       
       if (renderer && scene && camera) {
         renderer.render(scene, camera);
       }
       
-      // Animate markers
-      markerRefs.current.forEach((marker) => {
-        const scale = 1 + Math.sin(Date.now() * 0.002) * 0.1;
-        
-        // Scale the actual marker, not the label
-        if (marker instanceof THREE.Group && marker.children.length > 0) {
-          marker.children[0].scale.set(scale, scale, scale);
-        } else {
-          marker.scale.set(scale, scale, scale);
-        }
-      });
+      // No more pulsing animations for markers - they remain static
+      // This makes the markers stationary and easier to click
     };
     
     animate();

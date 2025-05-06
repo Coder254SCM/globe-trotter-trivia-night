@@ -5,18 +5,18 @@ export const setupScene = () => {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x000000); // Black background for better contrast
   
-  // Add stronger ambient light
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+  // Add ambient light with improved brightness
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
   scene.add(ambientLight);
 
-  // Add stronger directional light
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
-  directionalLight.position.set(100, 100, 100);
+  // Add directional light from the front
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+  directionalLight.position.set(0, 0, 100);
   scene.add(directionalLight);
 
-  // Add second directional light from another angle
+  // Add directional light from another angle
   const secondLight = new THREE.DirectionalLight(0xffffff, 0.8);
-  secondLight.position.set(-100, -100, -100);
+  secondLight.position.set(100, 100, 0);
   scene.add(secondLight);
 
   return scene;
@@ -39,7 +39,9 @@ export const setupRenderer = () => {
     alpha: true,
     powerPreference: "high-performance" 
   });
-  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for better performance
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   return renderer;
 };

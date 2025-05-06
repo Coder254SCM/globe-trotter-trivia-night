@@ -2,33 +2,33 @@
 import * as THREE from "three";
 import { DifficultyLevel } from "@/types/quiz";
 
-// Create a canvas text label
+// Create a canvas text label with improved styling
 export const createTextCanvas = (text: string) => {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
   
   if (!context) return null;
   
-  const fontSize = 24;
-  context.font = `${fontSize}px Arial`;
+  const fontSize = 16; // Smaller font size for less overlap
+  context.font = `bold ${fontSize}px Arial`;
   
   // Get text metrics to size canvas appropriately
   const metrics = context.measureText(text);
   const width = metrics.width + 20;
-  const height = fontSize + 16;
+  const height = fontSize + 12;
   
   canvas.width = width;
   canvas.height = height;
   
-  // Draw background with rounded corners
-  context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+  // Draw background with rounded corners - darker and more opaque
+  context.fillStyle = 'rgba(0, 0, 0, 0.8)';
   context.beginPath();
-  context.roundRect(0, 0, width, height, 8);
+  context.roundRect(0, 0, width, height, 6);
   context.fill();
   
-  // Draw text
+  // Draw text in white for better contrast
   context.fillStyle = 'white';
-  context.font = `${fontSize}px Arial`;
+  context.font = `bold ${fontSize}px Arial`;
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.fillText(text, width / 2, height / 2);
@@ -46,27 +46,29 @@ export const createCountryMarker = (
   const phi = (90 - lat) * (Math.PI / 180);
   const theta = (lng + 180) * (Math.PI / 180);
   
-  const x = -100 * Math.sin(phi) * Math.cos(theta);
-  const y = 100 * Math.cos(phi);
-  const z = 100 * Math.sin(phi) * Math.sin(theta);
+  // Calculate position on sphere with radius 100
+  const radius = 100;
+  const x = -radius * Math.sin(phi) * Math.cos(theta);
+  const y = radius * Math.cos(phi);
+  const z = radius * Math.sin(phi) * Math.sin(theta);
   
   // Different geometries for different icon types
   let markerGeometry;
   switch (iconType) {
     case 'landmark':
-      markerGeometry = new THREE.ConeGeometry(2, 4, 6);
+      markerGeometry = new THREE.ConeGeometry(1.8, 3.5, 6);
       break;
     case 'trophy':
-      markerGeometry = new THREE.OctahedronGeometry(2);
+      markerGeometry = new THREE.OctahedronGeometry(1.8);
       break;
     case 'culture':
-      markerGeometry = new THREE.TorusGeometry(2, 0.5, 8, 16);
+      markerGeometry = new THREE.TorusGeometry(1.8, 0.5, 8, 16);
       break;
     case 'nature':
-      markerGeometry = new THREE.DodecahedronGeometry(2);
+      markerGeometry = new THREE.DodecahedronGeometry(1.8);
       break;
     default:
-      markerGeometry = new THREE.SphereGeometry(2, 16, 16);
+      markerGeometry = new THREE.SphereGeometry(1.8, 16, 16);
   }
   
   // Colors based on difficulty
@@ -87,8 +89,7 @@ export const createCountryMarker = (
     color: markerColor,
     emissive: markerColor,
     emissiveIntensity: 0.3,
-    transparent: true,
-    opacity: 0.9,
+    shininess: 30,
   });
   
   const marker = new THREE.Mesh(markerGeometry, markerMaterial);
@@ -102,6 +103,7 @@ export const createCountryMarker = (
   // Create a group to hold both the marker and label
   const group = new THREE.Group();
   group.position.set(x, y, z);
+  group.lookAt(0, 0, 0); // Make sure the marker is oriented correctly
   group.add(marker);
   
   // Add label if name is provided
@@ -114,16 +116,15 @@ export const createCountryMarker = (
       const labelMaterial = new THREE.SpriteMaterial({ 
         map: labelTexture, 
         transparent: true,
-        depthTest: false,
-        depthWrite: false,
+        depthTest: false, // This ensures labels are always visible
       });
       
       const label = new THREE.Sprite(labelMaterial);
-      const scale = 0.15; // Adjust scale as needed
+      const scale = 0.14; // Adjust scale as needed
       label.scale.set(labelCanvas.width * scale, labelCanvas.height * scale, 1);
       
       // Position above the marker
-      label.position.set(0, 4, 0);
+      label.position.set(0, 3.5, 0);
       
       group.add(label);
     }
@@ -142,16 +143,19 @@ export const createPOIMarker = (
   const phi = (90 - lat) * (Math.PI / 180);
   const theta = (lng + 180) * (Math.PI / 180);
   
-  const x = -100 * Math.sin(phi) * Math.cos(theta);
-  const y = 100 * Math.cos(phi);
-  const z = 100 * Math.sin(phi) * Math.sin(theta);
+  // Calculate position on sphere with radius 100
+  const radius = 100;
+  const x = -radius * Math.sin(phi) * Math.cos(theta);
+  const y = radius * Math.cos(phi);
+  const z = radius * Math.sin(phi) * Math.sin(theta);
   
   // Create group for marker and label
   const group = new THREE.Group();
   group.position.set(x, y, z);
+  group.lookAt(0, 0, 0); // Make sure the marker is oriented correctly
   
   // Create more visible and distinct markers
-  const markerGeometry = new THREE.SphereGeometry(2.5, 16, 16);
+  const markerGeometry = new THREE.SphereGeometry(2, 16, 16);
   
   // Use different colors based on POI type
   let markerColor;
@@ -179,8 +183,7 @@ export const createPOIMarker = (
     color: markerColor,
     emissive: markerColor,
     emissiveIntensity: 0.5,
-    transparent: true,
-    opacity: 0.9,
+    shininess: 30,
   });
   
   const marker = new THREE.Mesh(markerGeometry, markerMaterial);
@@ -196,16 +199,15 @@ export const createPOIMarker = (
       const labelMaterial = new THREE.SpriteMaterial({ 
         map: labelTexture, 
         transparent: true,
-        depthTest: false,
-        depthWrite: false,
+        depthTest: false, // This ensures labels are always visible
       });
       
       const label = new THREE.Sprite(labelMaterial);
-      const scale = 0.15; // Adjust scale as needed
+      const scale = 0.14; // Adjust scale for better visibility
       label.scale.set(labelCanvas.width * scale, labelCanvas.height * scale, 1);
       
       // Position above the marker
-      label.position.set(0, 4, 0);
+      label.position.set(0, 3.5, 0);
       
       group.add(label);
     }
