@@ -3,7 +3,7 @@ import * as THREE from "three";
 
 export const setupScene = () => {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0a0a0a); // Very dark background
+  scene.background = new THREE.Color(0x000000); // Black background for better contrast
   
   // Add stronger ambient light
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
