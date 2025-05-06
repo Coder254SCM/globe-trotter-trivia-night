@@ -157,9 +157,9 @@ const europeCountries: Country[] = [
       "History",
       "Culture",
       "Geography",
-      "Design",
+      "Technology",
       "Music",
-      "Technology"
+      "Architecture"
     ],
     flagImageUrl: "https://flagcdn.com/se.svg",
     mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Sweden_relief_location_map.jpg/800px-Sweden_relief_location_map.jpg",

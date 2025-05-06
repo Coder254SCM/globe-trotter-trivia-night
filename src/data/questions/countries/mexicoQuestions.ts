@@ -36,7 +36,7 @@ const mexicoQuestions: Question[] = [
     id: "mx-q3",
     type: "image",
     text: "What Mexican holiday is being celebrated in this image?",
-    imageUrl: "https://i.imgur.com/asDmKHN.jpg", // Image of Day of the Dead celebration
+    imageUrl: "/lovable-uploads/94c703e9-6c52-4f7b-826f-0de74dd8bcdf.png", // Updated to local image
     choices: [
       { id: "a", text: "Independence Day", isCorrect: false },
       { id: "b", text: "Revolution Day", isCorrect: false },
