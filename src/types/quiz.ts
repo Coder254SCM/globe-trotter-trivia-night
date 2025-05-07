@@ -1,3 +1,4 @@
+
 export type QuestionType = 'multiple-choice' | 'image' | 'true-false' | 'fill-blank' | 'audio';
 
 export type DifficultyLevel = 'easy' | 'medium' | 'hard';
@@ -5,11 +6,14 @@ export type DifficultyLevel = 'easy' | 'medium' | 'hard';
 export type QuestionCategory = 
   // Culture & Society
   'History' | 'Culture' | 'Traditions' | 'Religion' | 'Language' | 'Fashion' |
-  'Festivals' | 'Customs' | 'Mythology' | 'Social Norms' | 'Languages' |
+  'Festivals' | 'Customs' | 'Mythology' | 'Social Norms' | 'Languages' | 
+  'Indigenous Culture' | 'Indigenous Peoples' | 'TV Shows' | 'War' | 'Ancient Civilization' | 
+  'Ancient Civilizations' | 'Viking Era' | 'World War II' |
   
   // Geography & Nature
   'Geography' | 'Wildlife' | 'Environment' | 'Climate' | 'Natural Wonders' |
-  'Ecosystems' | 'Conservation' | 'Natural Resources' |
+  'Ecosystems' | 'Conservation' | 'Natural Resources' | 'Nature' | 'Islands' |
+  'Desert' | 'Rainforests' | 'National Parks' | 'Canal' |
   
   // Arts & Entertainment
   'Art' | 'Music' | 'Dance' | 'Cinema' | 'Literature' | 'Theater' |
@@ -17,14 +21,15 @@ export type QuestionCategory =
   
   // People & Society
   'Famous People' | 'Tribes' | 'Demographics' | 'Social Movements' |
-  'Women Achievements' | 'Youth Culture' | 'Migration' | 'Indigenous Culture' |
+  'Women Achievements' | 'Youth Culture' | 'Migration' |
   
   // Modern Life
   'Technology' | 'Economy' | 'Urban Life' | 'Transportation' |
-  'Education' | 'Healthcare' | 'Innovation' | 'Science' |
+  'Education' | 'Healthcare' | 'Innovation' | 'Science' | 'Business' | 'Banking' |
+  'Maritime Exploration' |
   
   // Lifestyle
-  'Food' | 'Sports' | 'Fashion' | 'Lifestyle' | 'Recreation' |
+  'Food' | 'Sports' | 'Fashion' | 'Lifestyle' | 'Recreation' | 'Coffee' | 'Wine' | 'Tourism' |
   
   // Government & Heritage
   'Politics' | 'Landmarks' | 'Military History' | 'Achievements' |
