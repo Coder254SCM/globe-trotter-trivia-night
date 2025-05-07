@@ -3,26 +3,34 @@ import * as THREE from "three";
 
 export const setupScene = () => {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x000000); // Black background for better contrast
+  scene.background = new THREE.Color(0x000011); // Dark blue-black for better space feeling
   
-  // Add stronger ambient light for better global illumination
-  const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+  // Stronger ambient light for better global illumination
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1.8);
   scene.add(ambientLight);
 
-  // Add directional light from the front with increased intensity
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
+  // Enhanced directional light from the front
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 3.0);
   directionalLight.position.set(0, 0, 100);
+  directionalLight.castShadow = true;
   scene.add(directionalLight);
 
   // Add directional light from another angle with increased intensity
-  const secondLight = new THREE.DirectionalLight(0xffffff, 1.8);
+  const secondLight = new THREE.DirectionalLight(0xffffff, 2.2);
   secondLight.position.set(100, 100, 0);
+  secondLight.castShadow = true;
   scene.add(secondLight);
   
-  // Add a third light for more balanced illumination
-  const thirdLight = new THREE.DirectionalLight(0xffffff, 1.3);
+  // Third light for more balanced illumination
+  const thirdLight = new THREE.DirectionalLight(0xffffff, 1.8);
   thirdLight.position.set(-100, -50, -100);
+  thirdLight.castShadow = true;
   scene.add(thirdLight);
+
+  // Fourth light to illuminate the dark side
+  const fourthLight = new THREE.DirectionalLight(0xffffff, 1.2);
+  fourthLight.position.set(0, -100, -100);
+  scene.add(fourthLight);
 
   return scene;
 };
@@ -50,7 +58,8 @@ export const setupRenderer = () => {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   
   // Increase exposure for better visibility
-  renderer.toneMappingExposure = 1.8;
+  renderer.toneMappingExposure = 2.0;
+  renderer.outputEncoding = THREE.sRGBEncoding;
   
   return renderer;
 };
