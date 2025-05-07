@@ -57,9 +57,10 @@ export const setupRenderer = () => {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   
+  // Update this line to use the newer outputColorSpace property instead of outputEncoding
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
   // Increase exposure for better visibility
   renderer.toneMappingExposure = 2.0;
-  renderer.outputEncoding = THREE.sRGBEncoding;
   
   return renderer;
 };
