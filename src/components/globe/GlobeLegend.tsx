@@ -18,7 +18,10 @@ export const GlobeLegend: React.FC = () => {
           <span>Hard</span>
         </div>
         <div className="h-6 w-px bg-border mx-2"></div>
-        <p className="font-medium">Click on a country to start a quiz</p>
+        <div className="flex gap-2 items-center">
+          <span className="font-medium whitespace-nowrap">Click on a country to start a quiz</span>
+          <span className="hidden md:inline">or use search (⌘+K)</span>
+        </div>
       </div>
     </div>
   );

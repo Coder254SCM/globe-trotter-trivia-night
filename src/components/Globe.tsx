@@ -1,14 +1,16 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Country } from "../types/quiz";
 import { StarsBackground } from "./globe/StarsBackground";
 import { CountryCard } from "./globe/CountryCard";
 import { GlobeHeader } from "./globe/GlobeHeader";
 import { GlobeFilters } from "./globe/GlobeFilters";
 import { GlobeLegend } from "./globe/GlobeLegend";
+import { GlobeSearch } from "./globe/GlobeSearch";
 import { useGlobe } from "../hooks/useGlobe";
 import { useCountryFilter } from "../hooks/useCountryFilter";
 import countries from "../data/countries";
+import { toast } from "@/components/ui/use-toast";
 
 interface GlobeProps {
   onCountrySelect: (country: Country) => void;
@@ -39,7 +41,7 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
   };
 
   // Custom hook for globe setup and interaction
-  const { containerRef, zoomToContinent } = useGlobe({
+  const { containerRef, zoomToContinent, focusCountry } = useGlobe({
     filteredCountries,
     showLabels,
     rotating,
@@ -83,6 +85,15 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
     setRotating(true);
   };
 
+  // Focus on a specific country by ID (for search)
+  const handleCountryFocus = (countryId: string) => {
+    const country = countries.find(c => c.id === countryId);
+    if (country) {
+      focusCountry(country);
+      setRotating(false);
+    }
+  };
+
   return (
     <div className="relative w-full h-screen overflow-hidden">
       <div ref={containerRef} className="globe-container w-full h-full">
@@ -93,6 +104,11 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
         onToggleLabels={toggleLabels}
         onStartWeeklyChallenge={onStartWeeklyChallenge}
         showLabels={showLabels}
+      />
+      
+      <GlobeSearch 
+        onCountrySelect={handleCountrySelect}
+        onCountryFocus={handleCountryFocus}
       />
       
       <GlobeFilters

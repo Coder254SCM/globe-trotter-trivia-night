@@ -188,6 +188,95 @@ const europeCountries: Country[] = [
     mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Greece_relief_location_map.jpg/800px-Greece_relief_location_map.jpg",
     iconType: "landmark",
     continent: "Europe"
+  },
+  // Adding more European countries
+  {
+    id: "portugal",
+    name: "Portugal",
+    code: "PT",
+    position: {
+      lat: 39.3999,
+      lng: -8.2245,
+    },
+    difficulty: "medium",
+    categories: [
+      "History",
+      "Culture",
+      "Geography",
+      "Food",
+      "Music",
+      "Maritime Exploration"
+    ],
+    flagImageUrl: "https://flagcdn.com/pt.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Portugal_relief_location_map.jpg/800px-Portugal_relief_location_map.jpg",
+    iconType: "culture",
+    continent: "Europe"
+  },
+  {
+    id: "ireland",
+    name: "Ireland",
+    code: "IE",
+    position: {
+      lat: 53.1424,
+      lng: -7.6921,
+    },
+    difficulty: "medium",
+    categories: [
+      "History",
+      "Literature",
+      "Culture",
+      "Music",
+      "Mythology",
+      "Geography"
+    ],
+    flagImageUrl: "https://flagcdn.com/ie.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Ireland_relief_location_map.jpg/800px-Ireland_relief_location_map.jpg",
+    iconType: "culture",
+    continent: "Europe"
+  },
+  {
+    id: "norway",
+    name: "Norway",
+    code: "NO",
+    position: {
+      lat: 60.472,
+      lng: 8.4689,
+    },
+    difficulty: "medium",
+    categories: [
+      "Geography",
+      "Culture",
+      "History",
+      "Viking Era",
+      "Nature",
+      "Sports"
+    ],
+    flagImageUrl: "https://flagcdn.com/no.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Norway_relief_location_map.jpg/800px-Norway_relief_location_map.jpg",
+    iconType: "nature",
+    continent: "Europe"
+  },
+  {
+    id: "switzerland",
+    name: "Switzerland",
+    code: "CH",
+    position: {
+      lat: 46.8182,
+      lng: 8.2275,
+    },
+    difficulty: "medium",
+    categories: [
+      "Geography",
+      "Culture",
+      "History",
+      "Banking",
+      "Sports",
+      "Tourism"
+    ],
+    flagImageUrl: "https://flagcdn.com/ch.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Switzerland_relief_location_map.jpg/800px-Switzerland_relief_location_map.jpg",
+    iconType: "landmark",
+    continent: "Europe"
   }
 ];
 

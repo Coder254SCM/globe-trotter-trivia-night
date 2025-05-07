@@ -202,9 +202,6 @@ export const useGlobe = ({
       if (renderer && scene && camera) {
         renderer.render(scene, camera);
       }
-      
-      // No more pulsing animations for markers - they remain static
-      // This makes the markers stationary and easier to click
     };
     
     animate();
@@ -218,7 +215,7 @@ export const useGlobe = ({
         containerRef.current.removeChild(renderer.domElement);
       }
       
-      window.removeEventListener("resize", handleResize);
+      window.addEventListener("resize", handleResize);
       containerRef.current?.removeEventListener("click", handleClick);
     };
   }, []);
@@ -275,9 +272,49 @@ export const useGlobe = ({
       rotateGlobe();
     }
   };
+
+  // Focus on a specific country
+  const focusCountry = (country: Country) => {
+    if (!globeRef.current || !cameraRef.current) return;
+    
+    const { lat, lng } = country.position;
+    
+    // Convert to 3D coordinates
+    const phi = (90 - lat) * (Math.PI / 180);
+    const theta = (lng + 180) * (Math.PI / 180);
+    
+    if (globeRef.current && cameraRef.current) {
+      // Calculate the target position
+      const x = -200 * Math.sin(phi) * Math.cos(theta);
+      const y = 200 * Math.cos(phi);
+      const z = 200 * Math.sin(phi) * Math.sin(theta);
+      
+      // Gently rotate the globe to show this country
+      const duration = 1000; // ms
+      const startRotationY = globeRef.current.rotation.y;
+      const targetRotationY = Math.atan2(x, z);
+      const startTime = Date.now();
+      
+      const rotateGlobe = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease-in-out function
+        const easeProgress = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+        
+        globeRef.current!.rotation.y = startRotationY + (targetRotationY - startRotationY) * easeProgress;
+        
+        if (progress < 1) {
+          requestAnimationFrame(rotateGlobe);
+        }
+      };
+      
+      rotateGlobe();
+    }
+  };
   
   return {
     containerRef,
-    zoomToContinent
+    zoomToContinent,
+    focusCountry
   };
 };
