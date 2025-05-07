@@ -1,3 +1,4 @@
+
 import { Question, QuizResult } from "../types/quiz";
 import globalQuestions from "../data/questions/globalQuestions";
 import africaQuestions from "../data/questions/continents/africaQuestions";
@@ -14,6 +15,7 @@ import southAfricaQuestions from "../data/questions/countries/southAfricaQuestio
 import mexicoQuestions from "../data/questions/countries/mexicoQuestions";
 import egyptQuestions from "../data/questions/countries/egyptQuestions";
 import germanyQuestions from "../data/questions/countries/germanyQuestions";
+import colombiaQuestions from "../data/questions/countries/colombiaQuestions";
 import countries from "../data/countries";
 
 // This would be expanded as more question sets are added
@@ -31,6 +33,7 @@ const countryQuestions: Record<string, Question[]> = {
   "mexico": mexicoQuestions,
   "egypt": egyptQuestions,
   "germany": germanyQuestions,
+  "colombia": colombiaQuestions,
   // For new countries, we'll use global questions until we create specific ones
   "canada": globalQuestions.filter(q => q.category === "Geography" || q.category === "History").slice(0, 10),
   "russia": globalQuestions.filter(q => q.category === "History" || q.category === "Geography").slice(0, 10),

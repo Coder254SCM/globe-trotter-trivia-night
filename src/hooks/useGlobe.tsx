@@ -6,6 +6,7 @@ import { createCountryMarker, createPOIMarker } from "../components/globe/GlobeM
 import countries from "../data/countries";
 import { pointsOfInterest } from "../components/globe/types";
 import { Country } from "../types/quiz";
+import { toast } from "@/components/ui/use-toast";
 
 interface UseGlobeProps {
   filteredCountries: Country[];
@@ -29,6 +30,7 @@ export const useGlobe = ({
   const markerRefs = useRef<Map<string, THREE.Object3D>>(new Map());
   const animationFrameIdRef = useRef<number>(0);
   const globeTextureLoaded = useRef<boolean>(false);
+  const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
 
   // Update markers when filtered countries change
   const updateMarkers = () => {
@@ -40,7 +42,7 @@ export const useGlobe = ({
     });
     markerRefs.current.clear();
     
-    // Add markers for filtered countries
+    // Add markers for filtered countries with larger hit areas
     filteredCountries.forEach((country) => {
       const { lat, lng } = country.position;
       const marker = createCountryMarker(
@@ -51,6 +53,17 @@ export const useGlobe = ({
         showLabels ? country.name : undefined
       );
       marker.userData = { countryId: country.id };
+      
+      // Add invisible larger hit area for better interaction
+      const hitGeometry = new THREE.SphereGeometry(3.5, 16, 16);
+      const hitMaterial = new THREE.MeshBasicMaterial({
+        transparent: true,
+        opacity: 0,
+      });
+      const hitArea = new THREE.Mesh(hitGeometry, hitMaterial);
+      hitArea.userData = { countryId: country.id };
+      marker.add(hitArea);
+      
       globeRef.current?.add(marker);
       markerRefs.current.set(country.id, marker);
     });
@@ -83,10 +96,21 @@ export const useGlobe = ({
     // Load texture
     const textureLoader = new THREE.TextureLoader();
     
-    // Load the Earth texture uploaded by the user
+    // Load the Earth texture with enhanced detail
     const earthTexture = textureLoader.load('/lovable-uploads/ea2e8c03-0ad4-4868-9ddc-ba9172d51587.png', () => {
       globeTextureLoaded.current = true;
+      
+      // Notify when globe is fully loaded
+      toast({
+        title: "Globe Loaded",
+        description: "Use ⌘+K or click the search icon to find countries",
+      });
     });
+    
+    // Configure texture for better quality
+    earthTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    earthTexture.minFilter = THREE.LinearFilter;
+    earthTexture.magFilter = THREE.LinearFilter;
     
     // Load normal map for that 3D terrain feel
     const normalMap = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_normal_2048.jpg');
@@ -95,8 +119,9 @@ export const useGlobe = ({
     const earthMaterial = new THREE.MeshPhongMaterial({
       map: earthTexture,
       normalMap: normalMap,
-      normalScale: new THREE.Vector2(0.8, 0.8),
-      shininess: 20,
+      normalScale: new THREE.Vector2(1.2, 1.2),
+      shininess: 25,
+      specular: new THREE.Color(0x333333),
     });
     
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
@@ -108,7 +133,7 @@ export const useGlobe = ({
     const atmosphereMaterial = new THREE.MeshPhongMaterial({
       color: 0x3366cc,
       transparent: true,
-      opacity: 0.12,
+      opacity: 0.15,
       side: THREE.BackSide
     });
     const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
@@ -133,26 +158,30 @@ export const useGlobe = ({
     
     window.addEventListener("resize", handleResize);
 
-    // Click handler
+    // Enhanced click handler with better hit detection
     const raycaster = new THREE.Raycaster();
+    raycasterRef.current = raycaster;
     const mouse = new THREE.Vector2();
 
     const handleClick = (event: MouseEvent) => {
       if (!camera || !scene || !globe) return;
       
+      // Calculate normalized device coordinates
       mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
       
+      // Update the raycaster with the mouse position and camera
       raycaster.setFromCamera(mouse, camera);
       
-      // Check all objects in the scene for intersections
+      // Get all intersected objects with the ray, including children
       const intersects = raycaster.intersectObjects(globe.children, true);
       
       if (intersects.length > 0) {
-        // Find the first ancestor with userData
+        // Find the first ancestor with userData containing countryId
         let obj: THREE.Object3D | null = intersects[0].object;
         let countryId = null;
         
+        // Traverse up the parent chain to find the country id
         while (obj && !countryId) {
           if (obj.userData?.countryId) {
             countryId = obj.userData.countryId;
@@ -163,7 +192,34 @@ export const useGlobe = ({
         if (countryId) {
           const country = countries.find((c) => c.id === countryId);
           if (country) {
+            // Successfully found and selected a country
             onCountrySelect(country);
+            
+            // Visual feedback
+            const marker = markerRefs.current.get(countryId);
+            if (marker) {
+              // Scale animation for visual feedback
+              const originalScale = { value: 1 };
+              const targetScale = { value: 1.3 };
+              
+              const scaleUp = () => {
+                marker.scale.set(
+                  targetScale.value,
+                  targetScale.value,
+                  targetScale.value
+                );
+                
+                setTimeout(() => {
+                  marker.scale.set(
+                    originalScale.value,
+                    originalScale.value,
+                    originalScale.value
+                  );
+                }, 200);
+              };
+              
+              scaleUp();
+            }
           }
         }
       }
@@ -283,8 +339,23 @@ export const useGlobe = ({
         
         globeRef.current!.rotation.y = startRotationY + (targetRotationY - startRotationY) * easeProgress;
         
+        // Visual feedback on the country marker
+        const marker = markerRefs.current.get(country.id);
+        if (marker && progress >= 1) {
+          marker.scale.set(1.3, 1.3, 1.3);
+          setTimeout(() => {
+            marker.scale.set(1, 1, 1);
+          }, 300);
+        }
+        
         if (progress < 1) {
           requestAnimationFrame(rotateGlobe);
+        } else {
+          // Notify user when navigation is complete
+          toast({
+            title: country.name,
+            description: `Click on the marker to start a quiz about ${country.name}`
+          });
         }
       };
       

@@ -9,22 +9,29 @@ export const createTextCanvas = (text: string) => {
   
   if (!context) return null;
   
-  const fontSize = 16; // Smaller font size for less overlap
+  const fontSize = 18; // Larger font size for better visibility
   context.font = `bold ${fontSize}px Arial`;
   
   // Get text metrics to size canvas appropriately
   const metrics = context.measureText(text);
-  const width = metrics.width + 20;
-  const height = fontSize + 12;
+  const width = metrics.width + 24;
+  const height = fontSize + 16;
   
   canvas.width = width;
   canvas.height = height;
   
   // Draw background with rounded corners - darker and more opaque
-  context.fillStyle = 'rgba(0, 0, 0, 0.8)';
+  context.fillStyle = 'rgba(0, 0, 0, 0.85)';
   context.beginPath();
-  context.roundRect(0, 0, width, height, 6);
+  context.roundRect(0, 0, width, height, 8);
   context.fill();
+  
+  // Add a subtle border
+  context.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+  context.lineWidth = 1;
+  context.beginPath();
+  context.roundRect(0, 0, width, height, 8);
+  context.stroke();
   
   // Draw text in white for better contrast
   context.fillStyle = 'white';
@@ -56,40 +63,46 @@ export const createCountryMarker = (
   let markerGeometry;
   switch (iconType) {
     case 'landmark':
-      markerGeometry = new THREE.ConeGeometry(1.8, 3.5, 6);
+      markerGeometry = new THREE.ConeGeometry(2.0, 4.0, 8);
       break;
     case 'trophy':
-      markerGeometry = new THREE.OctahedronGeometry(1.8);
+      markerGeometry = new THREE.OctahedronGeometry(2.0);
       break;
     case 'culture':
-      markerGeometry = new THREE.TorusGeometry(1.8, 0.5, 8, 16);
+      markerGeometry = new THREE.TorusGeometry(2.0, 0.6, 10, 20);
       break;
     case 'nature':
-      markerGeometry = new THREE.DodecahedronGeometry(1.8);
+      markerGeometry = new THREE.DodecahedronGeometry(2.0);
       break;
     default:
-      markerGeometry = new THREE.SphereGeometry(1.8, 16, 16);
+      markerGeometry = new THREE.SphereGeometry(2.0, 20, 20);
   }
   
-  // Colors based on difficulty
+  // Colors based on difficulty with stronger emission
   let markerColor;
+  let emissiveIntensity;
   switch (difficulty) {
     case 'easy':
       markerColor = 0x4ade80;
+      emissiveIntensity = 0.6;
       break;
     case 'medium':
       markerColor = 0xfacc15;
+      emissiveIntensity = 0.6;
       break;
     case 'hard':
       markerColor = 0xef4444;
+      emissiveIntensity = 0.6;
       break;
   }
   
+  // Enhanced material with stronger emission
   const markerMaterial = new THREE.MeshPhongMaterial({
     color: markerColor,
     emissive: markerColor,
-    emissiveIntensity: 0.3,
-    shininess: 30,
+    emissiveIntensity: emissiveIntensity,
+    shininess: 40,
+    specular: new THREE.Color(0xffffff),
   });
   
   const marker = new THREE.Mesh(markerGeometry, markerMaterial);
@@ -120,11 +133,11 @@ export const createCountryMarker = (
       });
       
       const label = new THREE.Sprite(labelMaterial);
-      const scale = 0.14; // Adjust scale as needed
+      const scale = 0.18; // Larger scale for better visibility
       label.scale.set(labelCanvas.width * scale, labelCanvas.height * scale, 1);
       
       // Position above the marker
-      label.position.set(0, 3.5, 0);
+      label.position.set(0, 4.0, 0);
       
       group.add(label);
     }
@@ -133,7 +146,7 @@ export const createCountryMarker = (
   return group;
 };
 
-// Updated to accept all POI types
+// Updated to accept all POI types with enhanced visibility
 export const createPOIMarker = (
   lat: number,
   lng: number,
