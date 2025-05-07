@@ -50,7 +50,6 @@ const southAmericaCountries: Country[] = [
     iconType: "culture",
     continent: "South America"
   },
-  // Adding more South American countries
   {
     id: "colombia",
     name: "Colombia",
@@ -137,6 +136,127 @@ const southAmericaCountries: Country[] = [
     ],
     flagImageUrl: "https://flagcdn.com/bo.svg",
     mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Bolivia_relief_location_map.jpg/800px-Bolivia_relief_location_map.jpg",
+    iconType: "nature",
+    continent: "South America"
+  },
+  // Additional South American countries
+  {
+    id: "ecuador",
+    name: "Ecuador",
+    code: "EC",
+    position: {
+      lat: -1.8312,
+      lng: -78.1834,
+    },
+    difficulty: "medium",
+    categories: [
+      "Geography",
+      "Culture",
+      "Wildlife",
+      "Environment"
+    ],
+    flagImageUrl: "https://flagcdn.com/ec.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Ecuador_relief_location_map.jpg/800px-Ecuador_relief_location_map.jpg",
+    iconType: "nature",
+    continent: "South America"
+  },
+  {
+    id: "venezuela",
+    name: "Venezuela",
+    code: "VE",
+    position: {
+      lat: 6.4238,
+      lng: -66.5897,
+    },
+    difficulty: "hard",
+    categories: [
+      "Geography",
+      "History",
+      "Politics",
+      "Culture"
+    ],
+    flagImageUrl: "https://flagcdn.com/ve.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Venezuela_relief_location_map.jpg/800px-Venezuela_relief_location_map.jpg",
+    iconType: "landmark",
+    continent: "South America"
+  },
+  {
+    id: "uruguay",
+    name: "Uruguay",
+    code: "UY",
+    position: {
+      lat: -32.5228,
+      lng: -55.7658,
+    },
+    difficulty: "medium",
+    categories: [
+      "Culture",
+      "Geography",
+      "Sports",
+      "History"
+    ],
+    flagImageUrl: "https://flagcdn.com/uy.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Uruguay_relief_location_map.jpg/800px-Uruguay_relief_location_map.jpg",
+    iconType: "culture",
+    continent: "South America"
+  },
+  {
+    id: "paraguay",
+    name: "Paraguay",
+    code: "PY",
+    position: {
+      lat: -23.4425,
+      lng: -58.4438,
+    },
+    difficulty: "hard",
+    categories: [
+      "Culture",
+      "Geography",
+      "History",
+      "Language"
+    ],
+    flagImageUrl: "https://flagcdn.com/py.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Paraguay_relief_location_map.jpg/800px-Paraguay_relief_location_map.jpg",
+    iconType: "culture",
+    continent: "South America"
+  },
+  {
+    id: "guyana",
+    name: "Guyana",
+    code: "GY",
+    position: {
+      lat: 4.8604,
+      lng: -58.9302,
+    },
+    difficulty: "hard",
+    categories: [
+      "Geography",
+      "Culture",
+      "History",
+      "Environment"
+    ],
+    flagImageUrl: "https://flagcdn.com/gy.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Guyana_relief_location_map.jpg/800px-Guyana_relief_location_map.jpg",
+    iconType: "nature",
+    continent: "South America"
+  },
+  {
+    id: "suriname",
+    name: "Suriname",
+    code: "SR",
+    position: {
+      lat: 3.9193,
+      lng: -56.0278,
+    },
+    difficulty: "hard",
+    categories: [
+      "Geography",
+      "Culture",
+      "History",
+      "Wildlife"
+    ],
+    flagImageUrl: "https://flagcdn.com/sr.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Suriname_relief_location_map.jpg/800px-Suriname_relief_location_map.jpg",
     iconType: "nature",
     continent: "South America"
   }

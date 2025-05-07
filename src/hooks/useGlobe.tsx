@@ -80,21 +80,18 @@ export const useGlobe = ({
     // Create Earth globe with continents
     const earthGeometry = new THREE.SphereGeometry(100, 64, 64);
     
-    // Load Earth texture with continents and oceans
+    // Load texture
     const textureLoader = new THREE.TextureLoader();
     
-    // First, load a normal map for that 3D terrain feel
-    const normalMap = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_normal_2048.jpg');
-    
-    // Load Earth texture (better quality)
-    const earthTexture = textureLoader.load('/lovable-uploads/600c2c58-a99e-4652-8e24-5959f1631910.png', () => {
+    // Load the Earth texture uploaded by the user
+    const earthTexture = textureLoader.load('/lovable-uploads/ea2e8c03-0ad4-4868-9ddc-ba9172d51587.png', () => {
       globeTextureLoaded.current = true;
     });
     
-    // Load cloud layer for more realism
-    const cloudTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_clouds_1024.jpg');
+    // Load normal map for that 3D terrain feel
+    const normalMap = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_normal_2048.jpg');
     
-    // Create the main Earth material
+    // Create the main Earth material with enhanced lighting response
     const earthMaterial = new THREE.MeshPhongMaterial({
       map: earthTexture,
       normalMap: normalMap,
@@ -106,19 +103,7 @@ export const useGlobe = ({
     earthRef.current = earth;
     globe.add(earth);
     
-    // Add subtle cloud layer
-    const cloudGeometry = new THREE.SphereGeometry(101, 64, 64);
-    const cloudMaterial = new THREE.MeshPhongMaterial({
-      map: cloudTexture,
-      transparent: true,
-      opacity: 0.15,
-      blending: THREE.AdditiveBlending,
-    });
-    
-    const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
-    globe.add(clouds);
-    
-    // Add atmosphere glow effect
+    // Add subtle atmosphere glow effect
     const atmosphereGeometry = new THREE.SphereGeometry(103, 64, 64);
     const atmosphereMaterial = new THREE.MeshPhongMaterial({
       color: 0x3366cc,
@@ -192,11 +177,6 @@ export const useGlobe = ({
       
       if (rotating && globeRef.current) {
         globeRef.current.rotation.y += 0.0005;
-        
-        // Rotate cloud layer slightly faster for a dynamic effect
-        if (clouds) {
-          clouds.rotation.y += 0.0001;
-        }
       }
       
       if (renderer && scene && camera) {

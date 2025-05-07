@@ -5,19 +5,24 @@ export const setupScene = () => {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x000000); // Black background for better contrast
   
-  // Add stronger ambient light
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+  // Add stronger ambient light for better global illumination
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
   scene.add(ambientLight);
 
   // Add directional light from the front with increased intensity
-  const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0);
   directionalLight.position.set(0, 0, 100);
   scene.add(directionalLight);
 
   // Add directional light from another angle with increased intensity
-  const secondLight = new THREE.DirectionalLight(0xffffff, 1.0);
+  const secondLight = new THREE.DirectionalLight(0xffffff, 1.5);
   secondLight.position.set(100, 100, 0);
   scene.add(secondLight);
+  
+  // Add a third light for more balanced illumination
+  const thirdLight = new THREE.DirectionalLight(0xffffff, 1.0);
+  thirdLight.position.set(-100, -50, -100);
+  scene.add(thirdLight);
 
   return scene;
 };
@@ -45,7 +50,7 @@ export const setupRenderer = () => {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   
   // Increase exposure for better visibility
-  renderer.toneMappingExposure = 1.2;
+  renderer.toneMappingExposure = 1.5;
   
   return renderer;
 };

@@ -13,7 +13,7 @@ export type QuestionCategory =
   // Geography & Nature
   'Geography' | 'Wildlife' | 'Environment' | 'Climate' | 'Natural Wonders' |
   'Ecosystems' | 'Conservation' | 'Natural Resources' | 'Nature' | 'Islands' |
-  'Desert' | 'Rainforests' | 'National Parks' | 'Canal' |
+  'Desert' | 'Rainforests' | 'National Parks' | 'Canal' | 'Ecology' |
   
   // Arts & Entertainment
   'Art' | 'Music' | 'Dance' | 'Cinema' | 'Literature' | 'Theater' |
