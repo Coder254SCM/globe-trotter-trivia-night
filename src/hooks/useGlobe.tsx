@@ -31,6 +31,8 @@ export const useGlobe = ({
   const animationFrameIdRef = useRef<number>(0);
   const globeTextureLoaded = useRef<boolean>(false);
   const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
+  const oceanRef = useRef<THREE.Mesh | null>(null);
+  const cloudsRef = useRef<THREE.Mesh | null>(null);
 
   // Update markers when filtered countries change
   const updateMarkers = () => {
@@ -78,7 +80,12 @@ export const useGlobe = ({
     
     const scene = setupScene();
     const camera = setupCamera();
+    
+    // Enhanced renderer with better antialiasing and higher pixel ratio
     const renderer = setupRenderer();
+    renderer.setPixelRatio(window.devicePixelRatio * 1.5); // Higher quality rendering
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     
     sceneRef.current = scene;
     cameraRef.current = camera;
@@ -91,45 +98,85 @@ export const useGlobe = ({
     scene.add(globe);
 
     // Create Earth globe with continents
-    const earthGeometry = new THREE.SphereGeometry(100, 64, 64);
+    const earthGeometry = new THREE.SphereGeometry(100, 128, 128); // Higher detail geometry
     
-    // Load texture
+    // Load textures with better quality
     const textureLoader = new THREE.TextureLoader();
     
     // Load the Earth texture with enhanced detail
     const earthTexture = textureLoader.load('/lovable-uploads/ea2e8c03-0ad4-4868-9ddc-ba9172d51587.png', () => {
       globeTextureLoaded.current = true;
       
-      // Notify when globe is fully loaded
-      toast({
-        title: "Globe Loaded",
-        description: "Use ⌘+K or click the search icon to find countries",
-      });
+      // Only notify when globe is fully loaded
+      if (cloudsRef.current) {
+        toast({
+          title: "Globe Loaded",
+          description: "Use ⌘+K or click the search icon to find countries",
+        });
+      }
     });
     
     // Configure texture for better quality
     earthTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    earthTexture.minFilter = THREE.LinearFilter;
+    earthTexture.minFilter = THREE.LinearMipmapLinearFilter;
     earthTexture.magFilter = THREE.LinearFilter;
     
     // Load normal map for that 3D terrain feel
     const normalMap = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_normal_2048.jpg');
+    normalMap.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    
+    // Load specular map for better lighting response
+    const specularMap = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_specular_2048.jpg');
+    specularMap.anisotropy = renderer.capabilities.getMaxAnisotropy();
     
     // Create the main Earth material with enhanced lighting response
     const earthMaterial = new THREE.MeshPhongMaterial({
       map: earthTexture,
       normalMap: normalMap,
-      normalScale: new THREE.Vector2(1.2, 1.2),
-      shininess: 25,
-      specular: new THREE.Color(0x333333),
+      normalScale: new THREE.Vector2(1.5, 1.5), // Stronger normal effect
+      specularMap: specularMap,
+      shininess: 35,
+      specular: new THREE.Color(0x666666)
     });
     
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
+    earth.castShadow = true;
+    earth.receiveShadow = true;
     earthRef.current = earth;
     globe.add(earth);
     
+    // Create ocean layer for better visual separation
+    const oceanGeometry = new THREE.SphereGeometry(100.1, 128, 128); // Slightly larger than earth
+    const oceanMaterial = new THREE.MeshPhongMaterial({
+      color: 0x006994,
+      transparent: true,
+      opacity: 0.7,
+      shininess: 100,
+      specular: new THREE.Color(0xffffff)
+    });
+    
+    const ocean = new THREE.Mesh(oceanGeometry, oceanMaterial);
+    oceanRef.current = ocean;
+    globe.add(ocean);
+    
+    // Add clouds layer
+    const cloudsGeometry = new THREE.SphereGeometry(103, 64, 64); // Above earth
+    const cloudsTexture = textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_clouds_1024.png');
+    cloudsTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    
+    const cloudsMaterial = new THREE.MeshPhongMaterial({
+      map: cloudsTexture,
+      transparent: true,
+      opacity: 0.4,
+      side: THREE.DoubleSide
+    });
+    
+    const clouds = new THREE.Mesh(cloudsGeometry, cloudsMaterial);
+    cloudsRef.current = clouds;
+    globe.add(clouds);
+    
     // Add subtle atmosphere glow effect
-    const atmosphereGeometry = new THREE.SphereGeometry(103, 64, 64);
+    const atmosphereGeometry = new THREE.SphereGeometry(106, 64, 64);
     const atmosphereMaterial = new THREE.MeshPhongMaterial({
       color: 0x3366cc,
       transparent: true,
@@ -138,6 +185,21 @@ export const useGlobe = ({
     });
     const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
     globe.add(atmosphere);
+    
+    // Enhanced lighting for better clarity
+    // Main directional light (sun)
+    const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    sunLight.position.set(500, 500, -1000);
+    sunLight.castShadow = true;
+    scene.add(sunLight);
+    
+    // Ambient light to see the dark side better
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+    scene.add(ambientLight);
+    
+    // Hemisphere light for more natural coloring
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x000000, 0.2);
+    scene.add(hemisphereLight);
 
     // Add points of interest markers
     pointsOfInterest.forEach(poi => {
@@ -227,12 +289,17 @@ export const useGlobe = ({
     
     containerRef.current.addEventListener("click", handleClick);
 
-    // Animation loop
+    // Animation loop with enhanced effects
     const animate = () => {
       animationFrameIdRef.current = requestAnimationFrame(animate);
       
       if (rotating && globeRef.current) {
         globeRef.current.rotation.y += 0.0005;
+      }
+      
+      // Animate clouds separately for realistic effect
+      if (cloudsRef.current) {
+        cloudsRef.current.rotation.y += 0.0002;
       }
       
       if (renderer && scene && camera) {

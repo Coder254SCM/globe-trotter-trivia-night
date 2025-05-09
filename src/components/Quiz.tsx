@@ -23,6 +23,8 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false 
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [totalTime, setTotalTime] = useState(0);
   const [startTime] = useState(Date.now());
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
@@ -31,6 +33,8 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false 
     // Reset state for each question
     setSelectedChoice(null);
     setIsAnswered(false);
+    setImageLoaded(false);
+    setImageError(false);
     
     // Set timer based on difficulty
     let timeLimit = 0;
@@ -104,6 +108,14 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false 
         correctQuestions,
       });
     }
+  };
+
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
   };
 
   const getChoiceClassName = (choice: Choice) => {
@@ -187,10 +199,27 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false 
           
           {currentQuestion?.imageUrl && (
             <div className="mt-4 mb-6 flex justify-center">
+              {!imageLoaded && !imageError && (
+                <div className="w-full max-h-60 flex items-center justify-center bg-muted rounded-md">
+                  <div className="animate-pulse text-muted-foreground">Loading image...</div>
+                </div>
+              )}
+              
+              {imageError && (
+                <div className="w-full h-40 flex items-center justify-center bg-muted rounded-md">
+                  <div className="text-muted-foreground">
+                    <p>Image could not be loaded</p>
+                    <p className="text-sm">{currentQuestion.imageUrl}</p>
+                  </div>
+                </div>
+              )}
+              
               <img 
                 src={currentQuestion.imageUrl}
                 alt="Question visual"
-                className="max-w-full rounded-md shadow-md max-h-60 object-contain"
+                className={`max-w-full rounded-md shadow-md max-h-60 object-contain ${!imageLoaded ? 'hidden' : ''}`}
+                onLoad={handleImageLoad}
+                onError={handleImageError}
               />
             </div>
           )}
