@@ -18,6 +18,53 @@ import germanyQuestions from "../data/questions/countries/germanyQuestions";
 import colombiaQuestions from "../data/questions/countries/colombiaQuestions";
 import countries from "../data/countries";
 
+// Create specialized question sets for countries that don't have specific questions yet
+const generateCountrySpecificQuestions = (countryId: string): Question[] => {
+  const country = countries.find(c => c.id === countryId);
+  if (!country) return [];
+  
+  // Get global questions related to geography
+  const geographyQuestions = globalQuestions
+    .filter(q => q.category === "Geography" || q.category === "History")
+    .slice(0, 5);
+  
+  // Generate some country-specific questions
+  const countryQuestions: Question[] = [
+    {
+      id: `${countryId}-capital`,
+      type: "multiple-choice",
+      text: `What is the capital city of ${country.name}?`,
+      choices: [], // Will be populated dynamically
+      category: "Geography",
+      explanation: "",
+      difficulty: "medium",
+      lastUpdated: new Date().toISOString()
+    },
+    {
+      id: `${countryId}-continent`,
+      type: "multiple-choice",
+      text: `On which continent is ${country.name} located?`,
+      choices: [], // Will be populated dynamically
+      category: "Geography",
+      explanation: "",
+      difficulty: "easy",
+      lastUpdated: new Date().toISOString()
+    },
+    {
+      id: `${countryId}-language`,
+      type: "multiple-choice",
+      text: `Which of the following is an official language of ${country.name}?`,
+      choices: [], // Will be populated dynamically
+      category: "Culture",
+      explanation: "",
+      difficulty: "medium",
+      lastUpdated: new Date().toISOString()
+    }
+  ];
+  
+  return [...geographyQuestions, ...countryQuestions];
+};
+
 // This would be expanded as more question sets are added
 const countryQuestions: Record<string, Question[]> = {
   "kenya": kenyaQuestions,
@@ -34,20 +81,43 @@ const countryQuestions: Record<string, Question[]> = {
   "egypt": egyptQuestions,
   "germany": germanyQuestions,
   "colombia": colombiaQuestions,
-  // For new countries, we'll use global questions until we create specific ones
-  "canada": globalQuestions.filter(q => q.category === "Geography" || q.category === "History").slice(0, 10),
-  "russia": globalQuestions.filter(q => q.category === "History" || q.category === "Geography").slice(0, 10),
-  "argentina": globalQuestions.filter(q => q.category === "Geography" || q.category === "Culture").slice(0, 10),
-  "spain": globalQuestions.filter(q => q.category === "History" || q.category === "Culture").slice(0, 10),
-  "thailand": globalQuestions.filter(q => q.category === "Geography" || q.category === "Culture").slice(0, 10),
-  "nigeria": globalQuestions.filter(q => q.category === "Geography" || q.category === "History").slice(0, 10),
-  "united-kingdom": globalQuestions.filter(q => q.category === "History" || q.category === "Culture").slice(0, 10),
-  "new-zealand": globalQuestions.filter(q => q.category === "Geography" || q.category === "Wildlife").slice(0, 10),
-  // Add newly added countries
-  "morocco": globalQuestions.filter(q => q.category === "Geography" || q.category === "Culture").slice(0, 10),
-  "ghana": globalQuestions.filter(q => q.category === "Geography" || q.category === "History").slice(0, 10),
-  "sweden": globalQuestions.filter(q => q.category === "Geography" || q.category === "Culture").slice(0, 10),
-  "greece": globalQuestions.filter(q => q.category === "History" || q.category === "Art").slice(0, 10),
+  // For new countries, we'll use global questions filtered by category
+  "new-zealand": globalQuestions.filter(q => 
+    q.category === "Geography" || q.category === "Wildlife" || q.category === "History"
+  ).slice(0, 10),
+  "canada": globalQuestions.filter(q => 
+    q.category === "Geography" || q.category === "History" || q.category === "Wildlife"
+  ).slice(0, 10),
+  "russia": globalQuestions.filter(q => 
+    q.category === "History" || q.category === "Geography" || q.category === "Politics"
+  ).slice(0, 10),
+  "argentina": globalQuestions.filter(q => 
+    q.category === "Geography" || q.category === "Culture" || q.category === "Sports"
+  ).slice(0, 10),
+  "spain": globalQuestions.filter(q => 
+    q.category === "History" || q.category === "Culture" || q.category === "Art"
+  ).slice(0, 10),
+  "thailand": globalQuestions.filter(q => 
+    q.category === "Geography" || q.category === "Culture" || q.category === "Religion"
+  ).slice(0, 10),
+  "nigeria": globalQuestions.filter(q => 
+    q.category === "Geography" || q.category === "History" || q.category === "Culture"
+  ).slice(0, 10),
+  "united-kingdom": globalQuestions.filter(q => 
+    q.category === "History" || q.category === "Culture" || q.category === "Literature"
+  ).slice(0, 10),
+  "morocco": globalQuestions.filter(q => 
+    q.category === "Geography" || q.category === "Culture" || q.category === "History"
+  ).slice(0, 10),
+  "ghana": globalQuestions.filter(q => 
+    q.category === "Geography" || q.category === "History" || q.category === "Culture"
+  ).slice(0, 10),
+  "sweden": globalQuestions.filter(q => 
+    q.category === "Geography" || q.category === "Culture" || q.category === "History"
+  ).slice(0, 10),
+  "greece": globalQuestions.filter(q => 
+    q.category === "History" || q.category === "Art" || q.category === "Philosophy"
+  ).slice(0, 10),
 };
 
 const continentQuestions: Record<string, Question[]> = {
@@ -55,8 +125,16 @@ const continentQuestions: Record<string, Question[]> = {
   // Add more continent questions as they're created
 };
 
-// Track failed questions globally
+// Track failed questions globally for spaced repetition
 let failedQuestions: Record<string, number> = {};
+
+// Prevent showing the same question multiple times in a session
+let usedQuestionIds: Set<string> = new Set();
+
+// Reset used questions every few hours to allow rotation
+setInterval(() => {
+  usedQuestionIds.clear();
+}, 3600000); // Clear every hour
 
 // Get questions for a specific quiz
 export const getQuizQuestions = (
@@ -68,8 +146,13 @@ export const getQuizQuestions = (
   let questionPool: Question[] = [];
   
   // Add country-specific questions if a country is selected
-  if (countryId && countryQuestions[countryId]) {
-    questionPool.push(...countryQuestions[countryId]);
+  if (countryId) {
+    if (countryQuestions[countryId]) {
+      questionPool.push(...countryQuestions[countryId]);
+    } else {
+      // Generate some basic questions for countries without specific question sets
+      questionPool.push(...generateCountrySpecificQuestions(countryId));
+    }
   }
   
   // Add continent-specific questions if a continent is selected
@@ -82,24 +165,25 @@ export const getQuizQuestions = (
     questionPool.push(...globalQuestions);
   }
   
-  // If we don't have enough questions, just use what we have
-  if (questionPool.length <= count) {
-    return questionPool;
+  // Filter out questions that have been used recently
+  questionPool = questionPool.filter(q => !usedQuestionIds.has(q.id));
+  
+  // If we don't have enough questions, include some used ones
+  if (questionPool.length < count) {
+    const additionalQuestions = globalQuestions
+      .filter(q => !questionPool.some(pq => pq.id === q.id))
+      .slice(0, count - questionPool.length);
+    
+    questionPool.push(...additionalQuestions);
   }
   
-  // Prioritize country-specific questions
-  const countrySpecificQuestions = questionPool.filter(q => 
-    countryId && countryQuestions[countryId] && 
-    countryQuestions[countryId].some(cq => cq.id === q.id)
-  );
+  // Shuffle and pick the requested number of questions
+  const selectedQuestions = shuffleArray(questionPool).slice(0, count);
   
-  // If we have enough country-specific questions, use those
-  if (countrySpecificQuestions.length >= count) {
-    return shuffleArray(countrySpecificQuestions).slice(0, count);
-  }
+  // Mark these questions as used
+  selectedQuestions.forEach(q => usedQuestionIds.add(q.id));
   
-  // Otherwise, shuffle the entire pool and take the requested number
-  return shuffleArray(questionPool).slice(0, count);
+  return selectedQuestions;
 };
 
 // Record failed questions

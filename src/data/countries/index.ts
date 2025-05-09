@@ -6,6 +6,7 @@ import europeCountries from "./europe";
 import northAmericaCountries from "./north-america";
 import southAmericaCountries from "./south-america";
 import oceaniaCountries from "./oceania";
+import antarcticaCountries from "./antarctica";
 
 // Combine all continent-specific countries into a single array
 const countries: Country[] = [
@@ -14,7 +15,9 @@ const countries: Country[] = [
   ...europeCountries,
   ...northAmericaCountries,
   ...southAmericaCountries,
-  ...oceaniaCountries
+  ...oceaniaCountries,
+  ...antarcticaCountries
 ];
 
 export default countries;
+
