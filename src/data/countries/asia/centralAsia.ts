@@ -37,7 +37,7 @@ const centralAsiaCountries: Country[] = [
       "Geography",
       "Architecture",
       "Culture",
-      "Silk Road"
+      "Heritage Sites"
     ],
     flagImageUrl: "https://flagcdn.com/uz.svg",
     mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/thumb/f/f5/Uzbekistan_relief_location_map.jpg/800px-Uzbekistan_relief_location_map.jpg",
@@ -57,7 +57,7 @@ const centralAsiaCountries: Country[] = [
       "Geography",
       "History",
       "Culture",
-      "Mountains",
+      "Nature",
       "Traditions"
     ],
     flagImageUrl: "https://flagcdn.com/kg.svg",
