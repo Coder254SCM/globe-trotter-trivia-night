@@ -20,6 +20,7 @@ import mexicoQuestions from "../../data/questions/countries/mexicoQuestions";
 import egyptQuestions from "../../data/questions/countries/egyptQuestions";
 import germanyQuestions from "../../data/questions/countries/germanyQuestions";
 import colombiaQuestions from "../../data/questions/countries/colombiaQuestions";
+import newZealandQuestions from "../../data/questions/countries/newZealandQuestions";
 
 // Create specialized question sets for countries that don't have specific questions yet
 const generateCountrySpecificQuestions = (countryId: string): Question[] => {
@@ -57,13 +58,11 @@ const buildAllCountryQuestions = (): Record<string, Question[]> => {
     "egypt": egyptQuestions,
     "germany": germanyQuestions,
     "colombia": colombiaQuestions,
+    "new-zealand": newZealandQuestions,
   };
   
   // Add specifically filtered global questions for some important countries
   const globalQuestionSets: Record<string, Question[]> = {
-    "new-zealand": globalQuestions.filter(q => 
-      q.category === "Geography" || q.category === "Wildlife" || q.category === "History"
-    ).slice(0, 10),
     "canada": globalQuestions.filter(q => 
       q.category === "Geography" || q.category === "History" || q.category === "Wildlife"
     ).slice(0, 10),

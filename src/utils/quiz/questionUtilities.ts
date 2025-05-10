@@ -10,3 +10,25 @@ export function shuffleArray<T>(array: T[]): T[] {
   }
   return newArray;
 }
+
+/**
+ * Filter questions by difficulty level
+ */
+export function filterQuestionsByDifficulty(questions: any[], difficulty: string): any[] {
+  if (!difficulty || difficulty === 'all') {
+    return questions;
+  }
+  return questions.filter(q => q.difficulty === difficulty);
+}
+
+/**
+ * Get a random selection of items from an array
+ */
+export function getRandomSelection<T>(array: T[], count: number): T[] {
+  if (array.length <= count) {
+    return shuffleArray(array);
+  }
+  
+  const shuffled = shuffleArray(array);
+  return shuffled.slice(0, count);
+}

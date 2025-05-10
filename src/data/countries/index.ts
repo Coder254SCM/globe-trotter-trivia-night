@@ -20,4 +20,3 @@ const countries: Country[] = [
 ];
 
 export default countries;
-

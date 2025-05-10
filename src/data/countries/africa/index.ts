@@ -1,16 +1,18 @@
 
 import { Country } from "../../../types/quiz";
-import northAfricaCountries from "./northAfrica";
 import eastAfricaCountries from "./eastAfrica";
-import westAfricaCountries from "./westAfrica";
+import northAfricaCountries from "./northAfrica";
 import southernAfricaCountries from "./southernAfrica";
+import westAfricaCountries from "./westAfrica";
+import centralAfricaCountries from "./centralAfrica";
 
 // Combine all region countries into a single array
 const africaCountries: Country[] = [
-  ...northAfricaCountries,
   ...eastAfricaCountries,
+  ...northAfricaCountries,
+  ...southernAfricaCountries,
   ...westAfricaCountries,
-  ...southernAfricaCountries
+  ...centralAfricaCountries
 ];
 
 export default africaCountries;
