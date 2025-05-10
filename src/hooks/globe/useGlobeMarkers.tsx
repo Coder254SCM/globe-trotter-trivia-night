@@ -43,8 +43,8 @@ export const useGlobeMarkers = ({
       );
       marker.userData = { countryId: country.id };
       
-      // Add invisible larger hit area for better interaction
-      const hitGeometry = new THREE.SphereGeometry(3.5, 16, 16);
+      // Add a much larger invisible hit area for better interaction
+      const hitGeometry = new THREE.SphereGeometry(5.5, 16, 16);
       const hitMaterial = new THREE.MeshBasicMaterial({
         transparent: true,
         opacity: 0,
@@ -68,7 +68,7 @@ export const useGlobeMarkers = ({
     });
   };
 
-  // Setup click handler for country selection
+  // Setup click handler for country selection with improved hit detection
   const setupClickHandler = (camera: THREE.PerspectiveCamera, scene: THREE.Scene) => {
     if (!globeRef.current) return () => {};
     
@@ -79,8 +79,9 @@ export const useGlobeMarkers = ({
       if (!camera || !scene || !globeRef.current) return;
       
       // Calculate normalized device coordinates
-      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      const rect = (event.target as HTMLElement).getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       
       // Update the raycaster with the mouse position and camera
       raycaster.setFromCamera(mouse, camera);
@@ -112,7 +113,7 @@ export const useGlobeMarkers = ({
             if (marker) {
               // Scale animation for visual feedback
               const originalScale = { value: 1 };
-              const targetScale = { value: 1.3 };
+              const targetScale = { value: 1.5 };
               
               const scaleUp = () => {
                 marker.scale.set(
@@ -127,7 +128,7 @@ export const useGlobeMarkers = ({
                     originalScale.value,
                     originalScale.value
                   );
-                }, 200);
+                }, 300);
               };
               
               scaleUp();

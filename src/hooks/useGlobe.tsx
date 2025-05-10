@@ -64,9 +64,15 @@ export const useGlobe = ({
     // Add POI markers
     addPOIMarkers();
     
-    // Setup click handler
+    // Setup click handler with improved hit detection
     const handleClick = setupClickHandler(cameraRef.current, sceneRef.current);
-    containerRef.current?.addEventListener("click", handleClick);
+    
+    if (containerRef.current) {
+      // Remove any existing handler first to prevent duplicates
+      containerRef.current.removeEventListener("click", handleClick);
+      // Add the new handler
+      containerRef.current.addEventListener("click", handleClick);
+    }
     
     // Start animation
     const cleanup = startRotation(
@@ -81,7 +87,7 @@ export const useGlobe = ({
     if (globeTextureLoaded.current && cloudsRef.current) {
       toast({
         title: "Globe Loaded",
-        description: "Use ⌘+K or click the search icon to find countries",
+        description: `Explore ${countries.length} countries from around the world. Click on any marker to learn more!`,
       });
     }
     

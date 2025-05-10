@@ -91,14 +91,19 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
     if (country) {
       focusCountry(country);
       setRotating(false);
+      // Auto-select the country after focus
+      setTimeout(() => {
+        setSelectedCountry(country);
+      }, 1000);
     }
   };
 
   // Show actual number of countries on component mount
   useEffect(() => {
+    const countryCount = countries.length;
     toast({
       title: "World Explorer",
-      description: `Explore ${countries.length} countries from around the world`,
+      description: `Explore ${countryCount} countries from around the world. Click on any marker to learn more!`,
     });
   }, []);
 
