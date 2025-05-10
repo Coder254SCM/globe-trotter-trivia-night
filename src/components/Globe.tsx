@@ -94,6 +94,14 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
     }
   };
 
+  // Show actual number of countries on component mount
+  useEffect(() => {
+    toast({
+      title: "World Explorer",
+      description: `Explore ${countries.length} countries from around the world`,
+    });
+  }, []);
+
   return (
     <div className="relative w-full h-screen overflow-hidden">
       <div ref={containerRef} className="globe-container w-full h-full">

@@ -1,5 +1,5 @@
 
-import { Country } from "../../types/quiz";
+import { Country } from "../../../types/quiz";
 import caribbeanCountries from "./caribbean";
 import centralAmericaCountries from "./central-america";
 import northernAmericaCountries from "./northern-america";

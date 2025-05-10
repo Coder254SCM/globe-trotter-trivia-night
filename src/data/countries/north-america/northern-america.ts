@@ -14,10 +14,12 @@ const northernAmericaCountries: Country[] = [
     categories: [
       "History",
       "Geography",
-      "Politics",
       "Culture",
+      "Politics",
       "Sports",
-      "Entertainment"
+      "Technology",
+      "Music",
+      "Cinema"
     ],
     flagImageUrl: "https://flagcdn.com/us.svg",
     mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/USA_orthographic.svg/800px-USA_orthographic.svg.png",
@@ -34,37 +36,38 @@ const northernAmericaCountries: Country[] = [
     },
     difficulty: "medium",
     categories: [
-      "Geography",
-      "History",
-      "Culture",
-      "Wildlife",
-      "Sports"
+      "Geography", 
+      "History", 
+      "Culture", 
+      "Wildlife", 
+      "Sports",
+      "Nature",
+      "Music"
     ],
     flagImageUrl: "https://flagcdn.com/ca.svg",
-    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Canada_relief_location_map.jpg/800px-Canada_relief_location_map.jpg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Canada_relief_location_map.jpg/800px-Canada_relief_location_map.jpg",
     iconType: "nature",
     continent: "North America"
   },
   {
-    id: "mexico",
-    name: "Mexico",
-    code: "MX",
+    id: "greenland",
+    name: "Greenland",
+    code: "GL",
     position: {
-      lat: 23.6345,
-      lng: -102.5528,
+      lat: 71.7069,
+      lng: -42.6043,
     },
-    difficulty: "medium",
+    difficulty: "hard",
     categories: [
-      "History",
-      "Culture",
       "Geography",
-      "Food",
-      "Art",
-      "Traditions"
+      "Climate",
+      "Indigenous Culture",
+      "History",
+      "Nature"
     ],
-    flagImageUrl: "https://flagcdn.com/mx.svg",
-    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Mexico_relief_location_map.jpg/800px-Mexico_relief_location_map.jpg",
-    iconType: "culture",
+    flagImageUrl: "https://flagcdn.com/gl.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Greenland_relief_location_map.jpg/800px-Greenland_relief_location_map.jpg",
+    iconType: "nature",
     continent: "North America"
   }
 ];
