@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Country, DifficultyLevel } from "../types/quiz";
 import { StarsBackground } from "./globe/StarsBackground";
@@ -71,10 +70,10 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
 
   const handleStartQuiz = (difficulty: string) => {
     if (selectedCountry) {
-      // Fix the type issue by explicitly using a DifficultyLevel type
+      // Fix the type issue by explicitly using a DifficultyLevel type cast
       const countryWithDifficulty = {
         ...selectedCountry,
-        difficulty: "easy" as DifficultyLevel
+        difficulty: difficulty as DifficultyLevel
       };
       onCountrySelect(countryWithDifficulty);
     }

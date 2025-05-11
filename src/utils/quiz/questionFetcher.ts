@@ -1,6 +1,7 @@
 
 import { Question } from "../../types/quiz";
 import globalQuestions from "../../data/questions/globalQuestions";
+import easyGlobalQuestions from "../../data/questions/easyGlobalQuestions";
 import africaQuestions from "../../data/questions/continents/africaQuestions";
 import { countryQuestions } from "./questionSets";
 import { continentQuestions } from "./questionSets";
@@ -19,23 +20,38 @@ export const getQuizQuestions = (
   countryId?: string,
   continentId?: string,
   count: number = 10,
-  includeGlobal: boolean = true
+  includeGlobal: boolean = true,
+  difficulty?: string
 ): Question[] => {
   let questionPool: Question[] = [];
   
   // Add country-specific questions if a country is selected
   if (countryId && countryQuestions[countryId]) {
-    questionPool.push(...countryQuestions[countryId]);
+    // Filter by difficulty if specified
+    if (difficulty) {
+      questionPool.push(...countryQuestions[countryId].filter(q => q.difficulty === difficulty));
+    } else {
+      questionPool.push(...countryQuestions[countryId]);
+    }
   }
   
   // Add continent-specific questions if a continent is selected
   if (continentId && continentQuestions[continentId]) {
-    questionPool.push(...continentQuestions[continentId]);
+    if (difficulty) {
+      questionPool.push(...continentQuestions[continentId].filter(q => q.difficulty === difficulty));
+    } else {
+      questionPool.push(...continentQuestions[continentId]);
+    }
   }
   
   // Add global questions if requested and we need more questions
   if (includeGlobal && questionPool.length < count) {
-    questionPool.push(...globalQuestions);
+    // Add questions from the appropriate global question set
+    if (difficulty === "easy") {
+      questionPool.push(...easyGlobalQuestions);
+    } else {
+      questionPool.push(...globalQuestions);
+    }
   }
   
   // Filter out questions that have been used recently
@@ -73,6 +89,7 @@ export const getQuestionCountForCountry = (countryId: string): number => {
 export const getRecentlyUpdatedQuestions = (since: Date, count: number = 10): Question[] => {
   const allQuestions = [
     ...globalQuestions,
+    ...easyGlobalQuestions,
     ...Object.values(countryQuestions).flat(),
     ...Object.values(continentQuestions).flat()
   ];
@@ -85,4 +102,17 @@ export const getRecentlyUpdatedQuestions = (since: Date, count: number = 10): Qu
     });
   
   return recentQuestions.slice(0, count);
+};
+
+// Get questions by difficulty level
+export const getQuestionsByDifficulty = (difficulty: string, count: number = 10): Question[] => {
+  const allQuestions = [
+    ...globalQuestions,
+    ...easyGlobalQuestions,
+    ...Object.values(countryQuestions).flat(),
+    ...Object.values(continentQuestions).flat()
+  ];
+  
+  const filteredQuestions = allQuestions.filter(q => q.difficulty === difficulty);
+  return shuffleArray(filteredQuestions).slice(0, count);
 };

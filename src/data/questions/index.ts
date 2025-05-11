@@ -1,6 +1,7 @@
 
 // Import all question sets
 import globalQuestions from "./globalQuestions";
+import easyGlobalQuestions from "./easyGlobalQuestions";
 
 // Import continent question sets
 import africaQuestions from "./continents/africaQuestions";
@@ -26,6 +27,7 @@ import newZealandQuestions from "./countries/newZealandQuestions";
 export {
   // Global
   globalQuestions,
+  easyGlobalQuestions,
   
   // Continents
   africaQuestions,

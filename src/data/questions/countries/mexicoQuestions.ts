@@ -1,4 +1,3 @@
-
 import { Question } from "../../../types/quiz";
 
 const mexicoQuestions: Question[] = [
@@ -36,7 +35,7 @@ const mexicoQuestions: Question[] = [
     id: "mx-q3",
     type: "image",
     text: "What Mexican holiday is being celebrated in this image?",
-    imageUrl: "/lovable-uploads/b9339d4b-0a0f-4aae-bf15-0323d69cd0b5.png", // Updated to the new image
+    imageUrl: "/lovable-uploads/58f27fca-ef94-4dec-ab27-728c5237f553.png", // Updated to the correct image
     choices: [
       { id: "a", text: "Independence Day", isCorrect: false },
       { id: "b", text: "Revolution Day", isCorrect: false },
@@ -46,7 +45,7 @@ const mexicoQuestions: Question[] = [
     category: "Festivals",
     explanation: "Día de los Muertos (Day of the Dead) is a Mexican holiday celebrated throughout Mexico to remember and honor deceased loved ones. It involves colorful altars, sugar skulls, and marigold flowers.",
     difficulty: "easy",
-    lastUpdated: "2025-05-05",
+    lastUpdated: "2025-05-11",
   },
   {
     id: "mx-q4",
