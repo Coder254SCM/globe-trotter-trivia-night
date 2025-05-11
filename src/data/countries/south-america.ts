@@ -1,6 +1,7 @@
 
-import { Country } from "../types/quiz";
+import { Country } from "../../types/quiz";
 
+// South American countries data
 const southAmericaCountries: Country[] = [
   {
     id: "brazil",
@@ -10,15 +11,17 @@ const southAmericaCountries: Country[] = [
       lat: -14.2350,
       lng: -51.9253,
     },
-    difficulty: "medium",
+    difficulty: "easy", // Changed from medium to easy as requested
     categories: [
       "Geography",
-      "Culture",
       "History",
+      "Culture", 
+      "Music",
       "Sports",
-      "Wildlife",
       "Food",
-      "Music"
+      "Wildlife",
+      "Nature",
+      "Festivals"
     ],
     flagImageUrl: "https://flagcdn.com/br.svg",
     mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Brazil_relief_location_map.jpg/800px-Brazil_relief_location_map.jpg",
@@ -33,18 +36,16 @@ const southAmericaCountries: Country[] = [
       lat: -38.4161,
       lng: -63.6167,
     },
-    difficulty: "medium",
+    difficulty: "easy", // Changed from medium to easy
     categories: [
       "Geography",
       "Culture",
-      "Food",
       "Sports",
-      "History",
-      "Music",
-      "Literature"
+      "Food",
+      "History"
     ],
     flagImageUrl: "https://flagcdn.com/ar.svg",
-    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Argentina_relief_location_map.jpg/800px-Argentina_relief_location_map.jpg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Argentina_relief_location_map.jpg/800px-Argentina_relief_location_map.jpg",
     iconType: "culture",
     continent: "South America"
   },
@@ -56,19 +57,17 @@ const southAmericaCountries: Country[] = [
       lat: 4.5709,
       lng: -74.2973,
     },
-    difficulty: "medium",
+    difficulty: "easy", // Changed from hard to easy
     categories: [
       "Geography",
       "Culture",
       "History",
-      "Food",
-      "Wildlife",
-      "Literature",
-      "Music"
+      "Music",
+      "Food"
     ],
     flagImageUrl: "https://flagcdn.com/co.svg",
-    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Colombia_relief_location_map.jpg/800px-Colombia_relief_location_map.jpg",
-    iconType: "nature",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Colombia_relief_location_map.jpg/800px-Colombia_relief_location_map.jpg",
+    iconType: "culture",
     continent: "South America"
   },
   {
@@ -79,17 +78,16 @@ const southAmericaCountries: Country[] = [
       lat: -9.1900,
       lng: -75.0152,
     },
-    difficulty: "medium",
+    difficulty: "easy",
     categories: [
-      "Geography",
       "History",
+      "Geography",
       "Culture",
-      "Archaeology",
       "Food",
       "Ancient Civilizations"
     ],
     flagImageUrl: "https://flagcdn.com/pe.svg",
-    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Peru_relief_location_map.jpg/800px-Peru_relief_location_map.jpg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Peru_relief_location_map.jpg/800px-Peru_relief_location_map.jpg",
     iconType: "landmark",
     continent: "South America"
   },
@@ -101,17 +99,16 @@ const southAmericaCountries: Country[] = [
       lat: -35.6751,
       lng: -71.5430,
     },
-    difficulty: "medium",
+    difficulty: "easy",
     categories: [
       "Geography",
-      "Culture",
-      "Wine",
       "History",
-      "Environment",
-      "Astronomy"
+      "Culture",
+      "Food",
+      "Nature"
     ],
     flagImageUrl: "https://flagcdn.com/cl.svg",
-    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Chile_relief_location_map.jpg/800px-Chile_relief_location_map.jpg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Chile_relief_location_map.jpg/800px-Chile_relief_location_map.jpg",
     iconType: "nature",
     continent: "South America"
   },
@@ -123,18 +120,17 @@ const southAmericaCountries: Country[] = [
       lat: 6.4238,
       lng: -66.5897,
     },
-    difficulty: "hard",
+    difficulty: "easy",
     categories: [
       "Geography",
       "History",
       "Culture",
-      "Politics",
-      "Natural Resources",
-      "Environment"
+      "Music",
+      "Food"
     ],
     flagImageUrl: "https://flagcdn.com/ve.svg",
-    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Venezuela_relief_location_map.jpg/800px-Venezuela_relief_location_map.jpg",
-    iconType: "nature",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Venezuela_relief_location_map.jpg/800px-Venezuela_relief_location_map.jpg",
+    iconType: "culture",
     continent: "South America"
   },
   {
@@ -145,17 +141,15 @@ const southAmericaCountries: Country[] = [
       lat: -1.8312,
       lng: -78.1834,
     },
-    difficulty: "medium",
+    difficulty: "easy",
     categories: [
       "Geography",
-      "Wildlife",
-      "Galapagos",
+      "Nature",
       "Culture",
-      "History",
-      "Environment"
+      "History"
     ],
     flagImageUrl: "https://flagcdn.com/ec.svg",
-    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Ecuador_relief_location_map.jpg/800px-Ecuador_relief_location_map.jpg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ed/Ecuador_relief_location_map.jpg/800px-Ecuador_relief_location_map.jpg",
     iconType: "nature",
     continent: "South America"
   },
@@ -167,17 +161,14 @@ const southAmericaCountries: Country[] = [
       lat: -16.2902,
       lng: -63.5887,
     },
-    difficulty: "hard",
+    difficulty: "easy",
     categories: [
       "Geography",
       "Culture",
-      "History",
-      "Nature",
-      "Indigenous Peoples",
-      "Environment"
+      "History"
     ],
     flagImageUrl: "https://flagcdn.com/bo.svg",
-    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Bolivia_relief_location_map.jpg/800px-Bolivia_relief_location_map.jpg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Bolivia_relief_location_map.jpg/800px-Bolivia_relief_location_map.jpg",
     iconType: "culture",
     continent: "South America"
   },
@@ -189,17 +180,15 @@ const southAmericaCountries: Country[] = [
       lat: -23.4425,
       lng: -58.4438,
     },
-    difficulty: "hard",
+    difficulty: "easy",
     categories: [
       "Geography",
       "Culture",
       "History",
-      "Language",
-      "Environment",
-      "Sports"
+      "Food"
     ],
     flagImageUrl: "https://flagcdn.com/py.svg",
-    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Paraguay_relief_location_map.jpg/800px-Paraguay_relief_location_map.jpg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Paraguay_relief_location_map.jpg/800px-Paraguay_relief_location_map.jpg",
     iconType: "culture",
     continent: "South America"
   },
@@ -211,18 +200,16 @@ const southAmericaCountries: Country[] = [
       lat: -32.5228,
       lng: -55.7658,
     },
-    difficulty: "medium",
+    difficulty: "easy",
     categories: [
       "Geography",
       "Culture",
-      "Football",
-      "History",
-      "Food",
-      "Environment"
+      "Sports",
+      "History"
     ],
     flagImageUrl: "https://flagcdn.com/uy.svg",
-    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Uruguay_relief_location_map.jpg/800px-Uruguay_relief_location_map.jpg",
-    iconType: "trophy",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Uruguay_relief_location_map.jpg/800px-Uruguay_relief_location_map.jpg",
+    iconType: "culture",
     continent: "South America"
   },
   {
@@ -233,17 +220,14 @@ const southAmericaCountries: Country[] = [
       lat: 4.8604,
       lng: -58.9302,
     },
-    difficulty: "hard",
+    difficulty: "easy",
     categories: [
       "Geography",
-      "History",
       "Culture",
-      "Wildlife",
-      "Environment",
-      "Heritage"
+      "History"
     ],
     flagImageUrl: "https://flagcdn.com/gy.svg",
-    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Guyana_relief_location_map.jpg/800px-Guyana_relief_location_map.jpg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Guyana_relief_location_map.jpg/800px-Guyana_relief_location_map.jpg",
     iconType: "nature",
     continent: "South America"
   },
@@ -255,17 +239,14 @@ const southAmericaCountries: Country[] = [
       lat: 3.9193,
       lng: -56.0278,
     },
-    difficulty: "hard",
+    difficulty: "easy",
     categories: [
       "Geography",
       "Culture",
-      "History",
-      "Wildlife",
-      "Environment",
-      "Heritage"
+      "History"
     ],
     flagImageUrl: "https://flagcdn.com/sr.svg",
-    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Suriname_relief_location_map.jpg/800px-Suriname_relief_location_map.jpg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Suriname_relief_location_map.jpg/800px-Suriname_relief_location_map.jpg",
     iconType: "nature",
     continent: "South America"
   }

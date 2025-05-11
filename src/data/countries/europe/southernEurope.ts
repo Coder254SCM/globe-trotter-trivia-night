@@ -35,7 +35,7 @@ const southernEuropeCountries: Country[] = [
       lat: 40.4637,
       lng: -3.7492,
     },
-    difficulty: "medium",
+    difficulty: "easy",
     categories: [
       "History",
       "Culture",
@@ -58,7 +58,7 @@ const southernEuropeCountries: Country[] = [
       lat: 39.3999,
       lng: -8.2245,
     },
-    difficulty: "medium",
+    difficulty: "easy",
     categories: [
       "History",
       "Culture",
@@ -79,7 +79,7 @@ const southernEuropeCountries: Country[] = [
       lat: 39.0742,
       lng: 21.8243,
     },
-    difficulty: "medium",
+    difficulty: "easy",
     categories: [
       "Ancient History",
       "Philosophy",
@@ -91,6 +91,48 @@ const southernEuropeCountries: Country[] = [
     flagImageUrl: "https://flagcdn.com/gr.svg",
     mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Greece_relief_location_map.jpg/800px-Greece_relief_location_map.jpg",
     iconType: "landmark",
+    continent: "Europe"
+  },
+  {
+    id: "croatia",
+    name: "Croatia",
+    code: "HR",
+    position: {
+      lat: 45.1000,
+      lng: 15.2000,
+    },
+    difficulty: "easy",
+    categories: [
+      "Geography",
+      "History",
+      "Tourism",
+      "Culture",
+      "Food"
+    ],
+    flagImageUrl: "https://flagcdn.com/hr.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Croatia_relief_location_map.jpg/800px-Croatia_relief_location_map.jpg",
+    iconType: "landmark",
+    continent: "Europe"
+  },
+  {
+    id: "serbia",
+    name: "Serbia",
+    code: "RS",
+    position: {
+      lat: 44.0165,
+      lng: 21.0059,
+    },
+    difficulty: "easy",
+    categories: [
+      "History",
+      "Culture",
+      "Music",
+      "Food",
+      "Sports"
+    ],
+    flagImageUrl: "https://flagcdn.com/rs.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Serbia_relief_location_map.jpg/800px-Serbia_relief_location_map.jpg",
+    iconType: "culture",
     continent: "Europe"
   }
 ];

@@ -44,7 +44,7 @@ export const useGlobeMarkers = ({
       marker.userData = { countryId: country.id };
       
       // Add a much larger invisible hit area for better interaction
-      const hitGeometry = new THREE.SphereGeometry(5.5, 16, 16);
+      const hitGeometry = new THREE.SphereGeometry(6, 16, 16);
       const hitMaterial = new THREE.MeshBasicMaterial({
         transparent: true,
         opacity: 0,
@@ -113,7 +113,7 @@ export const useGlobeMarkers = ({
             if (marker) {
               // Scale animation for visual feedback
               const originalScale = { value: 1 };
-              const targetScale = { value: 1.5 };
+              const targetScale = { value: 1.8 };
               
               const scaleUp = () => {
                 marker.scale.set(

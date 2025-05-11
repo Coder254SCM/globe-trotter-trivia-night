@@ -1,21 +1,20 @@
 
 import React from "react";
-import { Filter } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { 
+import { Filter, X } from "lucide-react";
+import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { QuestionCategory } from "@/types/quiz";
+import { toast } from "@/components/ui/use-toast";
 
 interface GlobeFiltersProps {
   availableContinents: string[];
-  allCategories: QuestionCategory[];
+  allCategories: string[];
   selectedContinent: string | null;
   selectedCategory: QuestionCategory | null;
   filteredCountriesCount: number;
@@ -32,82 +31,80 @@ export const GlobeFilters: React.FC<GlobeFiltersProps> = ({
   filteredCountriesCount,
   onContinentChange,
   onCategoryChange,
-  onClearFilters
+  onClearFilters,
 }) => {
+  const handleClearFilters = () => {
+    onClearFilters();
+    toast({
+      title: "Filters Cleared",
+      description: "Now showing all countries on the globe."
+    });
+  };
+
   return (
-    <div className="absolute top-24 right-4 z-10 bg-background/90 p-4 rounded-lg shadow-lg backdrop-blur-sm border border-border">
-      <div className="flex items-center gap-2 mb-4">
-        <Filter size={18} className="text-primary" />
-        <h3 className="font-medium">Explore by</h3>
+    <div className="fixed left-4 top-20 z-20 bg-background/80 backdrop-blur-md shadow-lg rounded-lg p-4 w-64 border border-border">
+      <div className="flex items-center gap-2 mb-4 font-bold text-primary">
+        <Filter size={18} />
+        <h2>Explore by</h2>
       </div>
-      
-      <div className="grid gap-4">
-        <div>
-          <label className="text-sm text-muted-foreground mb-1 block">Continent</label>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Continent</label>
           <Select 
             value={selectedContinent || "all"} 
             onValueChange={onContinentChange}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full bg-background">
               <SelectValue placeholder="All Continents" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem value="all">All Continents</SelectItem>
-                {availableContinents.map((continent) => (
-                  <SelectItem key={continent} value={continent}>
-                    {continent}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
+            <SelectContent className="bg-background border border-border">
+              <SelectItem value="all">All Continents</SelectItem>
+              {availableContinents.map((continent) => (
+                <SelectItem key={continent} value={continent}>
+                  {continent}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
-        
-        <div>
-          <label className="text-sm text-muted-foreground mb-1 block">Category</label>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Category</label>
           <Select 
-            value={selectedCategory || "all"}
+            value={selectedCategory || "all"} 
             onValueChange={onCategoryChange}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full bg-background">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
-            <SelectContent className="max-h-80">
-              <SelectGroup>
-                <SelectItem value="all">All Categories</SelectItem>
-                {allCategories
-                  .sort((a, b) => a.localeCompare(b))
-                  .map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
+            <SelectContent className="max-h-80 overflow-y-auto bg-background border border-border">
+              <SelectItem value="all">All Categories</SelectItem>
+              {allCategories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
-        
+
         <Button 
           variant="outline" 
-          size="sm" 
-          onClick={onClearFilters}
-          className="mt-2"
+          onClick={handleClearFilters}
+          className="w-full flex items-center gap-2"
         >
+          <X size={14} />
           Clear Filters
         </Button>
-      </div>
-      
-      <div className="mt-4">
-        <p className="text-sm text-muted-foreground mb-2">Showing:</p>
-        <div className="flex flex-wrap gap-1">
-          <Badge variant="outline">{filteredCountriesCount} Countries</Badge>
-          {selectedContinent && (
-            <Badge variant="secondary">{selectedContinent}</Badge>
-          )}
-          {selectedCategory && (
-            <Badge variant="secondary">{selectedCategory}</Badge>
-          )}
+
+        <div className="pt-2 border-t border-border">
+          <p className="text-sm text-muted-foreground">
+            Showing: 
+            <span className="font-medium ml-2 text-foreground">
+              {filteredCountriesCount} Countries
+            </span>
+          </p>
         </div>
       </div>
     </div>

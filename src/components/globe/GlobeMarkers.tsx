@@ -9,28 +9,28 @@ export const createTextCanvas = (text: string) => {
   
   if (!context) return null;
   
-  const fontSize = 20; // Larger font size for better visibility
+  const fontSize = 24; // Larger font size for better visibility
   context.font = `bold ${fontSize}px Arial`;
   
   // Get text metrics to size canvas appropriately
   const metrics = context.measureText(text);
-  const width = metrics.width + 32; // Wider padding
-  const height = fontSize + 18;    // Taller for better visibility
+  const width = metrics.width + 40; // Wider padding
+  const height = fontSize + 24;    // Taller for better visibility
   
   canvas.width = width;
   canvas.height = height;
   
   // Draw background with rounded corners - darker and more opaque
-  context.fillStyle = 'rgba(0, 0, 0, 0.9)';
+  context.fillStyle = 'rgba(0, 0, 0, 0.95)';
   context.beginPath();
-  context.roundRect(0, 0, width, height, 8);
+  context.roundRect(0, 0, width, height, 10);
   context.fill();
   
   // Add a stronger border
-  context.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-  context.lineWidth = 1.5;
+  context.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+  context.lineWidth = 2;
   context.beginPath();
-  context.roundRect(0, 0, width, height, 8);
+  context.roundRect(0, 0, width, height, 10);
   context.stroke();
   
   // Draw text in white for better contrast
@@ -63,45 +63,33 @@ export const createCountryMarker = (
   let markerGeometry;
   switch (iconType) {
     case 'landmark':
-      markerGeometry = new THREE.ConeGeometry(2.5, 5.0, 8);
+      markerGeometry = new THREE.ConeGeometry(3.2, 6.0, 8);
       break;
     case 'trophy':
-      markerGeometry = new THREE.OctahedronGeometry(2.5);
+      markerGeometry = new THREE.OctahedronGeometry(3.2);
       break;
     case 'culture':
-      markerGeometry = new THREE.TorusGeometry(2.5, 0.8, 12, 24);
+      markerGeometry = new THREE.TorusGeometry(3.2, 1.0, 12, 24);
       break;
     case 'nature':
-      markerGeometry = new THREE.DodecahedronGeometry(2.5);
+      markerGeometry = new THREE.DodecahedronGeometry(3.2);
       break;
     default:
-      markerGeometry = new THREE.SphereGeometry(2.5, 24, 24);
+      markerGeometry = new THREE.SphereGeometry(3.2, 24, 24);
   }
   
   // Colors based on difficulty with stronger emission
   let markerColor;
   let emissiveIntensity;
-  switch (difficulty) {
-    case 'easy':
-      markerColor = 0x4ade80;
-      emissiveIntensity = 0.8;
-      break;
-    case 'medium':
-      markerColor = 0xfacc15;
-      emissiveIntensity = 0.8;
-      break;
-    case 'hard':
-      markerColor = 0xef4444;
-      emissiveIntensity = 0.8;
-      break;
-  }
+  markerColor = 0x4ade80; // Always use green color for easy difficulty
+  emissiveIntensity = 1.0;
   
   // Enhanced material with stronger emission for better visibility
   const markerMaterial = new THREE.MeshPhongMaterial({
     color: markerColor,
     emissive: markerColor,
     emissiveIntensity: emissiveIntensity,
-    shininess: 50,
+    shininess: 60,
     specular: new THREE.Color(0xffffff),
   });
   
@@ -133,11 +121,11 @@ export const createCountryMarker = (
       });
       
       const label = new THREE.Sprite(labelMaterial);
-      const scale = 0.22; // Larger scale for better visibility
+      const scale = 0.25; // Larger scale for better visibility
       label.scale.set(labelCanvas.width * scale, labelCanvas.height * scale, 1);
       
       // Position above the marker
-      label.position.set(0, 5.0, 0);
+      label.position.set(0, 6.0, 0);
       
       group.add(label);
     }
@@ -168,7 +156,7 @@ export const createPOIMarker = (
   group.lookAt(0, 0, 0); // Make sure the marker is oriented correctly
   
   // Create more visible and distinct markers
-  const markerGeometry = new THREE.SphereGeometry(2.5, 20, 20);
+  const markerGeometry = new THREE.SphereGeometry(3.0, 20, 20);
   
   // Use different colors based on POI type - brighter colors
   let markerColor;
@@ -195,8 +183,8 @@ export const createPOIMarker = (
   const markerMaterial = new THREE.MeshPhongMaterial({
     color: markerColor,
     emissive: markerColor,
-    emissiveIntensity: 0.7, // Stronger emission
-    shininess: 40,
+    emissiveIntensity: 0.8, // Stronger emission
+    shininess: 50,
   });
   
   const marker = new THREE.Mesh(markerGeometry, markerMaterial);
@@ -216,11 +204,11 @@ export const createPOIMarker = (
       });
       
       const label = new THREE.Sprite(labelMaterial);
-      const scale = 0.18; // Adjust scale for better visibility
+      const scale = 0.22; // Adjust scale for better visibility
       label.scale.set(labelCanvas.width * scale, labelCanvas.height * scale, 1);
       
       // Position above the marker
-      label.position.set(0, 4.5, 0);
+      label.position.set(0, 5.0, 0);
       
       group.add(label);
     }

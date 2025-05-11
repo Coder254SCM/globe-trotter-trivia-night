@@ -10,7 +10,7 @@ const westAsiaCountries: Country[] = [
       lat: 23.8859,
       lng: 45.0792,
     },
-    difficulty: "medium",
+    difficulty: "easy",
     categories: [
       "History",
       "Geography",
@@ -31,7 +31,7 @@ const westAsiaCountries: Country[] = [
       lat: 38.9637,
       lng: 35.2433,
     },
-    difficulty: "medium",
+    difficulty: "easy",
     categories: [
       "History",
       "Culture",
@@ -53,7 +53,7 @@ const westAsiaCountries: Country[] = [
       lat: 31.0461,
       lng: 34.8516,
     },
-    difficulty: "hard",
+    difficulty: "easy",
     categories: [
       "History",
       "Geography",
@@ -74,7 +74,7 @@ const westAsiaCountries: Country[] = [
       lat: 23.4241,
       lng: 53.8478,
     },
-    difficulty: "medium",
+    difficulty: "easy",
     categories: [
       "Architecture",
       "Economy",
@@ -95,7 +95,7 @@ const westAsiaCountries: Country[] = [
       lat: 32.4279,
       lng: 53.6880,
     },
-    difficulty: "hard",
+    difficulty: "easy",
     categories: [
       "History",
       "Geography",
@@ -105,6 +105,69 @@ const westAsiaCountries: Country[] = [
     ],
     flagImageUrl: "https://flagcdn.com/ir.svg",
     mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Iran_relief_location_map.jpg/800px-Iran_relief_location_map.jpg",
+    iconType: "culture",
+    continent: "Asia"
+  },
+  {
+    id: "iraq",
+    name: "Iraq",
+    code: "IQ",
+    position: {
+      lat: 33.2232,
+      lng: 43.6793,
+    },
+    difficulty: "easy",
+    categories: [
+      "History",
+      "Culture",
+      "Ancient Civilizations",
+      "Geography",
+      "Religion"
+    ],
+    flagImageUrl: "https://flagcdn.com/iq.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Iraq_relief_location_map.jpg/800px-Iraq_relief_location_map.jpg",
+    iconType: "landmark",
+    continent: "Asia"
+  },
+  {
+    id: "jordan",
+    name: "Jordan",
+    code: "JO",
+    position: {
+      lat: 30.5852,
+      lng: 36.2384,
+    },
+    difficulty: "easy",
+    categories: [
+      "History",
+      "Geography",
+      "Culture",
+      "Religion",
+      "Ancient History"
+    ],
+    flagImageUrl: "https://flagcdn.com/jo.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Jordan_relief_location_map.jpg/800px-Jordan_relief_location_map.jpg",
+    iconType: "landmark",
+    continent: "Asia"
+  },
+  {
+    id: "lebanon",
+    name: "Lebanon",
+    code: "LB",
+    position: {
+      lat: 33.8547,
+      lng: 35.8623,
+    },
+    difficulty: "easy",
+    categories: [
+      "History",
+      "Culture",
+      "Food",
+      "Geography",
+      "Religion"
+    ],
+    flagImageUrl: "https://flagcdn.com/lb.svg",
+    mapImageUrl: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Lebanon_relief_location_map.jpg/800px-Lebanon_relief_location_map.jpg",
     iconType: "culture",
     continent: "Asia"
   }

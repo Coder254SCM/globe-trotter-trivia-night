@@ -51,7 +51,7 @@ export const GlobeSearch: React.FC<GlobeSearchProps> = ({
     <>
       <Button 
         variant="outline"
-        className="fixed right-4 top-20 flex items-center gap-2 bg-background/90 backdrop-blur-sm z-10"
+        className="fixed right-4 top-4 flex items-center gap-2 bg-background/90 backdrop-blur-sm z-20 shadow-lg"
         onClick={() => setOpen(true)}
       >
         <Search className="h-4 w-4" />
@@ -62,8 +62,11 @@ export const GlobeSearch: React.FC<GlobeSearchProps> = ({
       </Button>
 
       <CommandDialog open={open} onOpenChange={setOpen}>
-        <CommandInput placeholder="Search all countries..." />
-        <CommandList>
+        <CommandInput 
+          placeholder="Search all countries..." 
+          onValueChange={setSearch}
+        />
+        <CommandList className="max-h-[80vh]">
           <CommandEmpty>No country found.</CommandEmpty>
           <CommandGroup heading="Countries">
             {countries

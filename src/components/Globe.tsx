@@ -71,10 +71,10 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
 
   const handleStartQuiz = (difficulty: string) => {
     if (selectedCountry) {
-      // Use the selected difficulty for the quiz
+      // Use the selected difficulty for the quiz but always set to easy as requested
       const countryWithDifficulty = {
         ...selectedCountry,
-        difficulty: difficulty as 'easy' | 'medium' | 'hard'
+        difficulty: "easy" // Always set to easy as requested 
       };
       onCountrySelect(countryWithDifficulty);
     }
