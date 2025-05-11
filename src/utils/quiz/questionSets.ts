@@ -30,13 +30,17 @@ const generateCountrySpecificQuestions = (countryId: string): Question[] => {
   // Generate country-specific questions using the utility function
   const countrySpecificQuestions = generateGenericCountryQuestions(country);
   
-  // Get global questions related to the country's categories
+  // Find global questions related to the country's categories
   const categoryQuestions = globalQuestions
     .filter(q => country.categories.includes(q.category))
     .slice(0, Math.min(5, country.categories.length));
   
+  // Make sure we don't have duplicate questions
+  const existingTexts = new Set(countrySpecificQuestions.map(q => q.text));
+  const uniqueCategoryQuestions = categoryQuestions.filter(q => !existingTexts.has(q.text));
+  
   // Mix both types of questions
-  return [...countrySpecificQuestions, ...categoryQuestions];
+  return [...countrySpecificQuestions, ...uniqueCategoryQuestions];
 };
 
 // Create a comprehensive mapping of all country questions
@@ -104,11 +108,17 @@ const buildAllCountryQuestions = (): Record<string, Question[]> => {
   });
   
   // Generate questions for ALL countries that don't have specific question sets
+  const countryCount = countries.length;
+  let generatedCount = 0;
+  
   countries.forEach(country => {
     if (!questionSets[country.id]) {
       questionSets[country.id] = generateCountrySpecificQuestions(country.id);
+      generatedCount++;
     }
   });
+  
+  console.log(`Generated questions for ${generatedCount} countries. Total countries: ${countryCount}`);
   
   return questionSets;
 };

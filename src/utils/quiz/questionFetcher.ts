@@ -15,6 +15,21 @@ setInterval(() => {
   usedQuestionIds.clear();
 }, 3600000); // Clear every hour
 
+// Function to deduplicate questions based on text content
+const deduplicateQuestions = (questions: Question[]): Question[] => {
+  const uniqueQuestions: Question[] = [];
+  const seenTexts = new Set<string>();
+  
+  questions.forEach(question => {
+    if (!seenTexts.has(question.text)) {
+      seenTexts.add(question.text);
+      uniqueQuestions.push(question);
+    }
+  });
+  
+  return uniqueQuestions;
+};
+
 // Get questions for a specific quiz
 export const getQuizQuestions = (
   countryId?: string,
@@ -44,15 +59,25 @@ export const getQuizQuestions = (
     }
   }
   
-  // Add global questions if requested and we need more questions
+  // Only add global questions if we need more AND they're requested
   if (includeGlobal && questionPool.length < count) {
+    let globalPool: Question[] = [];
     // Add questions from the appropriate global question set
     if (difficulty === "easy") {
-      questionPool.push(...easyGlobalQuestions);
+      globalPool = [...easyGlobalQuestions];
     } else {
-      questionPool.push(...globalQuestions);
+      globalPool = [...globalQuestions];
     }
+    
+    // Filter out questions that would duplicate country/continent specific ones
+    const existingTexts = new Set(questionPool.map(q => q.text));
+    const filteredGlobalPool = globalPool.filter(q => !existingTexts.has(q.text));
+    
+    questionPool.push(...filteredGlobalPool);
   }
+  
+  // Remove duplicates
+  questionPool = deduplicateQuestions(questionPool);
   
   // Filter out questions that have been used recently
   questionPool = questionPool.filter(q => !usedQuestionIds.has(q.id));
@@ -60,7 +85,7 @@ export const getQuizQuestions = (
   // If we don't have enough questions, include some used ones
   if (questionPool.length < count) {
     const additionalQuestions = globalQuestions
-      .filter(q => !questionPool.some(pq => pq.id === q.id))
+      .filter(q => !questionPool.some(pq => pq.text === q.text))
       .slice(0, count - questionPool.length);
     
     questionPool.push(...additionalQuestions);
@@ -94,7 +119,10 @@ export const getRecentlyUpdatedQuestions = (since: Date, count: number = 10): Qu
     ...Object.values(continentQuestions).flat()
   ];
   
-  const recentQuestions = allQuestions
+  // Deduplicate questions to ensure unique content
+  const uniqueQuestions = deduplicateQuestions(allQuestions);
+  
+  const recentQuestions = uniqueQuestions
     .filter(q => q.lastUpdated && new Date(q.lastUpdated) > since)
     .sort((a, b) => {
       if (!a.lastUpdated || !b.lastUpdated) return 0;
@@ -113,6 +141,9 @@ export const getQuestionsByDifficulty = (difficulty: string, count: number = 10)
     ...Object.values(continentQuestions).flat()
   ];
   
-  const filteredQuestions = allQuestions.filter(q => q.difficulty === difficulty);
+  // Deduplicate questions to ensure unique content
+  const uniqueQuestions = deduplicateQuestions(allQuestions);
+  
+  const filteredQuestions = uniqueQuestions.filter(q => q.difficulty === difficulty);
   return shuffleArray(filteredQuestions).slice(0, count);
 };

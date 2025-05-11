@@ -2,20 +2,28 @@
 import { Question } from "../../types/quiz";
 import { countryQuestions } from "../../utils/quiz/questionSets";
 
-// Collect easy questions from all countries
+// Collect easy questions from all countries with deduplication
 const collectEasyQuestions = (): Question[] => {
   const allEasyQuestions: Question[] = [];
+  const seenQuestionTexts = new Set<string>();
   
-  // Gather questions from all countries
+  // Gather unique easy questions from all countries
   Object.values(countryQuestions).forEach(countryQuestionSet => {
     const easyQuestions = countryQuestionSet.filter(q => q.difficulty === "easy");
-    allEasyQuestions.push(...easyQuestions);
+    
+    easyQuestions.forEach(question => {
+      // Only add questions we haven't seen before (based on question text)
+      if (!seenQuestionTexts.has(question.text)) {
+        seenQuestionTexts.add(question.text);
+        allEasyQuestions.push({...question});
+      }
+    });
   });
   
-  // Add a unique category for these collected questions, using a valid category
+  // Make IDs unique and update timestamps
   return allEasyQuestions.map(question => ({
     ...question,
-    category: question.category, // Keep the original category instead of using "Global Knowledge"
+    category: question.category,
     id: `global-easy-${question.id}`, // Make IDs unique
     lastUpdated: new Date().toISOString()
   }));
