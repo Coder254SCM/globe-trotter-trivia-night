@@ -12,10 +12,10 @@ const collectEasyQuestions = (): Question[] => {
     allEasyQuestions.push(...easyQuestions);
   });
   
-  // Add a unique category for these collected questions
+  // Add a unique category for these collected questions, using a valid category
   return allEasyQuestions.map(question => ({
     ...question,
-    category: question.category || "Global Knowledge",
+    category: question.category, // Keep the original category instead of using "Global Knowledge"
     id: `global-easy-${question.id}`, // Make IDs unique
     lastUpdated: new Date().toISOString()
   }));
