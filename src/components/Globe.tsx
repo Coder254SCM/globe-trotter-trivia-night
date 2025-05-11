@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Country } from "../types/quiz";
+import { Country, DifficultyLevel } from "../types/quiz";
 import { StarsBackground } from "./globe/StarsBackground";
 import { CountryCard } from "./globe/CountryCard";
 import { GlobeHeader } from "./globe/GlobeHeader";
@@ -74,7 +74,7 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
       // Use the selected difficulty for the quiz but always set to easy as requested
       const countryWithDifficulty = {
         ...selectedCountry,
-        difficulty: "easy" // Always set to easy as requested 
+        difficulty: "easy" as DifficultyLevel // Explicitly cast to DifficultyLevel
       };
       onCountrySelect(countryWithDifficulty);
     }
