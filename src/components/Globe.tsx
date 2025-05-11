@@ -71,10 +71,10 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
 
   const handleStartQuiz = (difficulty: string) => {
     if (selectedCountry) {
-      // Use the selected difficulty for the quiz but always set to easy as requested
+      // Fix the type issue by explicitly using a DifficultyLevel type
       const countryWithDifficulty = {
         ...selectedCountry,
-        difficulty: "easy" as DifficultyLevel // Explicitly cast to DifficultyLevel
+        difficulty: "easy" as DifficultyLevel
       };
       onCountrySelect(countryWithDifficulty);
     }
