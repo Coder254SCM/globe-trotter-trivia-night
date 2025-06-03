@@ -6,6 +6,7 @@ export * from "./audit/globalAudit";
 export * from "./audit/reportGeneration";
 
 // Keep the main interface for backward compatibility
-export { performGlobalAudit, generateAuditReport } from "./audit/globalAudit";
+export { performGlobalAudit } from "./audit/globalAudit";
+export { generateAuditReport } from "./audit/reportGeneration";
 export { auditCountryQuestions } from "./audit/countryAudit";
 export { auditQuestionsByCategory } from "./audit/categoryAudit";
