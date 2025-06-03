@@ -1,3 +1,4 @@
+
 import { Question } from "../../../types/quiz";
 
 const mexicoQuestions: Question[] = [
@@ -14,7 +15,7 @@ const mexicoQuestions: Question[] = [
     category: "Geography",
     explanation: "Mexico City (Ciudad de México) is the capital and largest city of Mexico. It's one of the most populous cities in the world and was built on the site of Tenochtitlan, the ancient Aztec capital.",
     difficulty: "easy",
-    lastUpdated: "2025-05-05",
+    lastUpdated: "2025-06-03",
   },
   {
     id: "mx-q2",
@@ -29,13 +30,13 @@ const mexicoQuestions: Question[] = [
     category: "History",
     explanation: "Chichen Itza was a major focal point of the ancient Maya civilization around 600 AD to 1200 AD. The site exhibits different architectural styles, including Puuc and Maya-Toltec fusion.",
     difficulty: "medium",
-    lastUpdated: "2025-05-05",
+    lastUpdated: "2025-06-03",
   },
   {
     id: "mx-q3",
     type: "image",
     text: "What Mexican holiday is being celebrated in this image?",
-    imageUrl: "/lovable-uploads/58f27fca-ef94-4dec-ab27-728c5237f553.png", // Updated to the correct image
+    imageUrl: "/lovable-uploads/58f27fca-ef94-4dec-ab27-728c5237f553.png",
     choices: [
       { id: "a", text: "Independence Day", isCorrect: false },
       { id: "b", text: "Revolution Day", isCorrect: false },
@@ -45,7 +46,7 @@ const mexicoQuestions: Question[] = [
     category: "Festivals",
     explanation: "Día de los Muertos (Day of the Dead) is a Mexican holiday celebrated throughout Mexico to remember and honor deceased loved ones. It involves colorful altars, sugar skulls, and marigold flowers.",
     difficulty: "easy",
-    lastUpdated: "2025-05-11",
+    lastUpdated: "2025-06-03",
   },
   {
     id: "mx-q4",
@@ -60,7 +61,7 @@ const mexicoQuestions: Question[] = [
     category: "Art",
     explanation: "Frida Kahlo (1907-1954) was a Mexican painter known for her self-portraits and works inspired by Mexican culture, identity, and her own challenging life experiences.",
     difficulty: "easy",
-    lastUpdated: "2025-05-05",
+    lastUpdated: "2025-06-03",
   },
   {
     id: "mx-q5",
@@ -73,22 +74,22 @@ const mexicoQuestions: Question[] = [
     category: "Demographics",
     explanation: "Mexico has the largest number of Spanish speakers in the world, with approximately 130 million native speakers, surpassing Spain and Colombia.",
     difficulty: "medium",
-    lastUpdated: "2025-05-05",
+    lastUpdated: "2025-06-03",
   },
   {
     id: "mx-q6",
     type: "multiple-choice",
-    text: "Which spicy sauce originated in Mexico and is made from chili peppers?",
+    text: "What is the traditional Mexican sauce made from chili peppers, tomatoes, and onions?",
     choices: [
-      { id: "a", text: "Sriracha", isCorrect: false },
-      { id: "b", text: "Tabasco", isCorrect: false },
+      { id: "a", text: "Pesto", isCorrect: false },
+      { id: "b", text: "Marinara", isCorrect: false },
       { id: "c", text: "Salsa", isCorrect: true },
       { id: "d", text: "Harissa", isCorrect: false },
     ],
     category: "Food",
-    explanation: "Salsa, which literally means 'sauce' in Spanish, originated in Mexico and typically includes chili peppers, tomatoes, onions, and other ingredients like cilantro and lime juice.",
+    explanation: "Salsa, which literally means 'sauce' in Spanish, is a traditional Mexican condiment typically made with chili peppers, tomatoes, onions, cilantro, and lime juice.",
     difficulty: "easy",
-    lastUpdated: "2025-05-05",
+    lastUpdated: "2025-06-03",
   },
   {
     id: "mx-q7",
@@ -103,7 +104,7 @@ const mexicoQuestions: Question[] = [
     category: "History",
     explanation: "Tenochtitlan was the capital of the Aztec Empire, built on an island in Lake Texcoco. After the Spanish conquest in 1521, it was largely destroyed and Mexico City was built on its ruins.",
     difficulty: "medium",
-    lastUpdated: "2025-05-05",
+    lastUpdated: "2025-06-03",
   },
   {
     id: "mx-q8",
@@ -118,12 +119,12 @@ const mexicoQuestions: Question[] = [
     category: "Sports",
     explanation: "Soccer (football) is by far the most popular sport in Mexico. The Mexican national football team has competed in 16 FIFA World Cups and the country has hosted the World Cup twice (1970 and 1986).",
     difficulty: "easy",
-    lastUpdated: "2025-05-05",
+    lastUpdated: "2025-06-03",
   },
   {
     id: "mx-q9",
     type: "multiple-choice",
-    text: "Which Mexican dish consists of a tortilla rolled around a filling, typically of meat, and covered with a chili pepper sauce?",
+    text: "Which Mexican dish consists of a tortilla rolled around a filling and covered with chili pepper sauce?",
     choices: [
       { id: "a", text: "Taco", isCorrect: false },
       { id: "b", text: "Burrito", isCorrect: false },
@@ -133,12 +134,12 @@ const mexicoQuestions: Question[] = [
     category: "Food",
     explanation: "An enchilada is a corn tortilla rolled around various fillings and covered with a chili pepper sauce. The dish originated in Mexico, where the practice of rolling tortillas around food dates back to Mayan times.",
     difficulty: "medium",
-    lastUpdated: "2025-05-05",
+    lastUpdated: "2025-06-03",
   },
   {
     id: "mx-q10",
     type: "multiple-choice",
-    text: "What is the name of the traditional Mexican alcoholic beverage made from the agave plant?",
+    text: "What is the name of the traditional Mexican alcoholic beverage made from the blue agave plant?",
     choices: [
       { id: "a", text: "Tequila", isCorrect: true },
       { id: "b", text: "Rum", isCorrect: false },
@@ -148,7 +149,37 @@ const mexicoQuestions: Question[] = [
     category: "Food",
     explanation: "Tequila is a distilled alcoholic beverage made from the blue agave plant, primarily in the area surrounding the city of Tequila in the central-western Mexican state of Jalisco.",
     difficulty: "easy",
-    lastUpdated: "2025-05-05",
+    lastUpdated: "2025-06-03",
+  },
+  {
+    id: "mx-q11",
+    type: "multiple-choice",
+    text: "Which Mexican state is famous for its pyramids at Teotihuacan?",
+    choices: [
+      { id: "a", text: "Yucatan", isCorrect: false },
+      { id: "b", text: "State of Mexico", isCorrect: true },
+      { id: "c", text: "Chiapas", isCorrect: false },
+      { id: "d", text: "Oaxaca", isCorrect: false },
+    ],
+    category: "History",
+    explanation: "The ancient city of Teotihuacan is located in the State of Mexico, just northeast of Mexico City. It was one of the largest cities in the ancient world and features the famous Pyramid of the Sun and Pyramid of the Moon.",
+    difficulty: "medium",
+    lastUpdated: "2025-06-03",
+  },
+  {
+    id: "mx-q12",
+    type: "multiple-choice",
+    text: "What is the currency of Mexico?",
+    choices: [
+      { id: "a", text: "Peso", isCorrect: true },
+      { id: "b", text: "Dollar", isCorrect: false },
+      { id: "c", text: "Euro", isCorrect: false },
+      { id: "d", text: "Real", isCorrect: false },
+    ],
+    category: "Geography",
+    explanation: "The Mexican peso (MXN) is the official currency of Mexico. It has been the currency of Mexico since 1993 and is one of the most traded currencies in Latin America.",
+    difficulty: "easy",
+    lastUpdated: "2025-06-03",
   }
 ];
 

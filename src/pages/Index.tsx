@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Globe from "../components/Globe";
 import Quiz from "../components/Quiz";
@@ -6,6 +5,7 @@ import QuizResult from "../components/QuizResult";
 import { Country, QuizResult as QuizResultType, Question } from "../types/quiz";
 import { getQuizQuestions, recordQuizResults, getMostFailedQuestions } from "../utils/quizDataManager";
 import { toast } from "@/components/ui/use-toast";
+import { logProductionStatus } from "../utils/quiz/productionAudit";
 
 const Index = () => {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
@@ -13,6 +13,16 @@ const Index = () => {
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [weeklyChallenge, setWeeklyChallenge] = useState<Question[]>([]);
   const [isWeeklyChallenge, setIsWeeklyChallenge] = useState(false);
+
+  // Run production audit on app start
+  useEffect(() => {
+    const runInitialAudit = async () => {
+      console.log("🔍 Running initial production audit...");
+      await logProductionStatus();
+    };
+    
+    runInitialAudit();
+  }, []);
 
   // Check if weekly challenge needs to be updated
   useEffect(() => {
