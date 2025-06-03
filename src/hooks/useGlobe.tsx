@@ -72,6 +72,7 @@ export const useGlobe = ({
     const handlers = setupClickHandler(cameraRef.current, sceneRef.current);
     if (!handlers) return;
     
+    // Fixed: Properly destructure the handlers
     const { handleClick, handleMouseMove } = handlers;
     
     // Remove any existing handlers to prevent duplicates

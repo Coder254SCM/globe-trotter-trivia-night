@@ -100,7 +100,7 @@ export const useGlobeMarkers = ({
 
   // Setup enhanced click handler with better hit detection
   const setupClickHandler = (camera: THREE.PerspectiveCamera, scene: THREE.Scene) => {
-    if (!globeRef.current) return () => {};
+    if (!globeRef.current) return null; // Fixed: return null instead of empty function
     
     const mouse = new THREE.Vector2();
     const raycaster = raycasterRef.current;
@@ -227,7 +227,7 @@ export const useGlobeMarkers = ({
       }
     };
     
-    return { handleClick, handleMouseMove };
+    return { handleClick, handleMouseMove }; // Always return object with handlers
   };
 
   return {

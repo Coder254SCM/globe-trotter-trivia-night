@@ -90,14 +90,7 @@ export const createCountryMarker = (
   
   // Add professional label if name is provided
   if (name) {
-    const labelCanvas = createTextCanvas(name, {
-      fontSize: 32,
-      fontFamily: 'Arial, sans-serif',
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      textColor: 'white',
-      padding: 12,
-      borderRadius: 8,
-    });
+    const labelCanvas = createTextCanvas(name); // Fixed: only pass one argument
     
     if (labelCanvas) {
       const labelTexture = new THREE.CanvasTexture(labelCanvas);
