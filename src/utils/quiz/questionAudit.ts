@@ -1,4 +1,3 @@
-
 import { Question } from "../../types/quiz";
 import { countryQuestions } from "./questionSets";
 import countries from "../../data/countries";
@@ -48,11 +47,6 @@ const isQuestionRelevantToCountry = (question: Question, countryId: string): boo
   
   // Check for direct country mentions
   if (questionText.includes(countryName) || explanation.includes(countryName)) {
-    return true;
-  }
-  
-  // Check for capital city mentions
-  if (country.capital && (questionText.includes(country.capital.toLowerCase()) || explanation.includes(country.capital.toLowerCase()))) {
     return true;
   }
   
