@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Country, DifficultyLevel } from "../types/quiz";
 import { StarsBackground } from "./globe/StarsBackground";
@@ -97,17 +98,19 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
     }
   };
 
-  // Show actual number of countries on component mount
+  // Show correct total number of countries on component mount
   useEffect(() => {
-    const countryCount = countries.length;
+    const totalCountries = countries.length;
+    const availableQuizCountries = filteredCountries.length;
+    
     toast({
-      title: "World Explorer",
-      description: `Explore ${countryCount} countries from around the world. Click on any marker to learn more!`,
+      title: "World Explorer Ready",
+      description: `Explore all ${totalCountries} countries worldwide! ${availableQuizCountries} countries have quiz content available.`,
     });
   }, []);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
+    <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-slate-900 via-blue-900 to-black">
       <div ref={containerRef} className="globe-container w-full h-full">
         <StarsBackground containerRef={containerRef} />
       </div>
@@ -129,6 +132,7 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
         selectedContinent={selectedContinent}
         selectedCategory={selectedCategory}
         filteredCountriesCount={filteredCountries.length}
+        totalCountriesCount={countries.length}
         onContinentChange={handleEnhancedContinentChange}
         onCategoryChange={handleCategoryChange}
         onClearFilters={handleClearFilters}

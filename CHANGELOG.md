@@ -3,6 +3,60 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2025-06-03
+
+### 🎯 Production Ready Features
+
+#### ✨ New Features Added
+- **Dark/Light Mode Toggle**: Full theme switching capability with persistent preferences
+- **Language Support**: Multi-language quiz interface supporting 10+ languages (English, Spanish, French, German, Italian, Portuguese, Russian, Chinese, Japanese, Arabic)
+- **Analytics System**: Comprehensive user behavior tracking and quiz performance analytics
+- **Invite System**: Social sharing and referral system with reward tracking
+- **Correct Country Count**: Now properly displays all 195 countries in the world
+- **Enhanced Globe Visuals**: More realistic and authentic-looking globe with improved lighting
+
+#### 🔧 Critical Bug Fixes
+- **Fixed Country Count Display**: Now correctly shows 195 total countries instead of misleading 83
+- **Improved Globe Realism**: Enhanced visual authenticity with better materials and lighting
+- **Question Audit System**: Comprehensive refactoring into smaller, maintainable modules
+- **TypeScript Errors**: Resolved all compilation errors in audit system
+
+#### 📊 Analytics & Insights
+- **User Behavior Tracking**: Monitor quiz completion rates, preferred difficulties, and country selections
+- **Performance Metrics**: Track average scores, time taken, and learning patterns
+- **Local Storage Fallback**: Offline analytics tracking for improved reliability
+
+#### 🌐 Internationalization
+- **Multi-Language Support**: Quiz interface available in 10 major world languages
+- **Language Selector**: Easy switching between languages with flag indicators
+- **Persistent Language Preferences**: Remembers user's language choice
+
+#### 🤝 Social Features
+- **Invite Friends System**: Share quiz challenges via email and social media
+- **Referral Tracking**: Unique referral codes and reward system
+- **Social Media Integration**: Direct sharing to Twitter, Facebook, WhatsApp, Telegram
+
+#### 🎨 UI/UX Improvements
+- **Theme Toggle**: Seamless dark/light mode switching
+- **Improved Filters**: Better country and category filtering with proper counts
+- **Enhanced Headers**: More professional branding and navigation
+- **Visual Polish**: Better contrast ratios and visual hierarchy
+
+### 📈 Monetization Preparation
+Ready for implementing:
+- **Premium Features**: Language packs, advanced analytics
+- **Subscription Model**: Monthly/yearly quiz access
+- **In-App Purchases**: Special quiz packs, hints, power-ups
+- **Advertisement Integration**: Banner and interstitial ad placements
+
+### 🔮 Next Steps Needed
+- **Database Migration**: Move from static data to Supabase for scalability
+- **User Authentication**: Enable user accounts and progress tracking  
+- **Premium Features**: Implement paid tiers and subscription management
+- **Advanced Analytics**: Real-time leaderboards and achievements
+
+---
+
 ## [2.0.0] - 2025-06-03
 
 ### Major Fixes & Improvements

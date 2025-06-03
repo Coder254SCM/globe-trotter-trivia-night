@@ -1,7 +1,8 @@
 
-import React from "react";
-import { GlobeIcon, MapPin, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Globe, Eye, EyeOff, Trophy, Settings } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 interface GlobeHeaderProps {
   onToggleLabels: () => void;
@@ -9,43 +10,64 @@ interface GlobeHeaderProps {
   showLabels: boolean;
 }
 
-export const GlobeHeader: React.FC<GlobeHeaderProps> = ({ 
+export const GlobeHeader = ({ 
   onToggleLabels, 
   onStartWeeklyChallenge, 
   showLabels 
-}) => {
+}: GlobeHeaderProps) => {
   return (
-    <>
-      <div className="absolute top-4 left-4 z-10">
-        <h1 className="text-4xl font-bold flex items-center bg-background/80 backdrop-blur-sm p-2 rounded-lg">
-          <GlobeIcon size={40} className="mr-2 text-primary glow" />
-          <span>Global Night Out</span>
-        </h1>
-        <p className="text-muted-foreground mt-2 bg-background/80 backdrop-blur-sm p-2 rounded-lg max-w-md">
-          Explore the world and test your knowledge in this interactive trivia adventure
-        </p>
-      </div>
-      
-      <div className="absolute top-4 right-4 z-10 flex gap-2">
-        <Button 
-          onClick={onToggleLabels}
-          className="flex items-center gap-2 bg-background/90 backdrop-blur-sm"
-          variant="outline"
-        >
-          <MapPin size={18} />
-          {showLabels ? "Hide Labels" : "Show Labels"}
-        </Button>
-        
-        {onStartWeeklyChallenge && (
-          <Button 
-            onClick={onStartWeeklyChallenge}
-            className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white shadow-md"
+    <div className="absolute top-4 left-4 right-4 z-10">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-background/90 backdrop-blur-sm px-3 py-2 rounded-lg border border-primary/20">
+            <Globe className="text-primary" size={24} />
+            <div>
+              <h1 className="text-xl font-bold text-foreground">Global Night Out</h1>
+              <p className="text-xs text-muted-foreground">Interactive World Quiz Explorer</p>
+            </div>
+          </div>
+          
+          <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+            v2.0 Production Ready
+          </Badge>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleLabels}
+            className="flex items-center gap-2 bg-background/90 backdrop-blur-sm"
           >
-            <Trophy size={18} />
-            Weekly Challenge
+            {showLabels ? <EyeOff size={16} /> : <Eye size={16} />}
+            <span className="hidden sm:inline">
+              {showLabels ? "Hide Labels" : "Show Labels"}
+            </span>
           </Button>
-        )}
+
+          {onStartWeeklyChallenge && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={onStartWeeklyChallenge}
+              className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700"
+            >
+              <Trophy size={16} />
+              <span className="hidden sm:inline">Weekly Challenge</span>
+            </Button>
+          )}
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="bg-background/90 backdrop-blur-sm"
+          >
+            <Settings size={16} />
+          </Button>
+        </div>
       </div>
-    </>
+    </div>
   );
 };

@@ -1,64 +1,49 @@
 
-import React from "react";
-import { Filter, X } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { QuestionCategory } from "@/types/quiz";
-import { toast } from "@/components/ui/use-toast";
+import { Card } from "@/components/ui/card";
+import { X, Globe, Filter } from "lucide-react";
 
 interface GlobeFiltersProps {
   availableContinents: string[];
   allCategories: string[];
-  selectedContinent: string | null;
-  selectedCategory: QuestionCategory | null;
+  selectedContinent: string;
+  selectedCategory: string;
   filteredCountriesCount: number;
+  totalCountriesCount: number;
   onContinentChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
   onClearFilters: () => void;
 }
 
-export const GlobeFilters: React.FC<GlobeFiltersProps> = ({
+export const GlobeFilters = ({
   availableContinents,
   allCategories,
   selectedContinent,
   selectedCategory,
   filteredCountriesCount,
+  totalCountriesCount,
   onContinentChange,
   onCategoryChange,
-  onClearFilters,
-}) => {
-  const handleClearFilters = () => {
-    onClearFilters();
-    toast({
-      title: "Filters Cleared",
-      description: "Now showing all countries on the globe."
-    });
-  };
+  onClearFilters
+}: GlobeFiltersProps) => {
+  const hasActiveFilters = selectedContinent !== "all" || selectedCategory !== "all";
 
   return (
-    <div className="fixed left-4 top-20 z-20 bg-background/80 backdrop-blur-md shadow-lg rounded-lg p-4 w-64 border border-border">
-      <div className="flex items-center gap-2 mb-4 font-bold text-primary">
-        <Filter size={18} />
-        <h2>Explore by</h2>
+    <Card className="absolute top-20 left-4 p-4 bg-background/90 backdrop-blur-sm border-primary/20 z-10">
+      <div className="flex items-center gap-2 mb-3">
+        <Filter size={18} className="text-primary" />
+        <h3 className="font-medium text-sm">Explore Countries</h3>
       </div>
-
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Continent</label>
-          <Select 
-            value={selectedContinent || "all"} 
-            onValueChange={onContinentChange}
-          >
-            <SelectTrigger className="w-full bg-background">
-              <SelectValue placeholder="All Continents" />
+      
+      <div className="space-y-3 min-w-[200px]">
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Continent</label>
+          <Select value={selectedContinent} onValueChange={onContinentChange}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-background border border-border">
+            <SelectContent>
               <SelectItem value="all">All Continents</SelectItem>
               {availableContinents.map((continent) => (
                 <SelectItem key={continent} value={continent}>
@@ -69,16 +54,13 @@ export const GlobeFilters: React.FC<GlobeFiltersProps> = ({
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Category</label>
-          <Select 
-            value={selectedCategory || "all"} 
-            onValueChange={onCategoryChange}
-          >
-            <SelectTrigger className="w-full bg-background">
-              <SelectValue placeholder="All Categories" />
+        <div>
+          <label className="text-xs text-muted-foreground mb-1 block">Category</label>
+          <Select value={selectedCategory} onValueChange={onCategoryChange}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue />
             </SelectTrigger>
-            <SelectContent className="max-h-80 overflow-y-auto bg-background border border-border">
+            <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
               {allCategories.map((category) => (
                 <SelectItem key={category} value={category}>
@@ -89,24 +71,25 @@ export const GlobeFilters: React.FC<GlobeFiltersProps> = ({
           </Select>
         </div>
 
-        <Button 
-          variant="outline" 
-          onClick={handleClearFilters}
-          className="w-full flex items-center gap-2"
-        >
-          <X size={14} />
-          Clear Filters
-        </Button>
-
-        <div className="pt-2 border-t border-border">
-          <p className="text-sm text-muted-foreground">
-            Showing: 
-            <span className="font-medium ml-2 text-foreground">
-              {filteredCountriesCount} Countries
-            </span>
-          </p>
+        <div className="flex items-center justify-between pt-2 border-t">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Globe size={12} />
+            <span>Showing {filteredCountriesCount} of {totalCountriesCount}</span>
+          </div>
+          
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClearFilters}
+              className="h-6 px-2 text-xs"
+            >
+              <X size={12} className="mr-1" />
+              Clear
+            </Button>
+          )}
         </div>
       </div>
-    </div>
+    </Card>
   );
 };
