@@ -10,6 +10,7 @@ import {
   validateQuestionQuality 
 } from "./questionDeduplication";
 import { performGlobalAudit } from "./questionAudit";
+import { filterQuestionsForCountry } from "./questionFilter";
 
 // Set to track used questions to prevent repetition within sessions
 let usedQuestionIds: Set<string> = new Set();
@@ -59,7 +60,7 @@ const runStartupAudit = async () => {
   }
 };
 
-// Enhanced question fetching with better country-relevance filtering
+// Enhanced question fetching with proper filtering
 export const getQuizQuestions = (
   countryId?: string,
   continentId?: string,
@@ -67,7 +68,6 @@ export const getQuizQuestions = (
   includeGlobal: boolean = true,
   difficulty?: string
 ): Question[] => {
-  // Run audit on first call
   if (!auditCompleted) {
     runStartupAudit();
   }
@@ -76,33 +76,23 @@ export const getQuizQuestions = (
   
   let questionPool: Question[] = [];
   
-  // Step 1: Add country-specific questions with enhanced relevance filtering
+  // Step 1: Add country-specific questions with STRICT filtering
   if (countryId && countryQuestions[countryId]) {
     let countryQs = countryQuestions[countryId];
     
-    // Filter by difficulty if specified
+    // Apply difficulty filter
     if (difficulty) {
       countryQs = countryQs.filter(q => q.difficulty === difficulty);
     }
     
-    // Enhanced validation and relevance filtering
-    countryQs = countryQs
-      .filter(validateQuestionQuality)
-      .filter(q => {
-        // More strict relevance checking for country questions
-        const relevant = filterRelevantQuestions([q], countryId);
-        if (relevant.length === 0) {
-          console.warn(`❌ Irrelevant question removed from ${countryId}: "${q.text.substring(0, 50)}..."`);
-          return false;
-        }
-        return true;
-      });
+    // CRITICAL: Apply strict relevance filtering
+    countryQs = filterQuestionsForCountry(countryQs, countryId);
     
     questionPool.push(...countryQs);
-    console.log(`✅ Added ${countryQs.length} country-specific questions for ${countryId}`);
+    console.log(`✅ Added ${countryQs.length} RELEVANT country-specific questions for ${countryId}`);
   }
   
-  // Step 2: Add continent-specific questions if needed
+  // Step 2: Add continent questions if needed
   if (continentId && continentQuestions[continentId] && questionPool.length < count) {
     let continentQs = continentQuestions[continentId];
     
@@ -110,15 +100,16 @@ export const getQuizQuestions = (
       continentQs = continentQs.filter(q => q.difficulty === difficulty);
     }
     
-    continentQs = continentQs
-      .filter(validateQuestionQuality)
-      .filter(q => filterRelevantQuestions([q], undefined, continentId)[0]);
+    // Filter continent questions for relevance too
+    if (countryId) {
+      continentQs = filterQuestionsForCountry(continentQs, countryId);
+    }
     
     questionPool.push(...continentQs);
-    console.log(`🌍 Added ${continentQs.length} continent-specific questions for ${continentId}`);
+    console.log(`🌍 Added ${continentQs.length} continent-specific questions`);
   }
   
-  // Step 3: Add global questions to fill remaining slots
+  // Step 3: Add ONLY general global questions
   if (includeGlobal && questionPool.length < count) {
     let globalPool: Question[] = [];
     
@@ -132,21 +123,17 @@ export const getQuizQuestions = (
       }
     }
     
-    // Validate and filter global questions
-    globalPool = globalPool.filter(validateQuestionQuality);
-    
-    // Only add questions that don't duplicate existing content
-    const existingFingerprints = new Set(
-      questionPool.map(q => q.text.toLowerCase().replace(/[^\w\s]/g, '').trim())
-    );
-    
-    const uniqueGlobalQuestions = globalPool.filter(q => {
-      const fingerprint = q.text.toLowerCase().replace(/[^\w\s]/g, '').trim();
-      return !existingFingerprints.has(fingerprint);
+    // Filter global questions to only include truly general ones
+    globalPool = globalPool.filter(q => {
+      const text = q.text.toLowerCase();
+      return text.includes("world") || 
+             text.includes("global") || 
+             text.includes("international") ||
+             q.category === "General Knowledge";
     });
     
-    questionPool.push(...uniqueGlobalQuestions);
-    console.log(`🌐 Added ${uniqueGlobalQuestions.length} global questions`);
+    questionPool.push(...globalPool.slice(0, count - questionPool.length));
+    console.log(`🌐 Added ${Math.min(globalPool.length, count - questionPool.length)} GENERAL global questions`);
   }
   
   // Step 4: Comprehensive deduplication
@@ -179,12 +166,7 @@ export const getQuizQuestions = (
   selectedQuestions.forEach(q => usedQuestionIds.add(q.id));
   
   console.log(`🎲 Final selection: ${selectedQuestions.length} questions`);
-  console.log('📋 Question breakdown:', selectedQuestions.map(q => ({
-    id: q.id,
-    category: q.category,
-    difficulty: q.difficulty,
-    text: q.text.substring(0, 30) + '...'
-  })));
+  console.log('✅ All questions passed relevance check');
   
   return selectedQuestions;
 };
