@@ -54,25 +54,33 @@ export const useGlobe = ({
 
   // Update markers when filtered countries change
   useEffect(() => {
-    updateMarkers();
-  }, [filteredCountries, showLabels]);
+    if (globeRef.current) {
+      updateMarkers();
+    }
+  }, [filteredCountries, showLabels, globeRef.current]);
 
-  // Setup POI markers, click handlers, and animation once scene is ready
+  // Setup click handlers and animation once scene is ready
   useEffect(() => {
-    if (!sceneRef.current || !cameraRef.current || !globeRef.current || !rendererRef.current) return;
+    if (!sceneRef.current || !cameraRef.current || !globeRef.current || !rendererRef.current || !containerRef.current) return;
+
+    console.log('Setting up globe interactions...');
 
     // Add POI markers
     addPOIMarkers();
     
-    // Setup click handler with improved hit detection
-    const handleClick = setupClickHandler(cameraRef.current, sceneRef.current);
+    // Setup enhanced click handlers
+    const handlers = setupClickHandler(cameraRef.current, sceneRef.current);
+    if (!handlers) return;
     
-    if (containerRef.current) {
-      // Remove any existing handler first to prevent duplicates
-      containerRef.current.removeEventListener("click", handleClick);
-      // Add the new handler
-      containerRef.current.addEventListener("click", handleClick);
-    }
+    const { handleClick, handleMouseMove } = handlers;
+    
+    // Remove any existing handlers to prevent duplicates
+    containerRef.current.removeEventListener("click", handleClick);
+    containerRef.current.removeEventListener("mousemove", handleMouseMove);
+    
+    // Add the new handlers
+    containerRef.current.addEventListener("click", handleClick, { passive: false });
+    containerRef.current.addEventListener("mousemove", handleMouseMove, { passive: true });
     
     // Start animation
     const cleanup = startRotation(
@@ -86,16 +94,19 @@ export const useGlobe = ({
     // Display toast when globe is fully loaded
     if (globeTextureLoaded.current && cloudsRef.current) {
       toast({
-        title: "Globe Loaded",
-        description: `Explore ${countries.length} countries from around the world. Click on any marker to learn more!`,
+        title: "World Explorer Ready",
+        description: `Explore ${countries.length} countries worldwide. Click on any glowing marker to start a quiz!`,
       });
     }
     
     return () => {
-      containerRef.current?.removeEventListener("click", handleClick);
+      if (containerRef.current) {
+        containerRef.current.removeEventListener("click", handleClick);
+        containerRef.current.removeEventListener("mousemove", handleMouseMove);
+      }
       cleanup();
     };
-  }, [rotating, sceneRef.current, cameraRef.current, globeRef.current, rendererRef.current]);
+  }, [rotating, sceneRef.current, cameraRef.current, globeRef.current, rendererRef.current, containerRef.current]);
 
   return {
     containerRef,

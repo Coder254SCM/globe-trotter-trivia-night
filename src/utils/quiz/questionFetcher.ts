@@ -2,35 +2,25 @@
 import { Question } from "../../types/quiz";
 import globalQuestions from "../../data/questions/globalQuestions";
 import easyGlobalQuestions from "../../data/questions/easyGlobalQuestions";
-import africaQuestions from "../../data/questions/continents/africaQuestions";
 import { countryQuestions } from "./questionSets";
 import { continentQuestions } from "./questionSets";
 import { shuffleArray } from "./questionUtilities";
+import { 
+  deduplicateQuestions, 
+  filterRelevantQuestions, 
+  validateQuestionQuality 
+} from "./questionDeduplication";
 
-// Set to track used questions to prevent repetition
+// Set to track used questions to prevent repetition within sessions
 let usedQuestionIds: Set<string> = new Set();
 
-// Reset used questions every few hours to allow rotation
+// Reset used questions every hour to allow rotation
 setInterval(() => {
   usedQuestionIds.clear();
-}, 3600000); // Clear every hour
+  console.log('Cleared used questions cache for fresh rotation');
+}, 3600000);
 
-// Function to deduplicate questions based on text content
-const deduplicateQuestions = (questions: Question[]): Question[] => {
-  const uniqueQuestions: Question[] = [];
-  const seenTexts = new Set<string>();
-  
-  questions.forEach(question => {
-    if (!seenTexts.has(question.text)) {
-      seenTexts.add(question.text);
-      uniqueQuestions.push(question);
-    }
-  });
-  
-  return uniqueQuestions;
-};
-
-// Get questions for a specific quiz
+// Get questions for a specific quiz with enhanced filtering
 export const getQuizQuestions = (
   countryId?: string,
   continentId?: string,
@@ -38,64 +28,107 @@ export const getQuizQuestions = (
   includeGlobal: boolean = true,
   difficulty?: string
 ): Question[] => {
+  console.log(`Fetching ${count} questions for country: ${countryId}, continent: ${continentId}, difficulty: ${difficulty}`);
+  
   let questionPool: Question[] = [];
   
-  // Add country-specific questions if a country is selected
+  // Step 1: Add country-specific questions
   if (countryId && countryQuestions[countryId]) {
+    let countryQs = countryQuestions[countryId];
+    
     // Filter by difficulty if specified
     if (difficulty) {
-      questionPool.push(...countryQuestions[countryId].filter(q => q.difficulty === difficulty));
-    } else {
-      questionPool.push(...countryQuestions[countryId]);
+      countryQs = countryQs.filter(q => q.difficulty === difficulty);
     }
+    
+    // Validate quality and filter for relevance
+    countryQs = countryQs
+      .filter(validateQuestionQuality)
+      .filter(q => filterRelevantQuestions([q], countryId)[0]);
+    
+    questionPool.push(...countryQs);
+    console.log(`Added ${countryQs.length} country-specific questions for ${countryId}`);
   }
   
-  // Add continent-specific questions if a continent is selected
-  if (continentId && continentQuestions[continentId]) {
+  // Step 2: Add continent-specific questions if needed
+  if (continentId && continentQuestions[continentId] && questionPool.length < count) {
+    let continentQs = continentQuestions[continentId];
+    
     if (difficulty) {
-      questionPool.push(...continentQuestions[continentId].filter(q => q.difficulty === difficulty));
-    } else {
-      questionPool.push(...continentQuestions[continentId]);
+      continentQs = continentQs.filter(q => q.difficulty === difficulty);
     }
+    
+    continentQs = continentQs
+      .filter(validateQuestionQuality)
+      .filter(q => filterRelevantQuestions([q], undefined, continentId)[0]);
+    
+    questionPool.push(...continentQs);
+    console.log(`Added ${continentQs.length} continent-specific questions for ${continentId}`);
   }
   
-  // Only add global questions if we need more AND they're requested
+  // Step 3: Add global questions to fill remaining slots
   if (includeGlobal && questionPool.length < count) {
     let globalPool: Question[] = [];
-    // Add questions from the appropriate global question set
+    
     if (difficulty === "easy") {
       globalPool = [...easyGlobalQuestions];
     } else {
       globalPool = [...globalQuestions];
+      
+      // If difficulty specified, filter global questions too
+      if (difficulty) {
+        globalPool = globalPool.filter(q => q.difficulty === difficulty);
+      }
     }
     
-    // Filter out questions that would duplicate country/continent specific ones
-    const existingTexts = new Set(questionPool.map(q => q.text));
-    const filteredGlobalPool = globalPool.filter(q => !existingTexts.has(q.text));
+    // Validate and filter global questions
+    globalPool = globalPool.filter(validateQuestionQuality);
     
-    questionPool.push(...filteredGlobalPool);
+    // Only add questions that don't duplicate existing content
+    const existingFingerprints = new Set(
+      questionPool.map(q => q.text.toLowerCase().replace(/[^\w\s]/g, '').trim())
+    );
+    
+    const uniqueGlobalQuestions = globalPool.filter(q => {
+      const fingerprint = q.text.toLowerCase().replace(/[^\w\s]/g, '').trim();
+      return !existingFingerprints.has(fingerprint);
+    });
+    
+    questionPool.push(...uniqueGlobalQuestions);
+    console.log(`Added ${uniqueGlobalQuestions.length} global questions`);
   }
   
-  // Remove duplicates
+  // Step 4: Comprehensive deduplication
   questionPool = deduplicateQuestions(questionPool);
   
-  // Filter out questions that have been used recently
-  questionPool = questionPool.filter(q => !usedQuestionIds.has(q.id));
+  // Step 5: Filter out recently used questions
+  const unusedQuestions = questionPool.filter(q => !usedQuestionIds.has(q.id));
   
-  // If we don't have enough questions, include some used ones
-  if (questionPool.length < count) {
-    const additionalQuestions = globalQuestions
-      .filter(q => !questionPool.some(pq => pq.text === q.text))
-      .slice(0, count - questionPool.length);
+  // Step 6: If we don't have enough unused questions, add some used ones
+  if (unusedQuestions.length < count) {
+    const additionalNeeded = count - unusedQuestions.length;
+    const usedButAvailable = questionPool
+      .filter(q => usedQuestionIds.has(q.id))
+      .slice(0, additionalNeeded);
     
-    questionPool.push(...additionalQuestions);
+    questionPool = [...unusedQuestions, ...usedButAvailable];
+  } else {
+    questionPool = unusedQuestions;
   }
   
-  // Shuffle and pick the requested number of questions
+  // Step 7: Final shuffle and selection
   const selectedQuestions = shuffleArray(questionPool).slice(0, count);
   
-  // Mark these questions as used
+  // Step 8: Mark questions as used
   selectedQuestions.forEach(q => usedQuestionIds.add(q.id));
+  
+  console.log(`Final selection: ${selectedQuestions.length} questions`);
+  console.log('Question breakdown:', selectedQuestions.map(q => ({
+    id: q.id,
+    category: q.category,
+    difficulty: q.difficulty,
+    text: q.text.substring(0, 50) + '...'
+  })));
   
   return selectedQuestions;
 };
@@ -105,12 +138,10 @@ export const hasQuestionsForCountry = (countryId: string): boolean => {
   return !!countryQuestions[countryId] && countryQuestions[countryId].length > 0;
 };
 
-// Get the number of questions available for a country
 export const getQuestionCountForCountry = (countryId: string): number => {
   return countryQuestions[countryId]?.length || 0;
 };
 
-// Get questions updated after a certain date
 export const getRecentlyUpdatedQuestions = (since: Date, count: number = 10): Question[] => {
   const allQuestions = [
     ...globalQuestions,
@@ -119,7 +150,6 @@ export const getRecentlyUpdatedQuestions = (since: Date, count: number = 10): Qu
     ...Object.values(continentQuestions).flat()
   ];
   
-  // Deduplicate questions to ensure unique content
   const uniqueQuestions = deduplicateQuestions(allQuestions);
   
   const recentQuestions = uniqueQuestions
@@ -132,7 +162,6 @@ export const getRecentlyUpdatedQuestions = (since: Date, count: number = 10): Qu
   return recentQuestions.slice(0, count);
 };
 
-// Get questions by difficulty level
 export const getQuestionsByDifficulty = (difficulty: string, count: number = 10): Question[] => {
   const allQuestions = [
     ...globalQuestions,
@@ -141,9 +170,8 @@ export const getQuestionsByDifficulty = (difficulty: string, count: number = 10)
     ...Object.values(continentQuestions).flat()
   ];
   
-  // Deduplicate questions to ensure unique content
   const uniqueQuestions = deduplicateQuestions(allQuestions);
-  
   const filteredQuestions = uniqueQuestions.filter(q => q.difficulty === difficulty);
+  
   return shuffleArray(filteredQuestions).slice(0, count);
 };
