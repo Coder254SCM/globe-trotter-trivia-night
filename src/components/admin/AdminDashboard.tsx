@@ -1,6 +1,6 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { QuestionAuditDashboard } from "./QuestionAuditDashboard";
+import { RealAuditDashboard } from "./RealAuditDashboard";
 import { ProjectStructure } from "./ProjectStructure";
 import { PlayerDashboard } from "./PlayerDashboard";
 
@@ -8,18 +8,18 @@ export const AdminDashboard = () => {
   return (
     <div className="min-h-screen p-6 bg-background">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Global Night Out - Admin Dashboard</h1>
+        <h1 className="text-3xl font-bold mb-6">Global Quiz Game - REAL Admin Dashboard</h1>
         
-        <Tabs defaultValue="audit" className="space-y-6">
+        <Tabs defaultValue="real-audit" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="audit">Question Audit</TabsTrigger>
-            <TabsTrigger value="structure">Project Structure</TabsTrigger>
+            <TabsTrigger value="real-audit">REAL Audit</TabsTrigger>
+            <TabsTrigger value="structure">Project Status</TabsTrigger>
             <TabsTrigger value="player">Player Dashboard</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="globe">Enhanced Globe</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="audit">
-            <QuestionAuditDashboard />
+          <TabsContent value="real-audit">
+            <RealAuditDashboard />
           </TabsContent>
 
           <TabsContent value="structure">
@@ -30,12 +30,16 @@ export const AdminDashboard = () => {
             <PlayerDashboard />
           </TabsContent>
 
-          <TabsContent value="analytics">
+          <TabsContent value="globe">
             <div className="text-center p-12">
-              <h3 className="text-lg font-semibold mb-2">Analytics Dashboard</h3>
-              <p className="text-muted-foreground">
-                Coming soon - requires database integration to track real user data
+              <h3 className="text-lg font-semibold mb-4">Enhanced 3D Globe Preview</h3>
+              <p className="text-muted-foreground mb-4">
+                The new Enhanced3DGlobe component with better Three.js rendering is now available.
+                It uses @react-three/fiber and @react-three/drei for improved performance and visuals.
               </p>
+              <div className="text-sm text-muted-foreground">
+                To replace the current globe, update the Globe.tsx component to use Enhanced3DGlobe instead.
+              </div>
             </div>
           </TabsContent>
         </Tabs>
