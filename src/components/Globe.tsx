@@ -10,6 +10,7 @@ import { GlobeSearch } from "./globe/GlobeSearch";
 import { useGlobe } from "../hooks/useGlobe";
 import { useCountryFilter } from "../hooks/useCountryFilter";
 import countries from "../data/countries";
+import { getQuestionStats } from "../utils/quiz/questionSets";
 import { toast } from "@/components/ui/use-toast";
 
 interface GlobeProps {
@@ -98,15 +99,20 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
     }
   };
 
-  // Show correct total number of countries on component mount
+  // Show comprehensive stats on component mount
   useEffect(() => {
-    const totalCountries = countries.length;
-    const availableQuizCountries = filteredCountries.length;
+    const stats = getQuestionStats();
     
     toast({
-      title: "World Explorer Ready",
-      description: `Explore all ${totalCountries} countries worldwide! ${availableQuizCountries} countries have quiz content available.`,
+      title: "🌍 Global Quiz Explorer Ready!",
+      description: `All ${stats.totalCountries} countries loaded with ${stats.totalQuestions} questions. Every country is now playable!`,
     });
+    
+    console.log("🌍 Globe Statistics:");
+    console.log(`- Total Countries: ${stats.totalCountries}`);
+    console.log(`- Countries with Questions: ${stats.countriesWithQuestions}`);
+    console.log(`- Total Questions: ${stats.totalQuestions}`);
+    console.log(`- Average Questions per Country: ${stats.averageQuestionsPerCountry.toFixed(1)}`);
   }, []);
 
   return (

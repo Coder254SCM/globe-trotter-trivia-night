@@ -2,10 +2,11 @@
 import { Question } from "../../types/quiz";
 import countries from "../../data/countries";
 import { generateGenericCountryQuestions } from "../countryDataUtilities";
+import { generateAllCountryQuestions } from "./countryGenerator";
 import globalQuestions from "../../data/questions/globalQuestions";
 import africaQuestions from "../../data/questions/continents/africaQuestions";
 
-// Import all country-specific question sets
+// Import all existing country-specific question sets
 import kenyaQuestions from "../../data/questions/countries/kenyaQuestions";
 import usaQuestions from "../../data/questions/countries/usaQuestions";
 import japanQuestions from "../../data/questions/countries/japanQuestions";
@@ -22,31 +23,11 @@ import germanyQuestions from "../../data/questions/countries/germanyQuestions";
 import colombiaQuestions from "../../data/questions/countries/colombiaQuestions";
 import newZealandQuestions from "../../data/questions/countries/newZealandQuestions";
 
-// Create specialized question sets for countries that don't have specific questions yet
-const generateCountrySpecificQuestions = (countryId: string): Question[] => {
-  const country = countries.find(c => c.id === countryId);
-  if (!country) return [];
-  
-  // Generate country-specific questions using the utility function
-  const countrySpecificQuestions = generateGenericCountryQuestions(country);
-  
-  // Find global questions related to the country's categories
-  const categoryQuestions = globalQuestions
-    .filter(q => country.categories.includes(q.category))
-    .slice(0, Math.min(5, country.categories.length));
-  
-  // Make sure we don't have duplicate questions
-  const existingTexts = new Set(countrySpecificQuestions.map(q => q.text));
-  const uniqueCategoryQuestions = categoryQuestions.filter(q => !existingTexts.has(q.text));
-  
-  // Mix both types of questions
-  return [...countrySpecificQuestions, ...uniqueCategoryQuestions];
-};
-
-// Create a comprehensive mapping of all country questions
-// This ensures every country in the world has at least some basic questions
+// Create comprehensive country questions for ALL 195 countries
 const buildAllCountryQuestions = (): Record<string, Question[]> => {
-  // Start with existing predefined question sets
+  console.log("🏗️ Building comprehensive question database for all 195 countries...");
+  
+  // Start with existing predefined question sets (high-quality, hand-crafted)
   const questionSets: Record<string, Question[]> = {
     "kenya": kenyaQuestions,
     "usa": usaQuestions,
@@ -65,69 +46,67 @@ const buildAllCountryQuestions = (): Record<string, Question[]> => {
     "new-zealand": newZealandQuestions,
   };
   
-  // Add specifically filtered global questions for some important countries
-  const globalQuestionSets: Record<string, Question[]> = {
-    "canada": globalQuestions.filter(q => 
-      q.category === "Geography" || q.category === "History" || q.category === "Wildlife"
-    ).slice(0, 10),
-    "russia": globalQuestions.filter(q => 
-      q.category === "History" || q.category === "Geography" || q.category === "Politics"
-    ).slice(0, 10),
-    "argentina": globalQuestions.filter(q => 
-      q.category === "Geography" || q.category === "Culture" || q.category === "Sports"
-    ).slice(0, 10),
-    "spain": globalQuestions.filter(q => 
-      q.category === "History" || q.category === "Culture" || q.category === "Art"
-    ).slice(0, 10),
-    "thailand": globalQuestions.filter(q => 
-      q.category === "Geography" || q.category === "Culture" || q.category === "Religion"
-    ).slice(0, 10),
-    "nigeria": globalQuestions.filter(q => 
-      q.category === "Geography" || q.category === "History" || q.category === "Culture"
-    ).slice(0, 10),
-    "united-kingdom": globalQuestions.filter(q => 
-      q.category === "History" || q.category === "Culture" || q.category === "Literature"
-    ).slice(0, 10),
-    "morocco": globalQuestions.filter(q => 
-      q.category === "Geography" || q.category === "Culture" || q.category === "History"
-    ).slice(0, 10),
-    "ghana": globalQuestions.filter(q => 
-      q.category === "Geography" || q.category === "History" || q.category === "Culture"
-    ).slice(0, 10),
-    "sweden": globalQuestions.filter(q => 
-      q.category === "Geography" || q.category === "Culture" || q.category === "History"
-    ).slice(0, 10),
-    "greece": globalQuestions.filter(q => 
-      q.category === "History" || q.category === "Art" || q.category === "Philosophy"
-    ).slice(0, 10),
-  };
-  
-  // Merge the predefined sets with filtered sets
-  Object.entries(globalQuestionSets).forEach(([countryId, questions]) => {
-    questionSets[countryId] = questions;
-  });
-  
   // Generate questions for ALL countries that don't have specific question sets
-  const countryCount = countries.length;
+  const allCountries = countries;
   let generatedCount = 0;
+  let existingCount = Object.keys(questionSets).length;
   
-  countries.forEach(country => {
+  allCountries.forEach(country => {
     if (!questionSets[country.id]) {
-      questionSets[country.id] = generateCountrySpecificQuestions(country.id);
+      // Generate comprehensive questions for this country
+      const countrySpecificQuestions = generateGenericCountryQuestions(country);
+      
+      // Add some filtered global questions relevant to this country's categories
+      const relevantGlobalQuestions = globalQuestions
+        .filter(q => country.categories.includes(q.category))
+        .slice(0, 5); // Limit to 5 additional questions
+      
+      // Combine country-specific and relevant global questions
+      questionSets[country.id] = [
+        ...countrySpecificQuestions,
+        ...relevantGlobalQuestions
+      ];
+      
       generatedCount++;
     }
   });
   
-  console.log(`Generated questions for ${generatedCount} countries. Total countries: ${countryCount}`);
+  console.log(`✅ Question database complete:`);
+  console.log(`   - Hand-crafted countries: ${existingCount}`);
+  console.log(`   - Generated countries: ${generatedCount}`);
+  console.log(`   - Total countries covered: ${allCountries.length}`);
+  console.log(`   - Total question sets: ${Object.keys(questionSets).length}`);
+  
+  // Verify we have all 195 countries
+  const missingCountries = allCountries.filter(country => !questionSets[country.id]);
+  if (missingCountries.length > 0) {
+    console.error(`🚨 Missing question sets for: ${missingCountries.map(c => c.name).join(", ")}`);
+  } else {
+    console.log("🎉 ALL 195 COUNTRIES HAVE QUESTION SETS!");
+  }
   
   return questionSets;
 };
 
-// Build the complete country question set
+// Build the complete country question set for all 195 countries
 export const countryQuestions = buildAllCountryQuestions();
 
 // Define continent questions
 export const continentQuestions: Record<string, Question[]> = {
   "africa": africaQuestions,
   // Add more continent questions as they're created
+};
+
+// Export statistics for monitoring
+export const getQuestionStats = () => {
+  const stats = {
+    totalCountries: countries.length,
+    countriesWithQuestions: Object.keys(countryQuestions).length,
+    totalQuestions: Object.values(countryQuestions).reduce((sum, questions) => sum + questions.length, 0),
+    averageQuestionsPerCountry: Object.values(countryQuestions).reduce((sum, questions) => sum + questions.length, 0) / Object.keys(countryQuestions).length,
+    continents: Object.keys(continentQuestions).length,
+  };
+  
+  console.log("📊 Question Database Statistics:", stats);
+  return stats;
 };

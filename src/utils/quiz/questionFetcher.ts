@@ -1,3 +1,4 @@
+
 import { Question } from "../../types/quiz";
 import globalQuestions from "../../data/questions/globalQuestions";
 import easyGlobalQuestions from "../../data/questions/easyGlobalQuestions";
@@ -109,7 +110,7 @@ export const getQuizQuestions = (
     console.log(`🌍 Added ${continentQs.length} continent-specific questions`);
   }
   
-  // Step 3: Add ONLY general global questions
+  // Step 3: Add ONLY general global questions (FIXED: Use valid category)
   if (includeGlobal && questionPool.length < count) {
     let globalPool: Question[] = [];
     
@@ -129,7 +130,8 @@ export const getQuizQuestions = (
       return text.includes("world") || 
              text.includes("global") || 
              text.includes("international") ||
-             q.category === "General Knowledge";
+             q.category === "History" || // Use valid categories from our type
+             q.category === "Geography";
     });
     
     questionPool.push(...globalPool.slice(0, count - questionPool.length));
