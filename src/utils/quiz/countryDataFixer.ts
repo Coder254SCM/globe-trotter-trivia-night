@@ -17,8 +17,8 @@ export const getActualCountryStats = () => {
     const continent = country.continent || 'Unknown';
     stats.continentBreakdown[continent] = (stats.continentBreakdown[continent] || 0) + 1;
     
-    // Check for missing essential data
-    if (!country.name || !country.latitude || !country.longitude) {
+    // Check for missing essential data - removed latitude/longitude check
+    if (!country.name) {
       stats.missingData.push(country.id);
     }
   });
