@@ -5,23 +5,35 @@ import { ProjectStructure } from "./ProjectStructure";
 import { PlayerDashboard } from "./PlayerDashboard";
 import { DynamicQuestionDashboard } from "./DynamicQuestionDashboard";
 import { ProductionDashboard } from "./ProductionDashboard";
-import { Enhanced3DGlobe } from "../globe/Enhanced3DGlobe";
+import { ProductionDataInitializer } from "./ProductionDataInitializer";
+import { Modern3DGlobe } from "../globe/Modern3DGlobe";
 
 export const AdminDashboard = () => {
   return (
     <div className="min-h-screen p-6 bg-background">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Global Quiz Game - Admin Dashboard</h1>
+        <h1 className="text-3xl font-bold mb-6">🌍 Global Quiz Game - Production Admin</h1>
         
-        <Tabs defaultValue="production" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="production">Production System</TabsTrigger>
+        <Tabs defaultValue="initializer" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="initializer">Production Init</TabsTrigger>
+            <TabsTrigger value="modern-globe">3D Globe</TabsTrigger>
+            <TabsTrigger value="production">System Status</TabsTrigger>
             <TabsTrigger value="dynamic">Dynamic Storage</TabsTrigger>
             <TabsTrigger value="real-audit">Legacy Audit</TabsTrigger>
             <TabsTrigger value="structure">Project Status</TabsTrigger>
             <TabsTrigger value="player">Player Dashboard</TabsTrigger>
-            <TabsTrigger value="globe">Enhanced Globe</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="initializer">
+            <ProductionDataInitializer />
+          </TabsContent>
+
+          <TabsContent value="modern-globe">
+            <div className="h-screen">
+              <Modern3DGlobe />
+            </div>
+          </TabsContent>
 
           <TabsContent value="production">
             <ProductionDashboard />
@@ -41,12 +53,6 @@ export const AdminDashboard = () => {
 
           <TabsContent value="player">
             <PlayerDashboard />
-          </TabsContent>
-
-          <TabsContent value="globe">
-            <div className="h-screen">
-              <Enhanced3DGlobe />
-            </div>
           </TabsContent>
         </Tabs>
       </div>
