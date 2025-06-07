@@ -369,10 +369,41 @@ export class QuizService {
     return data;
   }
 
-  // AI Question Generation using OpenAI (will be implemented when API key is added)
+  // AI Question Generation using Ollama (completely free local LLM)
   static async generateAIQuestions(countryId: string, difficulty: string, count: number = 50): Promise<void> {
-    console.log(`🤖 AI Question Generation will be implemented with OpenAI API`);
-    // This will use OpenAI to generate high-quality questions
-    // Implementation pending API key configuration
+    const { AIService } = await import('../aiService');
+    
+    try {
+      const country = await this.getCountryById(countryId);
+      if (!country) {
+        throw new Error(`Country with ID ${countryId} not found`);
+      }
+
+      console.log(`🤖 Generating ${count} ${difficulty} questions for ${country.name} using local AI...`);
+      
+      await AIService.generateQuestions(country, difficulty as any, count);
+      
+      console.log(`✅ Successfully generated and saved ${count} ${difficulty} questions for ${country.name}`);
+    } catch (error) {
+      console.error('AI question generation failed:', error);
+      throw error;
+    }
+  }
+
+  // Batch generate questions for all countries
+  static async generateQuestionsForAllCountries(questionsPerDifficulty: number = 20): Promise<void> {
+    const { AIService } = await import('../aiService');
+    
+    try {
+      const countries = await this.getAllCountries();
+      console.log(`🚀 Starting AI question generation for all ${countries.length} countries...`);
+      
+      await AIService.batchGenerateQuestions(countries, questionsPerDifficulty);
+      
+      console.log(`🎉 Completed AI question generation for all countries!`);
+    } catch (error) {
+      console.error('Batch AI question generation failed:', error);
+      throw error;
+    }
   }
 }
