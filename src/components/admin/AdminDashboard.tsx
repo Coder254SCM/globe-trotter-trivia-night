@@ -4,6 +4,7 @@ import { RealAuditDashboard } from "./RealAuditDashboard";
 import { ProjectStructure } from "./ProjectStructure";
 import { PlayerDashboard } from "./PlayerDashboard";
 import { DynamicQuestionDashboard } from "./DynamicQuestionDashboard";
+import { ProductionDashboard } from "./ProductionDashboard";
 import { Enhanced3DGlobe } from "../globe/Enhanced3DGlobe";
 
 export const AdminDashboard = () => {
@@ -12,14 +13,19 @@ export const AdminDashboard = () => {
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">Global Quiz Game - Admin Dashboard</h1>
         
-        <Tabs defaultValue="dynamic" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+        <Tabs defaultValue="production" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="production">Production System</TabsTrigger>
             <TabsTrigger value="dynamic">Dynamic Storage</TabsTrigger>
             <TabsTrigger value="real-audit">Legacy Audit</TabsTrigger>
             <TabsTrigger value="structure">Project Status</TabsTrigger>
             <TabsTrigger value="player">Player Dashboard</TabsTrigger>
             <TabsTrigger value="globe">Enhanced Globe</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="production">
+            <ProductionDashboard />
+          </TabsContent>
 
           <TabsContent value="dynamic">
             <DynamicQuestionDashboard />
