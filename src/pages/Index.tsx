@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from "react";
-import { Globe } from "@/components/Globe";
-import { Quiz } from "@/components/Quiz";
-import { QuizResult } from "@/components/QuizResult";
+import Globe from "@/components/Globe";
+import Quiz from "@/components/Quiz";
+import QuizResult from "@/components/QuizResult";
 import { GlobeFilters } from "@/components/globe/GlobeFilters";
 import { GlobeSearch } from "@/components/globe/GlobeSearch";
 import { GlobeHeader } from "@/components/globe/GlobeHeader";
@@ -18,7 +18,7 @@ export default function Index() {
   const [quizResult, setQuizResult] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedContinent, setSelectedContinent] = useState<string>("");
-  const [showQuestionlessOnly, setShowQuestionlessOnly] = useState(false);
+  const [showLabels, setShowLabels] = useState(true);
   const [countries, setCountries] = useState<Country[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -75,14 +75,13 @@ export default function Index() {
     setShowQuiz(true);
   };
 
+  const handleToggleLabels = () => {
+    setShowLabels(!showLabels);
+  };
+
   const filteredCountries = countries.filter(country => {
     const matchesSearch = country.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesContinent = !selectedContinent || country.continent === selectedContinent;
-    
-    if (showQuestionlessOnly) {
-      // For now, assume all countries have questions since we're using Supabase
-      return matchesSearch && matchesContinent;
-    }
     
     return matchesSearch && matchesContinent;
   });
@@ -109,8 +108,8 @@ export default function Index() {
     return (
       <QuizResult
         result={quizResult}
-        country={selectedCountry}
-        onRetry={handleRetryQuiz}
+        countryName={selectedCountry?.name || "Unknown"}
+        onRestart={handleRetryQuiz}
         onBackToGlobe={handleBackToGlobe}
       />
     );
@@ -129,19 +128,23 @@ export default function Index() {
         <ThemeToggle />
       </div>
       
-      <GlobeHeader />
+      <GlobeHeader 
+        onToggleLabels={handleToggleLabels}
+        showLabels={showLabels}
+      />
       
       <div className="container mx-auto px-4 relative z-10">
         <div className="flex flex-col lg:flex-row gap-6 mb-6">
           <div className="flex-1">
-            <GlobeSearch searchTerm={searchTerm} onSearchChange={setSearchTerm} />
+            <GlobeSearch 
+              value={searchTerm} 
+              onChange={setSearchTerm} 
+            />
           </div>
           <div className="lg:w-80">
             <GlobeFilters
               selectedContinent={selectedContinent}
               onContinentChange={setSelectedContinent}
-              showQuestionlessOnly={showQuestionlessOnly}
-              onQuestionlessOnlyChange={setShowQuestionlessOnly}
             />
           </div>
         </div>

@@ -1,6 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { allCountries } from "@/data/countries";
+import allCountries from "@/data/countries";
+import { Question as FrontendQuestion } from "@/types/quiz";
 
 export interface Country {
   id: string;
@@ -101,7 +101,7 @@ export class QuizService {
     countryId: string, 
     difficulty?: string, 
     limit: number = 10
-  ): Promise<Question[]> {
+  ): Promise<FrontendQuestion[]> {
     try {
       let query = supabase
         .from('questions')
@@ -121,7 +121,8 @@ export class QuizService {
         throw error;
       }
 
-      return data || [];
+      // Transform Supabase questions to frontend format
+      return (data || []).map(q => this.transformToFrontendQuestion(q));
     } catch (error) {
       console.error('Failed to fetch questions:', error);
       throw error;
@@ -129,9 +130,30 @@ export class QuizService {
   }
 
   /**
+   * Transform Supabase question to frontend format
+   */
+  private static transformToFrontendQuestion(supabaseQuestion: any): FrontendQuestion {
+    return {
+      id: supabaseQuestion.id,
+      type: 'multiple-choice',
+      text: supabaseQuestion.text,
+      imageUrl: supabaseQuestion.image_url,
+      choices: [
+        { id: 'a', text: supabaseQuestion.option_a, isCorrect: supabaseQuestion.correct_answer === supabaseQuestion.option_a },
+        { id: 'b', text: supabaseQuestion.option_b, isCorrect: supabaseQuestion.correct_answer === supabaseQuestion.option_b },
+        { id: 'c', text: supabaseQuestion.option_c, isCorrect: supabaseQuestion.correct_answer === supabaseQuestion.option_c },
+        { id: 'd', text: supabaseQuestion.option_d, isCorrect: supabaseQuestion.correct_answer === supabaseQuestion.option_d }
+      ],
+      category: supabaseQuestion.category,
+      explanation: supabaseQuestion.explanation || '',
+      difficulty: supabaseQuestion.difficulty as 'easy' | 'medium' | 'hard'
+    };
+  }
+
+  /**
    * Save questions to Supabase
    */
-  static async saveQuestions(questions: Partial<Question>[]): Promise<void> {
+  static async saveQuestions(questions: any[]): Promise<void> {
     try {
       const { error } = await supabase
         .from('questions')
@@ -167,14 +189,12 @@ export class QuizService {
       // Get countries with questions
       const { data: countriesWithQuestions } = await supabase
         .from('questions')
-        .select('country_id')
-        .distinct();
+        .select('country_id');
 
       // Get continents
       const { data: continentsData } = await supabase
         .from('countries')
-        .select('continent')
-        .distinct();
+        .select('continent');
 
       const continents = continentsData?.reduce((acc, item) => {
         acc[item.continent] = true;
@@ -194,6 +214,59 @@ export class QuizService {
     } catch (error) {
       console.error('Failed to get database stats:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Get leaderboard data
+   */
+  static async getLeaderboard(period: string = 'all-time'): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('leaderboards')
+        .select(`
+          *,
+          user_profiles (username)
+        `)
+        .eq('period', period)
+        .order('rank')
+        .limit(10);
+
+      if (error) {
+        console.error('Error fetching leaderboard:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Failed to fetch leaderboard:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get failed questions for Ultimate Quiz
+   */
+  static async getFailedQuestions(userId: string): Promise<FrontendQuestion[]> {
+    try {
+      const { data, error } = await supabase
+        .from('failed_questions')
+        .select(`
+          questions (*)
+        `)
+        .eq('user_id', userId)
+        .eq('mastered', false);
+
+      if (error) {
+        console.error('Error fetching failed questions:', error);
+        throw error;
+      }
+
+      // Transform to frontend format
+      return (data || []).map((item: any) => this.transformToFrontendQuestion(item.questions));
+    } catch (error) {
+      console.error('Failed to fetch failed questions:', error);
+      return [];
     }
   }
 
@@ -226,12 +299,12 @@ export class QuizService {
     const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
     
     for (const difficulty of difficulties) {
-      const questions: Partial<Question>[] = [];
+      const questions: any[] = [];
       
       for (let i = 0; i < questionsPerDifficulty; i++) {
         const monthRotation = (i % 12) + 1;
         
-        const question: Partial<Question> = {
+        const question = {
           id: `${country.id}-${difficulty}-${monthRotation}-${i}`,
           country_id: country.id,
           text: this.getQuestionTemplate(country, difficulty, i),

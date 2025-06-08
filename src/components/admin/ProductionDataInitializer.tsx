@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { QuizService } from "@/services/supabase/quizService";
-import { allCountries } from "@/data/countries";
+import allCountries from "@/data/countries";
 
 export function ProductionDataInitializer() {
   const [isInitializing, setIsInitializing] = useState(false);

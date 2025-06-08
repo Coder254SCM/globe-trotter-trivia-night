@@ -99,8 +99,7 @@ export const Modern3DGlobe = ({ onCountryClick }: Modern3DGlobeProps) => {
     // Add 195 country markers (simplified for demo)
     const markerGeometry = new THREE.SphereGeometry(0.02, 8, 8);
     const markerMaterial = new THREE.MeshBasicMaterial({ 
-      color: 0x00ff88,
-      emissive: 0x004422
+      color: 0x00ff88
     });
 
     // Sample country positions (would be all 195 in production)
@@ -253,7 +252,7 @@ export const Modern3DGlobe = ({ onCountryClick }: Modern3DGlobeProps) => {
           
           <div className="flex gap-2 mt-3">
             <Button
-              onClick={handleToggleRotation}
+              onClick={() => setIsRotating(!isRotating)}
               size="sm"
               variant="outline"
               className="bg-black/50 border-white/30 text-white hover:bg-white/20"
@@ -263,7 +262,13 @@ export const Modern3DGlobe = ({ onCountryClick }: Modern3DGlobeProps) => {
             </Button>
             
             <Button
-              onClick={handleResetRotation}
+              onClick={() => {
+                if (globeRef.current) {
+                  globeRef.current.rotation.x = 0;
+                  globeRef.current.rotation.y = Math.PI;
+                  setIsRotating(true);
+                }
+              }}
               size="sm"
               variant="outline"
               className="bg-black/50 border-white/30 text-white hover:bg-white/20"
