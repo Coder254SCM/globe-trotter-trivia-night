@@ -10,14 +10,15 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { QuizService } from "@/services/supabase/quizService";
-import { Country } from "@/services/supabase/quizService";
+import { Country } from "@/types/quiz";
 
 export default function Index() {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizResult, setQuizResult] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedContinent, setSelectedContinent] = useState<string>("");
+  const [selectedContinent, setSelectedContinent] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [showLabels, setShowLabels] = useState(true);
   const [countries, setCountries] = useState<Country[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,11 +80,22 @@ export default function Index() {
     setShowLabels(!showLabels);
   };
 
+  const handleClearFilters = () => {
+    setSelectedContinent("all");
+    setSelectedCategory("all");
+    setSearchTerm("");
+  };
+
+  // Get unique continents and categories from countries
+  const availableContinents = Array.from(new Set(countries.map(c => c.continent))).sort();
+  const allCategories = Array.from(new Set(countries.flatMap(c => c.categories || []))).sort();
+
   const filteredCountries = countries.filter(country => {
     const matchesSearch = country.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesContinent = !selectedContinent || country.continent === selectedContinent;
+    const matchesContinent = selectedContinent === "all" || country.continent === selectedContinent;
+    const matchesCategory = selectedCategory === "all" || (country.categories && country.categories.includes(selectedCategory));
     
-    return matchesSearch && matchesContinent;
+    return matchesSearch && matchesContinent && matchesCategory;
   });
 
   if (loading) {
@@ -137,14 +149,21 @@ export default function Index() {
         <div className="flex flex-col lg:flex-row gap-6 mb-6">
           <div className="flex-1">
             <GlobeSearch 
-              value={searchTerm} 
-              onChange={setSearchTerm} 
+              onCountrySelect={handleCountryClick}
+              onCountryFocus={() => {}}
             />
           </div>
           <div className="lg:w-80">
             <GlobeFilters
+              availableContinents={availableContinents}
+              allCategories={allCategories}
               selectedContinent={selectedContinent}
+              selectedCategory={selectedCategory}
+              filteredCountriesCount={filteredCountries.length}
+              totalCountriesCount={countries.length}
               onContinentChange={setSelectedContinent}
+              onCategoryChange={setSelectedCategory}
+              onClearFilters={handleClearFilters}
             />
           </div>
         </div>
@@ -156,10 +175,8 @@ export default function Index() {
         </div>
 
         <Globe
-          countries={filteredCountries}
-          onCountryClick={handleCountryClick}
-          selectedCountry={selectedCountry}
-          onStartQuiz={handleStartQuiz}
+          onCountrySelect={handleCountryClick}
+          onStartWeeklyChallenge={() => {}}
         />
       </div>
     </div>

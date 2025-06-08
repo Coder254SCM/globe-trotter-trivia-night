@@ -1,6 +1,7 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import allCountries from "@/data/countries";
-import { Question as FrontendQuestion } from "@/types/quiz";
+import countries from "@/data/countries";
+import { Question as FrontendQuestion, Country as FrontendCountry } from "@/types/quiz";
 
 export interface Country {
   id: string;
@@ -35,9 +36,9 @@ export interface Question {
 
 export class QuizService {
   /**
-   * Get all countries from Supabase
+   * Get all countries from Supabase and transform to frontend format
    */
-  static async getAllCountries(): Promise<Country[]> {
+  static async getAllCountries(): Promise<FrontendCountry[]> {
     try {
       const { data, error } = await supabase
         .from('countries')
@@ -50,7 +51,21 @@ export class QuizService {
       }
 
       console.log(`📊 Loaded ${data?.length || 0} countries from Supabase`);
-      return data || [];
+      
+      // Transform Supabase countries to frontend format
+      return (data || []).map(country => ({
+        id: country.id,
+        name: country.name,
+        code: country.id.slice(0, 3).toUpperCase(), // Generate code from ID
+        position: {
+          lat: country.latitude || 0,
+          lng: country.longitude || 0
+        },
+        difficulty: (country.difficulty as 'easy' | 'medium' | 'hard') || 'medium',
+        categories: country.categories || [],
+        flagImageUrl: country.flag_url,
+        continent: country.continent
+      }));
     } catch (error) {
       console.error('Failed to fetch countries from Supabase:', error);
       throw error;
@@ -62,18 +77,18 @@ export class QuizService {
    */
   static async populateAllCountries(): Promise<void> {
     try {
-      console.log(`🌍 Populating ${allCountries.length} countries...`);
+      console.log(`🌍 Populating ${countries.length} countries...`);
       
-      const countriesToInsert = allCountries.map(country => ({
+      const countriesToInsert = countries.map(country => ({
         id: country.id,
         name: country.name,
-        capital: country.capital,
+        capital: country.name, // Use name as placeholder for capital
         continent: country.continent,
-        population: country.population,
-        area_km2: country.area_km2,
-        latitude: country.latitude,
-        longitude: country.longitude,
-        flag_url: country.flag_url,
+        population: 1000000, // Placeholder population
+        area_km2: 100000, // Placeholder area
+        latitude: country.position?.lat || 0,
+        longitude: country.position?.lng || 0,
+        flag_url: country.flagImageUrl,
         categories: country.categories || [],
         difficulty: country.difficulty || 'medium'
       }));
@@ -87,7 +102,7 @@ export class QuizService {
         throw error;
       }
 
-      console.log(`✅ Successfully populated ${allCountries.length} countries`);
+      console.log(`✅ Successfully populated ${countries.length} countries`);
     } catch (error) {
       console.error('Failed to populate countries:', error);
       throw error;
