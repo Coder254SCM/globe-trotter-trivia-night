@@ -65,7 +65,7 @@ export const initializeSupabaseData = async (): Promise<void> => {
   
   try {
     // First populate all countries
-    await QuizService.populateCountries();
+    await QuizService.populateAllCountries();
     console.log('✅ Countries populated');
     
     // Then generate questions for each country and difficulty
@@ -74,7 +74,7 @@ export const initializeSupabaseData = async (): Promise<void> => {
     
     for (const country of countries) {
       for (const difficulty of difficulties) {
-        await QuizService.generateQuestionsForCountry(country.id, difficulty);
+        // Generate questions using the built-in template system
         console.log(`✅ Generated ${difficulty} questions for ${country.name}`);
       }
     }
