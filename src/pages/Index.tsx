@@ -31,6 +31,16 @@ export default function Index() {
         console.log('🌍 Loading countries from Supabase...');
         const supabaseCountries = await QuizService.getAllCountries();
         console.log(`✅ Loaded ${supabaseCountries.length} countries from Supabase`);
+        
+        if (supabaseCountries.length === 0) {
+          console.log('⚠️ No countries found in database. Please initialize the database.');
+          toast({
+            title: "Database Empty",
+            description: "No countries found. Please go to Admin → Production Init to populate the database.",
+            variant: "destructive",
+          });
+        }
+        
         setCountries(supabaseCountries);
       } catch (error) {
         console.error('❌ Failed to load countries from Supabase:', error);
@@ -110,7 +120,6 @@ export default function Index() {
     return (
       <Quiz
         country={selectedCountry}
-        onComplete={handleQuizComplete}
         onBack={handleBackToGlobe}
       />
     );
@@ -145,40 +154,59 @@ export default function Index() {
         showLabels={showLabels}
       />
       
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="flex flex-col lg:flex-row gap-6 mb-6">
-          <div className="flex-1">
-            <GlobeSearch 
+      {countries.length === 0 ? (
+        <div className="container mx-auto px-4 relative z-10 text-center mt-20">
+          <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-6 max-w-md mx-auto">
+            <h2 className="text-2xl font-bold text-yellow-400 mb-4">Database Empty</h2>
+            <p className="text-gray-300 mb-4">
+              No countries found in the database. Initialize the production data to get started.
+            </p>
+            <Button
+              onClick={() => window.location.href = '/admin'}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white"
+            >
+              Go to Admin Panel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="flex flex-col lg:flex-row gap-6 mb-6">
+              <div className="flex-1">
+                <GlobeSearch 
+                  onCountrySelect={handleCountryClick}
+                  onCountryFocus={() => {}}
+                />
+              </div>
+              <div className="lg:w-80">
+                <GlobeFilters
+                  availableContinents={availableContinents}
+                  allCategories={allCategories}
+                  selectedContinent={selectedContinent}
+                  selectedCategory={selectedCategory}
+                  filteredCountriesCount={filteredCountries.length}
+                  totalCountriesCount={countries.length}
+                  onContinentChange={setSelectedContinent}
+                  onCategoryChange={setSelectedCategory}
+                  onClearFilters={handleClearFilters}
+                />
+              </div>
+            </div>
+
+            <div className="text-center mb-4">
+              <p className="text-sm text-gray-300">
+                Showing {filteredCountries.length} of {countries.length} countries
+              </p>
+            </div>
+
+            <Globe
               onCountrySelect={handleCountryClick}
-              onCountryFocus={() => {}}
+              onStartWeeklyChallenge={() => {}}
             />
           </div>
-          <div className="lg:w-80">
-            <GlobeFilters
-              availableContinents={availableContinents}
-              allCategories={allCategories}
-              selectedContinent={selectedContinent}
-              selectedCategory={selectedCategory}
-              filteredCountriesCount={filteredCountries.length}
-              totalCountriesCount={countries.length}
-              onContinentChange={setSelectedContinent}
-              onCategoryChange={setSelectedCategory}
-              onClearFilters={handleClearFilters}
-            />
-          </div>
-        </div>
-
-        <div className="text-center mb-4">
-          <p className="text-sm text-gray-300">
-            Showing {filteredCountries.length} of {countries.length} countries
-          </p>
-        </div>
-
-        <Globe
-          onCountrySelect={handleCountryClick}
-          onStartWeeklyChallenge={() => {}}
-        />
-      </div>
+        </>
+      )}
     </div>
   );
 }
