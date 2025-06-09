@@ -120,6 +120,7 @@ export default function Index() {
     return (
       <Quiz
         country={selectedCountry}
+        onFinish={handleQuizComplete}
         onBack={handleBackToGlobe}
       />
     );

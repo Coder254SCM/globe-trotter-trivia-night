@@ -1,17 +1,16 @@
+
 /**
  * Database Setup Script
  * 
  * This script helps initialize the Globe Trotter Trivia database with:
  * 1. All 195 countries
- * 2. AI-generated questions for all difficulty levels
+ * 2. Template-generated questions for all difficulty levels
  * 
  * Usage:
- * 1. Ensure Ollama is installed and running (see AIService.getInstallationInstructions())
- * 2. Run: npm run setup-db
+ * 1. Run: npm run setup-db
  */
 
 import { QuizService } from '../services/supabase/quizService';
-import { AIService } from '../services/aiService';
 
 class DatabaseSetup {
   /**
@@ -21,31 +20,14 @@ class DatabaseSetup {
     console.log('🚀 Starting Globe Trotter Trivia database setup...');
     
     try {
-      // Step 1: Check if Ollama is available
-      console.log('\n📋 Step 1: Checking AI service availability...');
-      const isOllamaAvailable = await AIService.checkOllamaAvailability();
-      
-      if (!isOllamaAvailable) {
-        console.log('❌ Ollama is not available. Please install and start Ollama first.');
-        console.log(AIService.getInstallationInstructions());
-        return;
-      }
-      
-      console.log('✅ Ollama is available');
-      
-      // Step 2: Ensure the model is available
-      console.log('\n📋 Step 2: Ensuring AI model is available...');
-      await AIService.ensureModelAvailable();
-      console.log('✅ AI model is ready');
-      
-      // Step 3: Populate countries
-      console.log('\n📋 Step 3: Populating countries database...');
+      // Step 1: Populate countries
+      console.log('\n📋 Step 1: Populating countries database...');
       await QuizService.populateAllCountries();
       console.log('✅ All 195 countries have been added to the database');
       
-      // Step 4: Generate questions for all countries
-      console.log('\n📋 Step 4: Generating AI questions for all countries...');
-      console.log('⏳ This may take a while (estimated 30-60 minutes for all countries)...');
+      // Step 2: Generate questions for all countries
+      console.log('\n📋 Step 2: Generating template questions for all countries...');
+      console.log('⏳ This may take a while...');
       
       await QuizService.generateQuestionsForAllCountries(20); // 20 questions per difficulty per country
       
@@ -79,7 +61,19 @@ class DatabaseSetup {
         return;
       }
       
-      await AIService.generateAllDifficultyQuestions(country, 20);
+      // Convert frontend Country to backend Country format
+      const backendCountry = {
+        id: country.id,
+        name: country.name,
+        capital: country.name, // Placeholder
+        continent: country.continent,
+        population: 1000000, // Placeholder
+        area_km2: 100000, // Placeholder
+        latitude: country.position?.lat || 0,
+        longitude: country.position?.lng || 0
+      };
+      
+      await QuizService.generateQuestionsForCountry(country, 20);
       console.log(`✅ Generated questions for ${country.name}`);
       
     } catch (error) {
@@ -95,16 +89,6 @@ class DatabaseSetup {
     console.log('⚡ Starting quick development setup...');
     
     try {
-      // Check Ollama
-      const isOllamaAvailable = await AIService.checkOllamaAvailability();
-      if (!isOllamaAvailable) {
-        console.log('❌ Ollama not available. Install it first.');
-        console.log(AIService.getInstallationInstructions());
-        return;
-      }
-      
-      await AIService.ensureModelAvailable();
-      
       // Populate countries
       await QuizService.populateAllCountries();
       
@@ -113,7 +97,10 @@ class DatabaseSetup {
       const testCountries = countries.slice(0, 10);
       
       console.log(`🎯 Generating questions for ${testCountries.length} countries (quick setup)...`);
-      await AIService.batchGenerateQuestions(testCountries, 5); // Only 5 questions per difficulty
+      
+      for (const country of testCountries) {
+        await QuizService.generateQuestionsForCountry(country, 5); // Only 5 questions per difficulty
+      }
       
       console.log('⚡ Quick setup completed!');
       console.log(`📊 Generated questions for: ${testCountries.map(c => c.name).join(', ')}`);
@@ -153,9 +140,7 @@ if (require.main === module) {
       console.log('  npm run setup-db country "Country Name" - Generate questions for specific country');
       console.log('');
       console.log('Prerequisites:');
-      console.log('  1. Install Ollama: https://ollama.ai');
-      console.log('  2. Start Ollama: ollama serve');
-      console.log('  3. Pull model: ollama pull llama3.2:3b');
+      console.log('  1. Database must be initialized via Admin panel first');
       break;
   }
 }
