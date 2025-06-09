@@ -9,7 +9,7 @@ import { GlobeLegend } from "./globe/GlobeLegend";
 import { GlobeSearch } from "./globe/GlobeSearch";
 import { useGlobe } from "../hooks/useGlobe";
 import { useCountryFilter } from "../hooks/useCountryFilter";
-import countries from "../data/countries";
+import { QuizService } from "../services/supabase/quizService";
 import { getQuestionStats } from "../utils/quiz/questionSets";
 import { toast } from "@/components/ui/use-toast";
 
@@ -22,6 +22,42 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [rotating, setRotating] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Load all 195 countries from Supabase
+  useEffect(() => {
+    const loadCountries = async () => {
+      try {
+        setLoading(true);
+        const allCountries = await QuizService.getAllCountries();
+        // Convert Supabase country format to frontend format
+        const formattedCountries = allCountries.map(country => ({
+          id: country.id,
+          name: country.name,
+          code: country.id.toUpperCase(),
+          position: { lat: country.latitude, lng: country.longitude },
+          continent: country.continent,
+          difficulty: 'easy' as DifficultyLevel,
+          categories: country.categories || ['Geography'],
+          flagImageUrl: `https://flagcdn.com/w320/${country.id}.png`
+        }));
+        setCountries(formattedCountries);
+        console.log(`🌍 Loaded ${formattedCountries.length} countries from database`);
+      } catch (error) {
+        console.error('Failed to load countries:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load countries. Please refresh the page.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadCountries();
+  }, []);
   
   // Custom hooks for country filtering
   const {
@@ -114,6 +150,14 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
     console.log(`- Total Questions: ${stats.totalQuestions}`);
     console.log(`- Average Questions per Country: ${stats.averageQuestionsPerCountry.toFixed(1)}`);
   }, []);
+
+  if (loading) {
+    return (
+      <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-slate-900 via-blue-900 to-black flex items-center justify-center">
+        <div className="text-white text-xl">🌍 Loading all 195 countries...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-slate-900 via-blue-900 to-black">

@@ -11,7 +11,9 @@
     "preview": "vite preview",
     "setup-db": "tsx src/scripts/setupDatabase.ts",
     "setup-db:full": "tsx src/scripts/setupDatabase.ts full",
-    "setup-db:quick": "tsx src/scripts/setupDatabase.ts quick"
+    "setup-db:quick": "tsx src/scripts/setupDatabase.ts quick",
+    "migrate-difficulty": "tsx src/scripts/migrateDifficulty.ts",
+    "generate-questions": "tsx src/scripts/generateQuestions.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -83,7 +85,7 @@
     "lovable-tagger": "^1.1.7",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.11",
-    "tsx": "^4.7.1",
+    "tsx": "^4.19.4",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1"

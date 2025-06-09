@@ -118,14 +118,58 @@ export class AIService {
    */
   private static buildPrompt(country: Country, difficulty: string, count: number): string {
     const difficultyInstructions = {
-      easy: 'basic facts like capital, continent, major landmarks',
-      medium: 'cultural aspects, history, economy, and regional knowledge',
-      hard: 'detailed historical events, specific statistics, complex cultural nuances'
+      easy: `EASY LEVEL - Basic facts that most people would know:
+        - Capital city, continent, major landmarks
+        - Famous tourist attractions, basic geography
+        - Well-known cultural elements, major languages
+        - Simple historical facts taught in elementary school`,
+      
+      medium: `MEDIUM LEVEL - College-level knowledge requiring specialized study:
+        - Specific historical events with dates and key figures
+        - Economic indicators, trade relationships, GDP details
+        - Political systems, government structure, constitutional details
+        - Regional conflicts, diplomatic relations, treaties
+        - Detailed cultural practices, religious demographics
+        - Geographic features like mountain ranges, river systems
+        - Colonial history, independence movements, wars`,
+      
+      hard: `HARD LEVEL - PhD/Expert-level knowledge requiring deep academic study:
+        - Obscure historical events, minor political figures
+        - Specific economic data, trade statistics, inflation rates
+        - Constitutional amendments, legal system details
+        - Linguistic minorities, dialect variations
+        - Archaeological findings, ancient civilizations
+        - Specific geographic coordinates, elevation data
+        - Detailed demographic statistics, census data
+        - Academic research findings, scholarly debates
+        - Technical government policies, bureaucratic details`
+    };
+
+    const examplesByDifficulty = {
+      easy: `Example EASY questions:
+        - "What is the capital of ${country.name}?"
+        - "Which continent is ${country.name} located in?"
+        - "What is the main language spoken in ${country.name}?"`,
+      
+      medium: `Example MEDIUM questions:
+        - "In what year did ${country.name} gain independence?"
+        - "What is the current GDP per capita of ${country.name}?"
+        - "Which political party currently governs ${country.name}?"
+        - "What major trade agreement is ${country.name} part of?"`,
+      
+      hard: `Example HARD questions:
+        - "What was the inflation rate in ${country.name} in 2019?"
+        - "Which specific constitutional article governs electoral processes in ${country.name}?"
+        - "What percentage of ${country.name}'s population speaks [specific minority language]?"
+        - "In which year was the [specific government ministry] established in ${country.name}?"`
     };
 
     return `Generate ${count} multiple-choice trivia questions about ${country.name}.
 
-Difficulty: ${difficulty} - Focus on ${difficultyInstructions[difficulty as keyof typeof difficultyInstructions]}
+DIFFICULTY: ${difficulty.toUpperCase()}
+${difficultyInstructions[difficulty as keyof typeof difficultyInstructions]}
+
+${examplesByDifficulty[difficulty as keyof typeof examplesByDifficulty]}
 
 Country Information:
 - Capital: ${country.capital}
@@ -133,16 +177,24 @@ Country Information:
 - Population: ${country.population.toLocaleString()}
 - Area: ${country.area_km2.toLocaleString()} km²
 
+IMPORTANT REQUIREMENTS:
+- For EASY: Questions answerable by general knowledge
+- For MEDIUM: Questions requiring college-level study of the country
+- For HARD: Questions requiring PhD-level expertise or specialized research
+- All wrong answers must be plausible and realistic
+- Include specific numbers, dates, and technical details for medium/hard
+- Avoid questions that can be easily googled in 30 seconds
+
 Format each question as JSON:
 {
   "question": "Question text?",
   "options": ["A", "B", "C", "D"],
   "correct": 0,
-  "explanation": "Brief explanation",
-  "category": "Geography|History|Culture|Economy|Nature"
+  "explanation": "Detailed explanation with context",
+  "category": "Geography|History|Culture|Economy|Politics|Demographics|Legal"
 }
 
-Return only a JSON array of questions. Ensure questions are factually accurate and appropriate for ${difficulty} difficulty.`;
+Return only a JSON array of questions. Ensure questions match the specified difficulty level exactly.`;
   }
 
   /**
@@ -195,26 +247,51 @@ Return only a JSON array of questions. Ensure questions are factually accurate a
         {
           question: `What is the capital of ${country.name}?`,
           correct: country.capital,
-          category: 'Geography'
+          category: 'Geography',
+          options: [country.capital, 'London', 'Paris', 'Berlin']
         },
         {
           question: `Which continent is ${country.name} located in?`,
           correct: country.continent,
-          category: 'Geography'
+          category: 'Geography',
+          options: [country.continent, 'Asia', 'Europe', 'Africa']
         }
       ],
       medium: [
         {
           question: `What is the approximate population of ${country.name}?`,
           correct: `About ${Math.round(country.population / 1000000)} million`,
-          category: 'Geography'
+          category: 'Demographics',
+          options: [
+            `About ${Math.round(country.population / 1000000)} million`,
+            `About ${Math.round(country.population / 1000000) * 2} million`,
+            `About ${Math.round(country.population / 1000000) / 2} million`,
+            `About ${Math.round(country.population / 1000000) * 1.5} million`
+          ]
+        },
+        {
+          question: `What is the total area of ${country.name}?`,
+          correct: `${country.area_km2.toLocaleString()} km²`,
+          category: 'Geography',
+          options: [
+            `${country.area_km2.toLocaleString()} km²`,
+            `${Math.round(country.area_km2 * 1.5).toLocaleString()} km²`,
+            `${Math.round(country.area_km2 * 0.7).toLocaleString()} km²`,
+            `${Math.round(country.area_km2 * 2).toLocaleString()} km²`
+          ]
         }
       ],
       hard: [
         {
-          question: `What is the total area of ${country.name} in square kilometers?`,
-          correct: `${country.area_km2.toLocaleString()} km²`,
-          category: 'Geography'
+          question: `What is the exact population density of ${country.name} per square kilometer?`,
+          correct: `${Math.round(country.population / country.area_km2)} people/km²`,
+          category: 'Demographics',
+          options: [
+            `${Math.round(country.population / country.area_km2)} people/km²`,
+            `${Math.round(country.population / country.area_km2 * 1.3)} people/km²`,
+            `${Math.round(country.population / country.area_km2 * 0.8)} people/km²`,
+            `${Math.round(country.population / country.area_km2 * 1.7)} people/km²`
+          ]
         }
       ]
     };
@@ -225,14 +302,13 @@ Return only a JSON array of questions. Ensure questions are factually accurate a
       id: `fallback-${country.id}-${difficulty}-${Date.now()}-${index}`,
       type: 'multiple-choice' as const,
       text: template.question,
-      choices: [
-        { id: 'a', text: template.correct, isCorrect: true },
-        { id: 'b', text: 'Option B', isCorrect: false },
-        { id: 'c', text: 'Option C', isCorrect: false },
-        { id: 'd', text: 'Option D', isCorrect: false }
-      ],
+      choices: template.options.map((option, i) => ({
+        id: String.fromCharCode(97 + i), // a, b, c, d
+        text: option,
+        isCorrect: option === template.correct
+      })),
       category: template.category as any,
-      explanation: `This is a ${difficulty} level question about ${country.name}.`,
+      explanation: `This is a ${difficulty} level question about ${country.name}. The correct answer demonstrates ${difficulty === 'easy' ? 'basic knowledge' : difficulty === 'medium' ? 'college-level understanding' : 'expert-level expertise'} of the country.`,
       difficulty: difficulty as any,
       imageUrl: undefined
     }));
