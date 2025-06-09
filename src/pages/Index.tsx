@@ -10,7 +10,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { QuizService } from "@/services/supabase/quizService";
-import { Country } from "@/types/quiz";
+import { Country, QuestionCategory } from "@/types/quiz";
 
 export default function Index() {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
@@ -93,7 +93,7 @@ export default function Index() {
   const filteredCountries = countries.filter(country => {
     const matchesSearch = country.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesContinent = selectedContinent === "all" || country.continent === selectedContinent;
-    const matchesCategory = selectedCategory === "all" || (country.categories && country.categories.includes(selectedCategory));
+    const matchesCategory = selectedCategory === "all" || (country.categories && country.categories.includes(selectedCategory as QuestionCategory));
     
     return matchesSearch && matchesContinent && matchesCategory;
   });

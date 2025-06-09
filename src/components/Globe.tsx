@@ -31,19 +31,9 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
       try {
         setLoading(true);
         const allCountries = await QuizService.getAllCountries();
-        // Convert Supabase country format to frontend format
-        const formattedCountries = allCountries.map(country => ({
-          id: country.id,
-          name: country.name,
-          code: country.id.toUpperCase(),
-          position: { lat: country.latitude, lng: country.longitude },
-          continent: country.continent,
-          difficulty: 'easy' as DifficultyLevel,
-          categories: country.categories || ['Geography'],
-          flagImageUrl: `https://flagcdn.com/w320/${country.id}.png`
-        }));
-        setCountries(formattedCountries);
-        console.log(`🌍 Loaded ${formattedCountries.length} countries from database`);
+        // Countries are already in the correct frontend format
+        setCountries(allCountries);
+        console.log(`🌍 Loaded ${allCountries.length} countries from database`);
       } catch (error) {
         console.error('Failed to load countries:', error);
         toast({
