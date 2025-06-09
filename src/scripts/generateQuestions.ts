@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '../integrations/supabase/types';
 import { AIService } from '../services/aiService';
@@ -23,17 +24,23 @@ interface GenerationOptions {
 
 /**
  * Generate questions for all countries with the new difficulty system
+ * Easy questions already exist (migrated from previous questions)
+ * We need to generate medium and hard questions
  */
 async function generateQuestionsForAllCountries(options: GenerationOptions = {}) {
   const {
-    difficulties = ['medium', 'hard'], // Don't regenerate easy (migrated from old hard)
-    questionsPerDifficulty = 10,
+    difficulties = ['medium', 'hard'], // Easy questions already exist
+    questionsPerDifficulty = 15,
     batchSize = 5,
     delayBetweenBatches = 3000
   } = options;
   
   console.log('🚀 Globe Trotter Trivia - Question Generation Script');
   console.log('===================================================\n');
+  console.log('📝 Current Status:');
+  console.log('- Easy questions: ✅ Already migrated (under 1 minute)');
+  console.log('- Medium questions: 🔄 Will generate (college-level, 2-3 minutes)');
+  console.log('- Hard questions: 🔄 Will generate (PhD-level, 3-5 minutes)\n');
   
   try {
     // Check if AI service is available
@@ -146,21 +153,24 @@ async function generateQuestionsForAllCountries(options: GenerationOptions = {})
     console.log(`❌ Total failures: ${totalFailed}`);
     
     // Get final counts by difficulty
-    for (const difficulty of difficulties) {
+    const allDifficulties = ['easy', 'medium', 'hard'];
+    for (const difficulty of allDifficulties) {
       const { count, error } = await supabase
         .from('questions')
         .select('*', { count: 'exact', head: true })
         .eq('difficulty', difficulty);
       
       if (!error) {
-        console.log(`📈 Total ${difficulty} questions in database: ${count}`);
+        const status = difficulty === 'easy' ? '✅ (migrated)' : 
+                      difficulties.includes(difficulty) ? '🆕 (new)' : '⏳ (pending)';
+        console.log(`📈 Total ${difficulty} questions: ${count} ${status}`);
       }
     }
     
-    console.log('\n✨ All done! Your trivia app now has the new difficulty levels:');
-    console.log('- Easy: Basic knowledge (migrated from old hard questions)');
-    console.log('- Medium: College-level knowledge');
-    console.log('- Hard: PhD-level expertise');
+    console.log('\n✨ Quiz difficulty levels now available:');
+    console.log('- Easy: Basic knowledge (under 1 minute)');
+    console.log('- Medium: College-level knowledge (2-3 minutes)');
+    console.log('- Hard: PhD-level expertise (3-5 minutes)');
     
   } catch (error) {
     console.error('❌ Question generation failed:', error);
@@ -203,8 +213,10 @@ async function main() {
   if (args.includes('--help') || args.includes('-h')) {
     console.log('🤖 Globe Trotter Trivia - Question Generation Script');
     console.log('====================================================\n');
+    console.log('📝 Current Status: Easy questions migrated, need medium/hard');
+    console.log('');
     console.log('Usage:');
-    console.log('  npm run generate-questions                    # Generate for all countries');
+    console.log('  npm run generate-questions                    # Generate medium & hard for all countries');
     console.log('  npm run generate-questions -- --sample        # Generate for 10 sample countries');
     console.log('  npm run generate-questions -- --country "USA" # Generate for specific country');
     console.log('  npm run generate-questions -- --medium-only   # Generate only medium difficulty');

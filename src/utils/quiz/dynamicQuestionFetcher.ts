@@ -33,7 +33,18 @@ export const getDynamicQuizQuestions = async (
       return questions;
     }
     
-    // If no questions found, return empty array (better than broken localStorage)
+    // If no questions found for the specific difficulty, try easy questions
+    // (since all questions were migrated to easy)
+    if (difficulty && difficulty !== 'easy') {
+      console.log(`⚠️ No ${difficulty} questions found, falling back to easy questions`);
+      const easyQuestions = await getSupabaseQuizQuestions(countryId, count, 'easy');
+      if (easyQuestions.length > 0) {
+        console.log(`✅ Retrieved ${easyQuestions.length} easy questions as fallback`);
+        return easyQuestions;
+      }
+    }
+    
+    // If no questions found, return empty array
     console.warn(`⚠️ No questions found in Supabase for ${countryId} (${difficulty})`);
     return [];
     
@@ -46,7 +57,7 @@ export const getDynamicQuizQuestions = async (
 export const getDynamicQuestionStats = async () => {
   try {
     const stats = await getSupabaseCountryStats();
-    console.log('📊 Production Stats:', stats);
+    console.log('📊 Production Stats (Post-Migration):', stats);
     return stats;
   } catch (error) {
     console.error('Error getting stats:', error);
