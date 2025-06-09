@@ -5,7 +5,6 @@ import { ProjectStructure } from "./ProjectStructure";
 import { PlayerDashboard } from "./PlayerDashboard";
 import { DynamicQuestionDashboard } from "./DynamicQuestionDashboard";
 import { ProductionDashboard } from "./ProductionDashboard";
-import { ProductionDataInitializer } from "./ProductionDataInitializer";
 import { Modern3DGlobe } from "../globe/Modern3DGlobe";
 
 export const AdminDashboard = () => {
@@ -14,29 +13,24 @@ export const AdminDashboard = () => {
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">🌍 Global Quiz Game - Production Admin</h1>
         
-        <Tabs defaultValue="initializer" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
-            <TabsTrigger value="initializer">Production Init</TabsTrigger>
-            <TabsTrigger value="modern-globe">3D Globe</TabsTrigger>
+        <Tabs defaultValue="production" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="production">System Status</TabsTrigger>
+            <TabsTrigger value="modern-globe">Enhanced Globe</TabsTrigger>
             <TabsTrigger value="dynamic">Dynamic Storage</TabsTrigger>
             <TabsTrigger value="real-audit">Legacy Audit</TabsTrigger>
             <TabsTrigger value="structure">Project Status</TabsTrigger>
             <TabsTrigger value="player">Player Dashboard</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="initializer">
-            <ProductionDataInitializer />
+          <TabsContent value="production">
+            <ProductionDashboard />
           </TabsContent>
 
           <TabsContent value="modern-globe">
             <div className="h-screen">
               <Modern3DGlobe />
             </div>
-          </TabsContent>
-
-          <TabsContent value="production">
-            <ProductionDashboard />
           </TabsContent>
 
           <TabsContent value="dynamic">
