@@ -61,18 +61,6 @@ class DatabaseSetup {
         return;
       }
       
-      // Convert frontend Country to backend Country format
-      const backendCountry = {
-        id: country.id,
-        name: country.name,
-        capital: country.name, // Placeholder
-        continent: country.continent,
-        population: 1000000, // Placeholder
-        area_km2: 100000, // Placeholder
-        latitude: country.position?.lat || 0,
-        longitude: country.position?.lng || 0
-      };
-      
       await QuizService.generateQuestionsForCountry(country, 20);
       console.log(`✅ Generated questions for ${country.name}`);
       

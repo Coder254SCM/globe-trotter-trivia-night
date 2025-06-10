@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import countries from "@/data/countries";
 import { Question as FrontendQuestion, Country as FrontendCountry, QuestionCategory } from "@/types/quiz";
@@ -156,6 +155,66 @@ export class QuizService {
   }
 
   /**
+   * Get failed questions for Ultimate Quiz
+   */
+  static async getFailedQuestions(userId: string): Promise<FrontendQuestion[]> {
+    try {
+      const { data, error } = await supabase
+        .from('failed_questions')
+        .select(`
+          question_id,
+          questions (*)
+        `)
+        .eq('user_id', userId)
+        .eq('mastered', false);
+
+      if (error) {
+        console.error('Error fetching failed questions:', error);
+        throw error;
+      }
+
+      return (data || [])
+        .filter(item => item.questions)
+        .map(item => this.transformToFrontendQuestion(item.questions));
+    } catch (error) {
+      console.error('Failed to fetch failed questions:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get leaderboard data
+   */
+  static async getLeaderboard(period: string = 'weekly', category?: string): Promise<any[]> {
+    try {
+      let query = supabase
+        .from('leaderboards')
+        .select(`
+          *,
+          user_profiles (username, avatar_url)
+        `)
+        .eq('period', period)
+        .order('rank');
+
+      if (category) {
+        query = query.eq('category', category);
+      }
+
+      const { data, error } = await query.limit(100);
+
+      if (error) {
+        console.error('Error fetching leaderboard:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Failed to fetch leaderboard:', error);
+      return [];
+    }
+  }
+
+  /**
    * Transform Supabase question to frontend format
    */
   private static transformToFrontendQuestion(supabaseQuestion: any): FrontendQuestion {
@@ -195,6 +254,27 @@ export class QuizService {
       console.error('Failed to save questions:', error);
       throw error;
     }
+  }
+
+  /**
+   * Generate questions for all countries - FIXED METHOD
+   */
+  static async generateQuestionsForAllCountries(questionsPerDifficulty: number = 20): Promise<void> {
+    const countries = await this.getAllCountries();
+    console.log(`📝 Generating ${questionsPerDifficulty} questions per difficulty for ${countries.length} countries...`);
+    
+    for (const country of countries) {
+      await this.generateEasyQuestionsForCountry(country, questionsPerDifficulty);
+    }
+    
+    console.log('✅ Completed generating questions for all countries');
+  }
+
+  /**
+   * Generate questions for a specific country - FIXED METHOD
+   */
+  static async generateQuestionsForCountry(country: FrontendCountry, questionsPerDifficulty: number = 20): Promise<void> {
+    await this.generateEasyQuestionsForCountry(country, questionsPerDifficulty);
   }
 
   /**
@@ -244,6 +324,116 @@ export class QuizService {
       return stats;
     } catch (error) {
       console.error('Failed to get database stats:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Audit questions - Check which questions are in wrong countries/categories
+   */
+  static async auditQuestions(): Promise<{
+    totalQuestions: number;
+    wrongCountryQuestions: number;
+    wrongCategoryQuestions: number;
+    details: Array<{
+      questionId: string;
+      text: string;
+      assignedCountry: string;
+      assignedCategory: string;
+      issues: string[];
+    }>;
+  }> {
+    try {
+      console.log('🔍 Starting comprehensive question audit...');
+      
+      // Get all questions with their country assignments
+      const { data: questions, error } = await supabase
+        .from('questions')
+        .select(`
+          id,
+          text,
+          country_id,
+          category,
+          countries (name, continent)
+        `);
+
+      if (error) {
+        console.error('Error fetching questions for audit:', error);
+        throw error;
+      }
+
+      const auditResults = {
+        totalQuestions: questions?.length || 0,
+        wrongCountryQuestions: 0,
+        wrongCategoryQuestions: 0,
+        details: [] as Array<{
+          questionId: string;
+          text: string;
+          assignedCountry: string;
+          assignedCategory: string;
+          issues: string[];
+        }>
+      };
+
+      (questions || []).forEach(question => {
+        const issues: string[] = [];
+        const questionText = question.text.toLowerCase();
+        const countryName = question.countries?.name?.toLowerCase() || '';
+        
+        // Check if question mentions the assigned country
+        const mentionsAssignedCountry = questionText.includes(countryName);
+        
+        // Check if question mentions other countries (potential wrong assignment)
+        const otherCountries = countries.filter(c => 
+          c.name.toLowerCase() !== countryName && 
+          questionText.includes(c.name.toLowerCase())
+        );
+
+        if (!mentionsAssignedCountry && otherCountries.length > 0) {
+          issues.push(`Question mentions ${otherCountries[0].name} but assigned to ${question.countries?.name}`);
+          auditResults.wrongCountryQuestions++;
+        }
+
+        // Check category relevance (basic check)
+        const categoryKeywords: Record<string, string[]> = {
+          'Geography': ['capital', 'border', 'mountain', 'river', 'location', 'continent'],
+          'History': ['founded', 'independence', 'war', 'ancient', 'empire', 'century'],
+          'Culture': ['tradition', 'festival', 'language', 'custom', 'religion'],
+          'Economy': ['currency', 'export', 'industry', 'trade', 'gdp'],
+          'Nature': ['wildlife', 'animal', 'plant', 'climate', 'forest']
+        };
+
+        const categoryWords = categoryKeywords[question.category] || [];
+        const hasRelevantKeywords = categoryWords.some(keyword => 
+          questionText.includes(keyword)
+        );
+
+        if (!hasRelevantKeywords && !mentionsAssignedCountry) {
+          issues.push(`Question category '${question.category}' may not match content`);
+          auditResults.wrongCategoryQuestions++;
+        }
+
+        if (issues.length > 0) {
+          auditResults.details.push({
+            questionId: question.id,
+            text: question.text.substring(0, 100) + '...',
+            assignedCountry: question.countries?.name || 'Unknown',
+            assignedCategory: question.category,
+            issues
+          });
+        }
+      });
+
+      console.log('📊 Audit Results:', {
+        total: auditResults.totalQuestions,
+        wrongCountry: auditResults.wrongCountryQuestions,
+        wrongCategory: auditResults.wrongCategoryQuestions,
+        issuesFound: auditResults.details.length
+      });
+
+      return auditResults;
+    } catch (error) {
+      console.error('Failed to audit questions:', error);
       throw error;
     }
   }
