@@ -15,6 +15,7 @@ export interface QuestionToValidate {
   option_c: string;
   option_d: string;
   correct_answer: string;
+  difficulty?: string; // Added difficulty property
   country_id?: string;
   category: string;
 }
@@ -88,6 +89,12 @@ export class QuestionValidationService {
     const options = [question.option_a, question.option_b, question.option_c, question.option_d];
     if (!options.includes(question.correct_answer)) {
       issues.push('Correct answer must match one of the four options');
+      severity = 'critical';
+    }
+
+    // Reject easy questions if difficulty is specified
+    if (question.difficulty === 'easy') {
+      issues.push('Easy questions are no longer allowed in the system');
       severity = 'critical';
     }
 
