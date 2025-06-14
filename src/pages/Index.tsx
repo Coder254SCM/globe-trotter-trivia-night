@@ -7,9 +7,11 @@ import { QuizSettings } from "@/components/quiz/QuizSettings";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { useQuizManager } from "@/hooks/useQuizManager";
+import { useNavigate } from "react-router-dom";
 
 export default function Index() {
   const [weeklyChallenge, setWeeklyChallenge] = useState<{questions: any[], challengeId: string} | null>(null);
+  const navigate = useNavigate();
   
   const {
     allCountries,
@@ -34,10 +36,9 @@ export default function Index() {
     setWeeklyChallenge(null);
   };
 
-  // Simple handler for Globe component that doesn't expect parameters
+  // Navigate to weekly challenges page
   const handleStartWeeklyChallenge = () => {
-    // This will be handled by the WeeklyChallenges component instead
-    console.log('Weekly challenge requested from globe');
+    navigate('/weekly-challenges');
   };
 
   if (weeklyChallenge) {
