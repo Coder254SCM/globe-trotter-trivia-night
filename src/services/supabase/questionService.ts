@@ -62,7 +62,7 @@ export class QuestionService {
   /**
    * Save questions to Supabase with validation and rate limiting
    */
-  static async saveQuestions(questions: any[]): Promise<void> => {
+  static async saveQuestions(questions: any[]): Promise<void> {
     try {
       console.log(`🔍 Starting save operation for ${questions.length} questions...`);
       
@@ -104,7 +104,7 @@ export class QuestionService {
       console.log(`✅ ${validQuestions.length} medium/hard questions passed validation`);
 
       // Save with smaller batches to prevent rate limiting
-      const batchSize = 15;
+      const batchSize = 20;
       const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
       
       for (let i = 0; i < validQuestions.length; i += batchSize) {
@@ -127,7 +127,7 @@ export class QuestionService {
           
           // Add delay between batches
           if (i + batchSize < validQuestions.length) {
-            await delay(750); // Increased delay to prevent rate limiting
+            await delay(500);
           }
           
         } catch (batchError) {
@@ -147,7 +147,7 @@ export class QuestionService {
   /**
    * Validate a single question before saving
    */
-  static async validateQuestion(question: QuestionToValidate): Promise<boolean> => {
+  static async validateQuestion(question: QuestionToValidate): Promise<boolean> {
     try {
       // Reject easy questions immediately
       if (question.difficulty === 'easy') {
