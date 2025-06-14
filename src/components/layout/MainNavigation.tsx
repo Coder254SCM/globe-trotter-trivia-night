@@ -1,78 +1,91 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
-import { Link } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 import { 
   Home, 
-  Shield, 
-  Calendar, 
+  Settings, 
+  Users, 
+  BarChart3, 
   Trophy, 
-  User, 
-  LogOut, 
-  Settings,
-  BookOpen
+  HelpCircle,
+  Search,
+  Database,
+  Shield
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const MainNavigation = () => {
-  const { user, signOut, isAdmin } = useAuth();
+  const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState("globe");
+
+  const handleNavigation = (path: string, section: string) => {
+    navigate(path);
+    setActiveSection(section);
+  };
 
   return (
-    <nav className="bg-background border-b">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center space-x-8">
-            <Link to="/" className="flex items-center space-x-2">
-              <BookOpen className="h-8 w-8 text-primary" />
-              <span className="text-xl font-bold">Global Quiz</span>
-            </Link>
-            
-            {user && (
-              <div className="flex space-x-4">
-                <Link to="/weekly-challenges">
-                  <Button variant="ghost" size="sm">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Weekly Challenges
-                  </Button>
-                </Link>
-                <Link to="/ultimate-quiz">
-                  <Button variant="ghost" size="sm">
-                    <Trophy className="h-4 w-4 mr-2" />
-                    Ultimate Quiz
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
+    <nav className="flex flex-wrap gap-2 p-4 bg-card/50 backdrop-blur-sm border-b">
+      <Button
+        variant={activeSection === "globe" ? "default" : "ghost"}
+        size="sm"
+        onClick={() => handleNavigation("/", "globe")}
+        className="flex items-center gap-2"
+      >
+        <Home className="h-4 w-4" />
+        <span className="hidden sm:inline">Globe</span>
+      </Button>
 
-          <div className="flex items-center space-x-4">
-            {user ? (
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-muted-foreground">
-                  Welcome back!
-                </span>
-                
-                {isAdmin && (
-                  <Link to="/admin">
-                    <Button variant="outline" size="sm">
-                      <Shield className="h-4 w-4 mr-2" />
-                      Admin
-                    </Button>
-                  </Link>
-                )}
-                
-                <Button variant="ghost" size="sm" onClick={signOut}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
-                </Button>
-              </div>
-            ) : (
-              <Link to="/auth">
-                <Button>Sign In</Button>
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
+      <Button
+        variant={activeSection === "admin" ? "default" : "ghost"}
+        size="sm"
+        onClick={() => handleNavigation("/admin", "admin")}
+        className="flex items-center gap-2"
+      >
+        <Settings className="h-4 w-4" />
+        <span className="hidden sm:inline">Admin</span>
+      </Button>
+
+      <Button
+        variant={activeSection === "audit" ? "default" : "ghost"}
+        size="sm"
+        onClick={() => handleNavigation("/comprehensive-audit", "audit")}
+        className="flex items-center gap-2"
+      >
+        <Search className="h-4 w-4" />
+        <span className="hidden sm:inline">Question Audit</span>
+        <Badge variant="destructive" className="text-xs">Critical</Badge>
+      </Button>
+
+      <Button
+        variant={activeSection === "moderation" ? "default" : "ghost"}
+        size="sm"
+        onClick={() => handleNavigation("/admin/moderation", "moderation")}
+        className="flex items-center gap-2"
+      >
+        <Shield className="h-4 w-4" />
+        <span className="hidden sm:inline">Moderation</span>
+      </Button>
+
+      <Button
+        variant={activeSection === "challenges" ? "default" : "ghost"}
+        size="sm"
+        onClick={() => handleNavigation("/weekly-challenges", "challenges")}
+        className="flex items-center gap-2"
+      >
+        <Trophy className="h-4 w-4" />
+        <span className="hidden sm:inline">Challenges</span>
+      </Button>
+
+      <Button
+        variant={activeSection === "ultimate" ? "default" : "ghost"}
+        size="sm"
+        onClick={() => handleNavigation("/ultimate-quiz", "ultimate")}
+        className="flex items-center gap-2"
+      >
+        <HelpCircle className="h-4 w-4" />
+        <span className="hidden sm:inline">Ultimate Quiz</span>
+      </Button>
     </nav>
   );
 };

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { AlertTriangle, CheckCircle, Database, Search, Eye, Zap, FileText } from "lucide-react";
+import { AlertTriangle, CheckCircle, Database, Search, Eye, Zap, FileText, Trash2, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface QuestionIssue {
@@ -51,6 +51,7 @@ interface AuditResults {
 export const ComprehensiveQuestionAudit = () => {
   const [auditResults, setAuditResults] = useState<AuditResults | null>(null);
   const [loading, setLoading] = useState(false);
+  const [fixing, setFixing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState("");
   const { toast } = useToast();
@@ -78,7 +79,9 @@ export const ComprehensiveQuestionAudit = () => {
       option?.includes('Correct answer for') || 
       option?.includes('Incorrect option') ||
       option?.includes('Option A for') ||
-      option?.includes('Option B for')
+      option?.includes('Option B for') ||
+      option?.includes('Option C for') ||
+      option?.includes('Option D for')
     );
 
     if (hasPlaceholderOptions) {
@@ -146,6 +149,74 @@ export const ComprehensiveQuestionAudit = () => {
       issues,
       quality_score: Math.max(0, qualityScore)
     };
+  };
+
+  const deletePlaceholderQuestions = async () => {
+    if (!auditResults) return;
+    
+    setFixing(true);
+    setCurrentStep("Identifying placeholder questions...");
+    
+    try {
+      // Get all placeholder questions
+      const placeholderQuestions = auditResults.worst_questions.filter(q => 
+        q.issues.some(issue => issue.type === 'placeholder')
+      );
+
+      if (placeholderQuestions.length === 0) {
+        toast({
+          title: "No Placeholder Questions Found",
+          description: "All questions appear to be properly formatted.",
+        });
+        setFixing(false);
+        return;
+      }
+
+      setCurrentStep(`Deleting ${placeholderQuestions.length} placeholder questions...`);
+
+      // Delete placeholder questions in batches
+      const batchSize = 50;
+      let deleted = 0;
+
+      for (let i = 0; i < placeholderQuestions.length; i += batchSize) {
+        const batch = placeholderQuestions.slice(i, i + batchSize);
+        const ids = batch.map(q => q.id);
+
+        const { error } = await supabase
+          .from('questions')
+          .delete()
+          .in('id', ids);
+
+        if (error) {
+          console.error('Error deleting batch:', error);
+          throw error;
+        }
+
+        deleted += batch.length;
+        setProgress((deleted / placeholderQuestions.length) * 100);
+      }
+
+      toast({
+        title: "Cleanup Complete!",
+        description: `Successfully deleted ${deleted} placeholder questions.`,
+      });
+
+      // Re-run audit to show updated results
+      setTimeout(() => {
+        runComprehensiveAudit();
+      }, 1000);
+
+    } catch (error) {
+      console.error("Failed to delete placeholder questions:", error);
+      toast({
+        title: "Cleanup Failed",
+        description: "Could not delete all placeholder questions. Check console for details.",
+        variant: "destructive",
+      });
+    } finally {
+      setFixing(false);
+      setProgress(0);
+    }
   };
 
   const runComprehensiveAudit = async () => {
@@ -227,7 +298,7 @@ export const ComprehensiveQuestionAudit = () => {
       const worstQuestions = analyzedQuestions
         .filter(q => q.quality_score < 70)
         .sort((a, b) => a.quality_score - b.quality_score)
-        .slice(0, 20);
+        .slice(0, 50);
 
       // Generate country breakdown
       const countryBreakdown = Array.from(countryStats.entries()).map(([name, stats]) => ({
@@ -304,6 +375,21 @@ export const ComprehensiveQuestionAudit = () => {
     );
   }
 
+  if (fixing) {
+    return (
+      <Card className="p-6">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Trash2 className="h-5 w-5 animate-pulse text-destructive" />
+            <span className="font-medium">Cleaning Up Placeholder Questions...</span>
+          </div>
+          <Progress value={progress} className="w-full" />
+          <p className="text-sm text-muted-foreground">{currentStep}</p>
+        </div>
+      </Card>
+    );
+  }
+
   if (!auditResults) return null;
 
   const criticalIssues = auditResults.placeholder_questions + auditResults.wrong_country_questions;
@@ -367,10 +453,19 @@ export const ComprehensiveQuestionAudit = () => {
               <Progress value={auditResults.average_quality_score} />
             </div>
 
-            <Button onClick={runComprehensiveAudit} className="w-full">
-              <Search className="mr-2 h-4 w-4" />
-              Re-run Comprehensive Audit
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={runComprehensiveAudit} variant="outline" className="flex-1">
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Re-run Audit
+              </Button>
+              
+              {auditResults.placeholder_questions > 0 && (
+                <Button onClick={deletePlaceholderQuestions} variant="destructive" className="flex-1">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete {auditResults.placeholder_questions} Placeholder Questions
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

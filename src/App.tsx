@@ -14,6 +14,7 @@ import MediumQuestions from "./pages/MediumQuestions";
 import EasyQuestions from "./pages/EasyQuestions";
 import ManualHardQuestions from "./pages/ManualHardQuestions";
 import QuestionAudit from "./pages/QuestionAudit";
+import ComprehensiveAudit from "./pages/ComprehensiveAudit";
 import Moderation from "./pages/Moderation";
 import WeeklyChallenges from "./pages/WeeklyChallenges";
 import UltimateQuiz from "./pages/UltimateQuiz";
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/admin/hard-questions" element={<HardQuestions />} />
               <Route path="/admin/manual-hard-questions" element={<ManualHardQuestions />} />
               <Route path="/admin/question-audit" element={<QuestionAudit />} />
+              <Route path="/comprehensive-audit" element={<ComprehensiveAudit />} />
               <Route path="/admin/moderation" element={<Moderation />} />
               <Route path="/weekly-challenges" element={<WeeklyChallenges />} />
               <Route path="/ultimate-quiz" element={<UltimateQuiz />} />
