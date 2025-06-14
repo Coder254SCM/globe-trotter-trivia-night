@@ -32,7 +32,13 @@ export class ValidationEnforcementService {
 
       // Check each question for placeholder content
       for (const question of questions) {
-        const validation = await QuestionValidationService.preValidateQuestion(question);
+        // Ensure difficulty is properly typed before validation
+        const questionToValidate = {
+          ...question,
+          difficulty: question.difficulty as 'easy' | 'medium' | 'hard'
+        };
+        
+        const validation = await QuestionValidationService.preValidateQuestion(questionToValidate);
         
         // Delete if validation fails or has critical issues
         if (!validation.isValid || validation.severity === 'critical') {
@@ -103,7 +109,13 @@ export class ValidationEnforcementService {
       let placeholderCount = 0;
 
       for (const question of questions) {
-        const validation = await QuestionValidationService.preValidateQuestion(question);
+        // Ensure difficulty is properly typed before validation
+        const questionToValidate = {
+          ...question,
+          difficulty: question.difficulty as 'easy' | 'medium' | 'hard'
+        };
+        
+        const validation = await QuestionValidationService.preValidateQuestion(questionToValidate);
         
         if (validation.isValid) {
           valid++;
