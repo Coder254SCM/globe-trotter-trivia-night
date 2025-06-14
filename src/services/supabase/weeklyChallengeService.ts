@@ -131,11 +131,23 @@ export class WeeklyChallengeService {
 
       if (error) throw error;
 
-      // Update participant count manually
+      // Get current participant count and increment it
+      const { data: currentChallenge, error: fetchError } = await supabase
+        .from('weekly_challenges')
+        .select('participants')
+        .eq('id', challengeId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching current participant count:', fetchError);
+        return;
+      }
+
+      // Update participant count
       const { error: updateError } = await supabase
         .from('weekly_challenges')
         .update({ 
-          participants: supabase.raw('participants + 1')
+          participants: (currentChallenge?.participants || 0) + 1
         })
         .eq('id', challengeId);
 
