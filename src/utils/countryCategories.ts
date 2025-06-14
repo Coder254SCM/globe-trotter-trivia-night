@@ -20,40 +20,40 @@ export const getCategoriesForCountry = (countryName: string, continent: string):
     'Africa': ['Wildlife', 'Ancient Civilizations', 'Music', 'Art', 'Natural Resources'],
     'Asia': ['Technology', 'Religion', 'Architecture', 'Philosophy', 'Ancient History'],
     'Europe': ['Art', 'Literature', 'Architecture', 'Music', 'Science'],
-    'North America': ['Sports', 'Entertainment', 'Technology', 'Indigenous Culture', 'Industry'],
+    'North America': ['Sports', 'Technology', 'Indigenous Culture', 'Industry'],
     'South America': ['Music', 'Dance', 'Environment', 'Indigenous Peoples', 'Natural Wonders'],
     'Oceania': ['Environment', 'Indigenous Culture', 'Wildlife', 'Natural Wonders', 'Sports']
   };
 
-  // Country-specific additional categories
+  // Country-specific additional categories using only valid QuestionCategory types
   const countrySpecificCategories: Record<string, QuestionCategory[]> = {
-    'United States': ['Space Technology', 'Cinema', 'Innovation'],
-    'China': ['Ancient Civilization', 'Martial Arts', 'Tea Culture'],
-    'India': ['Spirituality', 'Yoga', 'Spices'],
-    'France': ['Wine', 'Fashion', 'Cuisine'],
-    'Japan': ['Anime', 'Martial Arts', 'Technology'],
-    'Brazil': ['Football', 'Carnival', 'Rainforest'],
+    'United States': ['Technology', 'Entertainment', 'Innovation'],
+    'China': ['Ancient Civilizations', 'Philosophy', 'Technology'],
+    'India': ['Religion', 'Philosophy', 'Ancient History'],
+    'France': ['Wine', 'Fashion', 'Food'],
+    'Japan': ['Technology', 'Art', 'Philosophy'],
+    'Brazil': ['Sports', 'Music', 'Rainforests'],
     'Egypt': ['Ancient History', 'Archaeology', 'Desert'],
-    'Australia': ['Wildlife', 'Surfing', 'Outback'],
-    'Russia': ['Space', 'Literature', 'Ballet'],
-    'Italy': ['Art', 'Cuisine', 'Fashion'],
-    'Germany': ['Engineering', 'Beer', 'Classical Music'],
-    'Spain': ['Flamenco', 'Bullfighting', 'Cuisine'],
-    'Mexico': ['Ancient Civilizations', 'Day of the Dead', 'Mariachi'],
-    'Canada': ['Ice Hockey', 'Maple Syrup', 'Wilderness'],
-    'United Kingdom': ['Literature', 'Monarchy', 'Tea'],
-    'South Korea': ['K-Pop', 'Technology', 'Martial Arts'],
-    'Nigeria': ['Nollywood', 'Oil', 'Diverse Cultures'],
-    'Kenya': ['Safari', 'Running', 'Maasai Culture'],
-    'Morocco': ['Spices', 'Carpets', 'Architecture'],
-    'Thailand': ['Buddhism', 'Cuisine', 'Elephants'],
-    'Greece': ['Ancient Philosophy', 'Mythology', 'Islands'],
-    'Norway': ['Fjords', 'Vikings', 'Oil'],
-    'Switzerland': ['Chocolate', 'Banking', 'Alps'],
-    'Netherlands': ['Tulips', 'Windmills', 'Cycling'],
-    'Argentina': ['Tango', 'Beef', 'Football'],
-    'Peru': ['Inca Heritage', 'Cuisine', 'Llamas'],
-    'South Africa': ['Mining', 'Wine', 'Safari']
+    'Australia': ['Wildlife', 'Sports', 'Environment'],
+    'Russia': ['Science', 'Literature', 'Art'],
+    'Italy': ['Art', 'Food', 'Fashion'],
+    'Germany': ['Science', 'Technology', 'Music'],
+    'Spain': ['Music', 'Art', 'Food'],
+    'Mexico': ['Ancient Civilizations', 'Traditions', 'Music'],
+    'Canada': ['Sports', 'Natural Resources', 'Environment'],
+    'United Kingdom': ['Literature', 'Monarchy', 'Traditions'],
+    'South Korea': ['Technology', 'Music', 'Entertainment'],
+    'Nigeria': ['Entertainment', 'Natural Resources', 'Culture'],
+    'Kenya': ['Wildlife', 'Sports', 'Culture'],
+    'Morocco': ['Traditions', 'Art', 'Architecture'],
+    'Thailand': ['Religion', 'Food', 'Wildlife'],
+    'Greece': ['Ancient History', 'Mythology', 'Islands'],
+    'Norway': ['Environment', 'History', 'Natural Resources'],
+    'Switzerland': ['Food', 'Economy', 'Mountains'],
+    'Netherlands': ['Traditions', 'Environment', 'Transportation'],
+    'Argentina': ['Music', 'Food', 'Sports'],
+    'Peru': ['Ancient History', 'Food', 'Wildlife'],
+    'South Africa': ['Natural Resources', 'Wine', 'Wildlife']
   };
 
   // Combine all categories
@@ -74,9 +74,9 @@ export const getCategoriesForCountry = (countryName: string, continent: string):
   
   // If we still don't have enough, add more general categories
   const additionalCategories: QuestionCategory[] = [
-    'Science', 'Education', 'Healthcare', 'Transportation', 'Agriculture',
+    'Science', 'Education', 'Healthcare', 'Transportation',
     'Tourism', 'Festivals', 'Traditions', 'Military History', 'Demographics',
-    'Climate', 'Natural Parks', 'Banking', 'Industry', 'Media'
+    'Climate', 'National Parks', 'Banking', 'Industry', 'Media'
   ];
   
   for (const category of additionalCategories) {
