@@ -1,4 +1,3 @@
-
 import { Country, QuestionCategory } from "@/types/quiz";
 import { Country as SupabaseCountry } from "@/services/supabase/quizService";
 import countries from "@/data/countries";
@@ -17,13 +16,11 @@ export const convertToCountryType = (supabaseCountries: any[]): Country[] => {
     // Find matching country in static data for position and code
     const staticCountry = countries.find(c => c.name === country.name);
 
-    // Correct parentheses and chaining to avoid TS1005 error!
+    // Filter and cast each category to ensure the array is of type QuestionCategory[]
     const validCategories = (country.categories || [])
-      .filter((cat: any): cat is string => typeof cat === "string")
-      .filter((cat: string): cat is QuestionCategory =>
-        VALID_CATEGORIES.includes(cat as QuestionCategory)
-      )
-      .map(cat => cat as QuestionCategory);
+      .filter((cat: any): cat is QuestionCategory =>
+        typeof cat === "string" && VALID_CATEGORIES.includes(cat as QuestionCategory)
+      );
 
     return {
       id: country.id,
@@ -31,7 +28,7 @@ export const convertToCountryType = (supabaseCountries: any[]): Country[] => {
       code: staticCountry?.code || country.name.substring(0, 3).toUpperCase(),
       position: staticCountry?.position || { lat: country.latitude || 0, lng: country.longitude || 0 },
       difficulty: (country.difficulty || 'medium') as any,
-      categories: validCategories, // Now properly typed as QuestionCategory[]
+      categories: validCategories, // Guaranteed to be QuestionCategory[]
       flagImageUrl: country.flag_url,
       continent: country.continent
     };
@@ -50,20 +47,20 @@ export const convertToSupabaseCountry = (country: Country): SupabaseCountry => {
     latitude: country.position.lat,
     longitude: country.position.lng,
     flag_url: country.flagImageUrl || '',
-    categories: country.categories.map(cat => String(cat)), // Convert QuestionCategory[] to string[]
+    // Only include categories that are valid - helps with serialization
+    categories: (country.categories || []).filter((cat: any): cat is QuestionCategory =>
+      typeof cat === "string" && VALID_CATEGORIES.includes(cat as QuestionCategory)
+    ),
     difficulty: country.difficulty
   };
 };
 
 // Convert raw Supabase data to SupabaseCountry format with proper typing
 export const convertRawToSupabaseCountry = (countryData: any): SupabaseCountry => {
-  // Fix parentheses and chaining here as well!
   const validCategories = (countryData.categories || [])
-    .filter((cat: any): cat is string => typeof cat === "string")
-    .filter((cat: string): cat is QuestionCategory =>
-      VALID_CATEGORIES.includes(cat as QuestionCategory)
-    )
-    .map(cat => cat as QuestionCategory);
+    .filter((cat: any): cat is QuestionCategory =>
+      typeof cat === "string" && VALID_CATEGORIES.includes(cat as QuestionCategory)
+    );
 
   return {
     id: countryData.id,
