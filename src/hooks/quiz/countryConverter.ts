@@ -70,7 +70,7 @@ export const convertRawToSupabaseCountry = (countryData: any): SupabaseCountry =
     latitude: countryData.latitude || 0,
     longitude: countryData.longitude || 0,
     flag_url: countryData.flag_url,
-    categories: validCategories, // Now properly typed as string[]
+    categories: validCategories, // This is now correctly typed as string[]
     difficulty: countryData.difficulty
   };
 };
