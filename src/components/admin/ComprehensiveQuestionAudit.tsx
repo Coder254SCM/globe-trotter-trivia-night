@@ -40,6 +40,7 @@ interface AuditResults {
   countries_analyzed: number;
   average_quality_score: number;
   worst_questions: QuestionAnalysis[];
+  placeholder_question_ids: string[];
   country_breakdown: Array<{
     country_name: string;
     total_questions: number;
@@ -64,24 +65,26 @@ export const ComprehensiveQuestionAudit = () => {
     const countryName = question.countries?.name?.toLowerCase() || '';
     const options = [question.option_a, question.option_b, question.option_c, question.option_d];
 
-    // Check for placeholder text
-    if (text.includes('correct answer for') || text.includes('incorrect option')) {
+    // Check for placeholder text in question
+    if (text.includes('correct answer for') || text.includes('incorrect option') || 
+        text.includes('option a for') || text.includes('option b for') ||
+        text.includes('option c for') || text.includes('option d for')) {
       issues.push({
         type: 'placeholder',
         severity: 'high',
-        description: 'Contains placeholder text instead of real question'
+        description: 'Contains placeholder text in question'
       });
       qualityScore -= 50;
     }
 
     // Check if options contain placeholder text
     const hasPlaceholderOptions = options.some(option => 
-      option?.includes('Correct answer for') || 
-      option?.includes('Incorrect option') ||
-      option?.includes('Option A for') ||
-      option?.includes('Option B for') ||
-      option?.includes('Option C for') ||
-      option?.includes('Option D for')
+      option?.toLowerCase().includes('correct answer for') || 
+      option?.toLowerCase().includes('incorrect option') ||
+      option?.toLowerCase().includes('option a for') ||
+      option?.toLowerCase().includes('option b for') ||
+      option?.toLowerCase().includes('option c for') ||
+      option?.toLowerCase().includes('option d for')
     );
 
     if (hasPlaceholderOptions) {
@@ -122,7 +125,7 @@ export const ComprehensiveQuestionAudit = () => {
 
     // Check for poor answer quality
     const allOptionsGeneric = options.every(option => 
-      option?.includes('for ' + question.countries?.name) || 
+      option?.toLowerCase().includes('for ' + question.countries?.name?.toLowerCase()) || 
       option?.length < 10
     );
 
@@ -152,40 +155,35 @@ export const ComprehensiveQuestionAudit = () => {
   };
 
   const deletePlaceholderQuestions = async () => {
-    if (!auditResults) return;
+    if (!auditResults || auditResults.placeholder_question_ids.length === 0) {
+      toast({
+        title: "No Placeholder Questions Found",
+        description: "All questions appear to be properly formatted.",
+      });
+      return;
+    }
     
     setFixing(true);
-    setCurrentStep("Identifying placeholder questions...");
+    setCurrentStep("Deleting placeholder questions...");
+    setProgress(0);
     
     try {
-      // Get all placeholder questions
-      const placeholderQuestions = auditResults.worst_questions.filter(q => 
-        q.issues.some(issue => issue.type === 'placeholder')
-      );
+      const questionIds = auditResults.placeholder_question_ids;
+      console.log(`🗑️ Deleting ${questionIds.length} placeholder questions:`, questionIds);
 
-      if (placeholderQuestions.length === 0) {
-        toast({
-          title: "No Placeholder Questions Found",
-          description: "All questions appear to be properly formatted.",
-        });
-        setFixing(false);
-        return;
-      }
-
-      setCurrentStep(`Deleting ${placeholderQuestions.length} placeholder questions...`);
-
-      // Delete placeholder questions in batches
+      // Delete questions in batches of 50
       const batchSize = 50;
       let deleted = 0;
 
-      for (let i = 0; i < placeholderQuestions.length; i += batchSize) {
-        const batch = placeholderQuestions.slice(i, i + batchSize);
-        const ids = batch.map(q => q.id);
-
-        const { error } = await supabase
+      for (let i = 0; i < questionIds.length; i += batchSize) {
+        const batch = questionIds.slice(i, i + batchSize);
+        
+        console.log(`Deleting batch ${Math.floor(i/batchSize) + 1}: ${batch.length} questions`);
+        
+        const { error, count } = await supabase
           .from('questions')
           .delete()
-          .in('id', ids);
+          .in('id', batch);
 
         if (error) {
           console.error('Error deleting batch:', error);
@@ -193,13 +191,18 @@ export const ComprehensiveQuestionAudit = () => {
         }
 
         deleted += batch.length;
-        setProgress((deleted / placeholderQuestions.length) * 100);
+        setProgress((deleted / questionIds.length) * 100);
+        setCurrentStep(`Deleted ${deleted}/${questionIds.length} placeholder questions...`);
+        
+        console.log(`✅ Deleted batch of ${batch.length} questions. Total deleted: ${deleted}`);
       }
 
       toast({
         title: "Cleanup Complete!",
         description: `Successfully deleted ${deleted} placeholder questions.`,
       });
+
+      console.log(`🎉 Successfully deleted ${deleted} placeholder questions from Supabase!`);
 
       // Re-run audit to show updated results
       setTimeout(() => {
@@ -210,7 +213,7 @@ export const ComprehensiveQuestionAudit = () => {
       console.error("Failed to delete placeholder questions:", error);
       toast({
         title: "Cleanup Failed",
-        description: "Could not delete all placeholder questions. Check console for details.",
+        description: `Could not delete placeholder questions: ${error.message}`,
         variant: "destructive",
       });
     } finally {
@@ -249,6 +252,7 @@ export const ComprehensiveQuestionAudit = () => {
       setCurrentStep("Analyzing question quality...");
 
       const analyzedQuestions: QuestionAnalysis[] = [];
+      const placeholderQuestionIds: string[] = [];
       let placeholderCount = 0;
       let genericCount = 0;
       let wrongCountryCount = 0;
@@ -260,12 +264,16 @@ export const ComprehensiveQuestionAudit = () => {
         const analysis = analyzeQuestion(question);
         analyzedQuestions.push(analysis);
 
+        // Track placeholder questions for deletion
+        const hasPlaceholder = analysis.issues.some(issue => issue.type === 'placeholder');
+        if (hasPlaceholder) {
+          placeholderQuestionIds.push(question.id);
+          placeholderCount++;
+        }
+
         // Count issue types
         analysis.issues.forEach(issue => {
           switch (issue.type) {
-            case 'placeholder':
-              placeholderCount++;
-              break;
             case 'generic':
               genericCount++;
               break;
@@ -286,7 +294,7 @@ export const ComprehensiveQuestionAudit = () => {
         const stats = countryStats.get(countryName)!;
         stats.total++;
         stats.totalScore += analysis.quality_score;
-        if (analysis.issues.some(i => i.type === 'placeholder')) {
+        if (hasPlaceholder) {
           stats.placeholder++;
         }
       }
@@ -323,6 +331,7 @@ export const ComprehensiveQuestionAudit = () => {
         countries_analyzed: countryStats.size,
         average_quality_score: averageQualityScore,
         worst_questions: worstQuestions,
+        placeholder_question_ids: placeholderQuestionIds,
         country_breakdown: countryBreakdown
       };
 
@@ -337,6 +346,7 @@ export const ComprehensiveQuestionAudit = () => {
       console.log(`⚠️ Generic Questions: ${genericCount}`);
       console.log(`❌ Wrong Country Questions: ${wrongCountryCount}`);
       console.log(`📉 Average Quality Score: ${averageQualityScore}/100`);
+      console.log(`🗑️ Placeholder Question IDs ready for deletion:`, placeholderQuestionIds.slice(0, 10));
 
       toast({
         title: "Comprehensive Audit Complete",
