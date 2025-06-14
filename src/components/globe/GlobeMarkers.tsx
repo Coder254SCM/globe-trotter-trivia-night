@@ -3,4 +3,4 @@
 
 export { createTextCanvas } from './utils/labelUtils';
 export { createCountryMarker } from './markers/CountryMarker';
-export { createPOIMarker } from './markers/POIMarker';
+// Removed POI marker export to prevent accidental use

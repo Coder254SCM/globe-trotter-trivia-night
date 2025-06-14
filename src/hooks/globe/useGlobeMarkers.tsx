@@ -2,8 +2,7 @@
 import { useRef, useEffect } from "react";
 import * as THREE from "three";
 import { Country } from "../../types/quiz";
-import { createCountryMarker, createPOIMarker } from "../../components/globe/GlobeMarkers";
-import { pointsOfInterest } from "../../components/globe/types";
+import { createCountryMarker } from "../../components/globe/GlobeMarkers";
 
 interface UseGlobeMarkersProps {
   globeRef: React.MutableRefObject<THREE.Group | null>;
@@ -31,7 +30,7 @@ export const useGlobeMarkers = ({
     });
     markerRefs.current.clear();
     
-    // Add markers for filtered countries with much larger, more visible markers
+    // Only add markers for filtered countries (NO POIS)
     filteredCountries.forEach((country) => {
       const { lat, lng } = country.position;
       const marker = createCountryMarker(
@@ -83,29 +82,17 @@ export const useGlobeMarkers = ({
       globeRef.current?.add(marker);
       markerRefs.current.set(country.id, marker);
     });
-    
-    console.log(`Added ${filteredCountries.length} country markers to globe`);
-  };
 
-  // Add points of interest markers
-  const addPOIMarkers = () => {
-    if (!globeRef.current) return;
-    
-    pointsOfInterest.forEach(poi => {
-      const marker = createPOIMarker(poi.lat, poi.lng, poi.type, poi.name);
-      marker.userData = { type: 'poi-marker' };
-      globeRef.current?.add(marker);
-    });
+    console.log(`Added ${filteredCountries.length} country markers to globe`);
   };
 
   // Setup enhanced click handler with better hit detection
   const setupClickHandler = (camera: THREE.PerspectiveCamera, scene: THREE.Scene) => {
-    if (!globeRef.current) return null; // Fixed: return null instead of empty function
+    if (!globeRef.current) return null;
     
     const mouse = new THREE.Vector2();
     const raycaster = raycasterRef.current;
     
-    // Increase raycaster sensitivity
     raycaster.params.Points!.threshold = 10;
     raycaster.params.Line!.threshold = 10;
 
@@ -115,30 +102,18 @@ export const useGlobeMarkers = ({
       event.preventDefault();
       event.stopPropagation();
       
-      console.log('Globe click detected at:', event.clientX, event.clientY);
-      
-      // Calculate normalized device coordinates with better precision
       const rect = (event.target as HTMLElement).getBoundingClientRect();
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       
-      console.log('Mouse coordinates:', mouse.x, mouse.y);
-      
-      // Update the raycaster
       raycaster.setFromCamera(mouse, camera);
-      
-      // Get all intersected objects, including deeply nested ones
       const intersects = raycaster.intersectObjects(globeRef.current.children, true);
       
-      console.log(`Found ${intersects.length} intersections`);
-      
       if (intersects.length > 0) {
-        // Look for country markers specifically
         for (const intersect of intersects) {
           let obj: THREE.Object3D | null = intersect.object;
           let countryData = null;
           
-          // Traverse up the parent chain to find country data
           while (obj && !countryData) {
             if (obj.userData?.countryId && obj.userData?.country) {
               countryData = {
@@ -151,39 +126,27 @@ export const useGlobeMarkers = ({
           }
           
           if (countryData) {
-            console.log('Country clicked:', countryData.countryId);
-            
             const country = filteredCountries.find((c) => c.id === countryData.countryId);
             if (country) {
-              // Visual feedback - enhanced animation
               const marker = markerRefs.current.get(countryData.countryId);
               if (marker) {
-                // Pulse animation
                 const originalScale = marker.scale.clone();
                 const targetScale = originalScale.clone().multiplyScalar(2.0);
-                
-                // Animate scale up
                 const animateUp = () => {
                   marker.scale.copy(targetScale);
-                  
-                  // Animate back down after delay
                   setTimeout(() => {
                     marker.scale.copy(originalScale);
                   }, 200);
                 };
-                
                 animateUp();
               }
               
-              // Call the selection handler
               onCountrySelect(country);
-              return; // Found and handled, exit
+              return;
             }
           }
         }
       }
-      
-      console.log('No country marker clicked');
     };
 
     // Also add hover effects
@@ -197,13 +160,11 @@ export const useGlobeMarkers = ({
       raycaster.setFromCamera(mouse, camera);
       const intersects = raycaster.intersectObjects(globeRef.current.children, true);
       
-      // Reset all hover effects
       markerRefs.current.forEach(marker => {
         const hoverArea = marker.children.find(child => child.userData?.type === 'hover-area');
         if (hoverArea) hoverArea.visible = false;
       });
       
-      // Apply hover effect to intersected country
       if (intersects.length > 0) {
         for (const intersect of intersects) {
           let obj: THREE.Object3D | null = intersect.object;
@@ -227,14 +188,13 @@ export const useGlobeMarkers = ({
       }
     };
     
-    return { handleClick, handleMouseMove }; // Always return object with handlers
+    return { handleClick, handleMouseMove };
   };
 
   return {
     markerRefs,
     raycasterRef,
     updateMarkers,
-    addPOIMarkers,
     setupClickHandler
   };
 };
