@@ -1,3 +1,4 @@
+
 import { Country, QuestionCategory } from "@/types/quiz";
 import { Country as SupabaseCountry } from "@/services/supabase/quizService";
 import countries from "@/data/countries";
@@ -15,15 +16,15 @@ export const convertToCountryType = (supabaseCountries: any[]): Country[] => {
   return supabaseCountries.map(country => {
     // Find matching country in static data for position and code
     const staticCountry = countries.find(c => c.name === country.name);
-    
-    // Filter and cast categories to valid QuestionCategory values with proper type assertion
-    const validCategories = ((country.categories || [])
-      .filter((cat: any): cat is string => typeof cat === 'string')
-      .filter((cat: string): cat is QuestionCategory => 
+
+    // Correct parentheses and chaining to avoid TS1005 error!
+    const validCategories = (country.categories || [])
+      .filter((cat: any): cat is string => typeof cat === "string")
+      .filter((cat: string): cat is QuestionCategory =>
         VALID_CATEGORIES.includes(cat as QuestionCategory)
       )
-      .map(cat => cat as QuestionCategory); // Cast each string to QuestionCategory
-    
+      .map(cat => cat as QuestionCategory);
+
     return {
       id: country.id,
       name: country.name,
@@ -56,7 +57,7 @@ export const convertToSupabaseCountry = (country: Country): SupabaseCountry => {
 
 // Convert raw Supabase data to SupabaseCountry format with proper typing
 export const convertRawToSupabaseCountry = (countryData: any): SupabaseCountry => {
-  // Filter categories to valid QuestionCategory values, then convert to string[]
+  // Fix parentheses and chaining here as well!
   const validCategories = (countryData.categories || [])
     .filter((cat: any): cat is string => typeof cat === "string")
     .filter((cat: string): cat is QuestionCategory =>
