@@ -36,7 +36,6 @@ export const useGlobe = ({
   const {
     markerRefs,
     updateMarkers,
-    addPOIMarkers,
     setupClickHandler
   } = useGlobeMarkers({
     globeRef,
@@ -64,10 +63,9 @@ export const useGlobe = ({
     if (!sceneRef.current || !cameraRef.current || !globeRef.current || !rendererRef.current || !containerRef.current) return;
 
     console.log('Setting up globe interactions...');
-
-    // Add POI markers
-    addPOIMarkers();
     
+    // POI marker logic REMOVED for a deep cleanse
+
     // Setup enhanced click handlers
     const handlers = setupClickHandler(cameraRef.current, sceneRef.current);
     if (!handlers) return;
@@ -115,3 +113,4 @@ export const useGlobe = ({
     focusCountry
   };
 };
+
