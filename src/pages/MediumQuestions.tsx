@@ -8,7 +8,7 @@ export default function MediumQuestions() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Medium Questions</h1>
           <p className="text-muted-foreground mt-2">
-            Generate medium-difficulty questions that require specific knowledge about countries
+            Medium question generation is temporarily unavailable
           </p>
         </div>
         
