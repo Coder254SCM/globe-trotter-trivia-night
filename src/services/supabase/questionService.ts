@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Question as FrontendQuestion } from "@/types/quiz";
+import { QuestionValidationService, QuestionToValidate } from "./questionValidationService";
 
 export interface Question {
   id: string;
@@ -56,10 +57,40 @@ export class QuestionService {
   }
 
   /**
-   * Save questions to Supabase
+   * Save questions to Supabase with validation
    */
   static async saveQuestions(questions: any[]): Promise<void> {
     try {
+      // Pre-validate all questions before attempting to save
+      const questionsToValidate: QuestionToValidate[] = questions.map(q => ({
+        text: q.text,
+        option_a: q.option_a,
+        option_b: q.option_b,
+        option_c: q.option_c,
+        option_d: q.option_d,
+        correct_answer: q.correct_answer,
+        country_id: q.country_id,
+        category: q.category
+      }));
+
+      console.log(`🔍 Pre-validating ${questions.length} questions...`);
+      const validationResults = await QuestionValidationService.batchValidateQuestions(questionsToValidate);
+
+      if (validationResults.criticalIssues > 0) {
+        const criticalQuestions = validationResults.results
+          .filter(r => r.severity === 'critical')
+          .map(r => `Question ${r.questionIndex + 1}: ${r.issues.join(', ')}`)
+          .join('\n');
+        
+        throw new Error(`❌ ${validationResults.criticalIssues} questions have critical issues:\n${criticalQuestions}`);
+      }
+
+      if (validationResults.validQuestions !== validationResults.totalQuestions) {
+        console.warn(`⚠️ ${validationResults.totalQuestions - validationResults.validQuestions} questions have non-critical issues but will be saved`);
+      }
+
+      console.log(`✅ Validation passed. Saving ${validationResults.validQuestions} valid questions...`);
+
       const { error } = await supabase
         .from('questions')
         .upsert(questions, { onConflict: 'id' });
@@ -69,10 +100,23 @@ export class QuestionService {
         throw error;
       }
 
-      console.log(`✅ Saved ${questions.length} questions to Supabase`);
+      console.log(`✅ Successfully saved ${questions.length} questions to Supabase`);
     } catch (error) {
       console.error('Failed to save questions:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Validate a single question before saving
+   */
+  static async validateQuestion(question: QuestionToValidate): Promise<boolean> {
+    try {
+      const result = await QuestionValidationService.preValidateQuestion(question);
+      return result.isValid && result.severity !== 'critical';
+    } catch (error) {
+      console.error('Question validation failed:', error);
+      return false;
     }
   }
 
