@@ -1,6 +1,6 @@
 
 import { Question } from "../../types/quiz";
-import { QuizService } from "../../services/supabase/quizService";
+import { QuestionService } from "../../services/supabase/questionService";
 
 // Enhanced question fetching with Supabase integration
 export const fetchSupabaseQuestions = async (
@@ -11,7 +11,7 @@ export const fetchSupabaseQuestions = async (
   if (!countryId) return [];
   
   try {
-    const supabaseQuestions = await QuizService.getQuestions(countryId, difficulty, count);
+    const supabaseQuestions = await QuestionService.getQuestions(countryId, difficulty, count);
     if (supabaseQuestions.length > 0) {
       console.log(`✅ Loaded ${supabaseQuestions.length} questions from Supabase for ${countryId}`);
       return supabaseQuestions;
@@ -25,7 +25,7 @@ export const fetchSupabaseQuestions = async (
 
 export const hasSupabaseQuestionsForCountry = async (countryId: string): Promise<boolean> => {
   try {
-    const questions = await QuizService.getQuestions(countryId, 'medium', 1);
+    const questions = await QuestionService.getQuestions(countryId, 'medium', 1);
     return questions.length > 0;
   } catch (error) {
     console.error('Error checking Supabase questions:', error);

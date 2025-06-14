@@ -1,283 +1,45 @@
-import { supabase } from "@/integrations/supabase/client";
-import countries from "@/data/countries";
-import { Question as FrontendQuestion, Country as FrontendCountry, QuestionCategory } from "@/types/quiz";
 
-export interface Country {
-  id: string;
-  name: string;
-  capital: string;
-  continent: string;
-  population: number;
-  area_km2: number;
-  latitude: number;
-  longitude: number;
-  flag_url?: string;
-  categories?: QuestionCategory[];
-  difficulty?: string;
-}
+import { Country as FrontendCountry } from "@/types/quiz";
+import { CountryService } from "./countryService";
+import { QuestionService } from "./questionService";
+import { GameService } from "./gameService";
+import { AuditService } from "./auditService";
+import { TemplateService } from "./templateService";
 
-export interface Question {
-  id: string;
-  country_id: string;
-  text: string;
-  option_a: string;
-  option_b: string;
-  option_c: string;
-  option_d: string;
-  correct_answer: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  category: string;
-  explanation?: string;
-  month_rotation?: number;
-  ai_generated?: boolean;
-  image_url?: string;
-}
-
-export interface AuditResult {
-  totalQuestions: number;
-  wrongCountryQuestions: number;
-  wrongCategoryQuestions: number;
-  details: Array<{
-    questionId: string;
-    text: string;
-    assignedCountry: string;
-    assignedCategory: string;
-    issues: string[];
-  }>;
-}
+// Re-export types for backward compatibility
+export type { Country } from "./countryService";
+export type { Question } from "./questionService";
+export type { AuditResult } from "./auditService";
 
 export class QuizService {
-  /**
-   * Get all countries from Supabase and transform to frontend format
-   */
-  static async getAllCountries(): Promise<FrontendCountry[]> {
-    try {
-      const { data, error } = await supabase
-        .from('countries')
-        .select('*')
-        .order('name');
+  // Country operations
+  static getAllCountries = CountryService.getAllCountries;
+  static populateAllCountries = CountryService.populateAllCountries;
+  static getDatabaseStats = CountryService.getDatabaseStats;
 
-      if (error) {
-        console.error('Error fetching countries:', error);
-        throw error;
-      }
+  // Question operations
+  static getQuestions = QuestionService.getQuestions;
+  static saveQuestions = QuestionService.saveQuestions;
 
-      console.log(`📊 Loaded ${data?.length || 0} countries from Supabase`);
-      
-      // Transform Supabase countries to frontend format
-      return (data || []).map(country => ({
-        id: country.id,
-        name: country.name,
-        code: country.id.slice(0, 3).toUpperCase(),
-        position: {
-          lat: country.latitude || 0,
-          lng: country.longitude || 0
-        },
-        difficulty: (country.difficulty as 'easy' | 'medium' | 'hard') || 'medium',
-        categories: (country.categories || ['Geography']) as QuestionCategory[],
-        flagImageUrl: country.flag_url,
-        continent: country.continent
-      }));
-    } catch (error) {
-      console.error('Failed to fetch countries from Supabase:', error);
-      throw error;
-    }
-  }
+  // Game operations
+  static getFailedQuestions = GameService.getFailedQuestions;
+  static getLeaderboard = GameService.getLeaderboard;
 
-  /**
-   * Populate all 195 countries into Supabase - PRODUCTION READY
-   */
-  static async populateAllCountries(): Promise<void> {
-    try {
-      console.log(`🌍 PRODUCTION: Populating ${countries.length} countries...`);
-      
-      // Check if countries already exist
-      const { count } = await supabase
-        .from('countries')
-        .select('*', { count: 'exact', head: true });
+  // Audit operations
+  static auditQuestions = AuditService.auditQuestions;
 
-      if (count && count > 0) {
-        console.log(`✅ Database already contains ${count} countries. Skipping population.`);
-        return;
-      }
-      
-      const countriesToInsert = countries.map(country => ({
-        id: country.id,
-        name: country.name,
-        capital: country.name, // Use name as placeholder for capital until we have real data
-        continent: country.continent,
-        population: 1000000, // Placeholder population
-        area_km2: 100000, // Placeholder area
-        latitude: country.position?.lat || 0,
-        longitude: country.position?.lng || 0,
-        flag_url: country.flagImageUrl,
-        categories: country.categories || ['Geography'],
-        difficulty: country.difficulty || 'medium'
-      }));
-
-      const { error } = await supabase
-        .from('countries')
-        .upsert(countriesToInsert, { onConflict: 'id' });
-
-      if (error) {
-        console.error('Error populating countries:', error);
-        throw error;
-      }
-
-      console.log(`✅ PRODUCTION: Successfully populated ${countries.length} countries`);
-      console.log(`🎯 All ${countries.length} countries are now ready for quiz generation`);
-    } catch (error) {
-      console.error('Failed to populate countries:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get questions for a specific country and difficulty
-   */
-  static async getQuestions(
-    countryId: string, 
-    difficulty?: string, 
-    limit: number = 10
-  ): Promise<FrontendQuestion[]> {
-    try {
-      let query = supabase
-        .from('questions')
-        .select('*')
-        .eq('country_id', countryId);
-
-      if (difficulty) {
-        query = query.eq('difficulty', difficulty);
-      }
-
-      const { data, error } = await query
-        .order('month_rotation')
-        .limit(limit);
-
-      if (error) {
-        console.error('Error fetching questions:', error);
-        throw error;
-      }
-
-      // Transform Supabase questions to frontend format
-      return (data || []).map(q => this.transformToFrontendQuestion(q));
-    } catch (error) {
-      console.error('Failed to fetch questions:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get failed questions for Ultimate Quiz
-   */
-  static async getFailedQuestions(userId: string): Promise<FrontendQuestion[]> {
-    try {
-      const { data, error } = await supabase
-        .from('failed_questions')
-        .select(`
-          question_id,
-          questions (*)
-        `)
-        .eq('user_id', userId)
-        .eq('mastered', false);
-
-      if (error) {
-        console.error('Error fetching failed questions:', error);
-        throw error;
-      }
-
-      return (data || [])
-        .filter(item => item.questions)
-        .map(item => this.transformToFrontendQuestion(item.questions));
-    } catch (error) {
-      console.error('Failed to fetch failed questions:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Get leaderboard data
-   */
-  static async getLeaderboard(period: string = 'weekly', category?: string): Promise<any[]> {
-    try {
-      let query = supabase
-        .from('leaderboards')
-        .select(`
-          *,
-          user_profiles (username, avatar_url)
-        `)
-        .eq('period', period)
-        .order('rank');
-
-      if (category) {
-        query = query.eq('category', category);
-      }
-
-      const { data, error } = await query.limit(100);
-
-      if (error) {
-        console.error('Error fetching leaderboard:', error);
-        throw error;
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('Failed to fetch leaderboard:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Transform Supabase question to frontend format
-   */
-  private static transformToFrontendQuestion(supabaseQuestion: any): FrontendQuestion {
-    return {
-      id: supabaseQuestion.id,
-      type: 'multiple-choice',
-      text: supabaseQuestion.text,
-      imageUrl: supabaseQuestion.image_url,
-      choices: [
-        { id: 'a', text: supabaseQuestion.option_a, isCorrect: supabaseQuestion.correct_answer === supabaseQuestion.option_a },
-        { id: 'b', text: supabaseQuestion.option_b, isCorrect: supabaseQuestion.correct_answer === supabaseQuestion.option_b },
-        { id: 'c', text: supabaseQuestion.option_c, isCorrect: supabaseQuestion.correct_answer === supabaseQuestion.option_c },
-        { id: 'd', text: supabaseQuestion.option_d, isCorrect: supabaseQuestion.correct_answer === supabaseQuestion.option_d }
-      ],
-      category: supabaseQuestion.category,
-      explanation: supabaseQuestion.explanation || '',
-      difficulty: supabaseQuestion.difficulty as 'easy' | 'medium' | 'hard'
-    };
-  }
-
-  /**
-   * Save questions to Supabase
-   */
-  static async saveQuestions(questions: any[]): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('questions')
-        .upsert(questions, { onConflict: 'id' });
-
-      if (error) {
-        console.error('Error saving questions:', error);
-        throw error;
-      }
-
-      console.log(`✅ Saved ${questions.length} questions to Supabase`);
-    } catch (error) {
-      console.error('Failed to save questions:', error);
-      throw error;
-    }
-  }
+  // Template operations
+  static generateEasyQuestionsForCountry = TemplateService.generateEasyQuestionsForCountry;
 
   /**
    * Generate questions for all countries - FIXED METHOD
    */
   static async generateQuestionsForAllCountries(questionsPerDifficulty: number = 20): Promise<void> {
-    const countries = await this.getAllCountries();
+    const countries = await CountryService.getAllCountries();
     console.log(`📝 Generating ${questionsPerDifficulty} questions per difficulty for ${countries.length} countries...`);
     
     for (const country of countries) {
-      await this.generateEasyQuestionsForCountry(country, questionsPerDifficulty);
+      await TemplateService.generateEasyQuestionsForCountry(country, questionsPerDifficulty);
     }
     
     console.log('✅ Completed generating questions for all countries');
@@ -287,239 +49,7 @@ export class QuizService {
    * Generate questions for a specific country - FIXED METHOD
    */
   static async generateQuestionsForCountry(country: FrontendCountry, questionsPerDifficulty: number = 20): Promise<void> {
-    await this.generateEasyQuestionsForCountry(country, questionsPerDifficulty);
-  }
-
-  /**
-   * Get database statistics - PRODUCTION READY
-   */
-  static async getDatabaseStats(): Promise<any> {
-    try {
-      // Get country count
-      const { count: countryCount } = await supabase
-        .from('countries')
-        .select('*', { count: 'exact', head: true });
-
-      // Get question count
-      const { count: questionCount } = await supabase
-        .from('questions')
-        .select('*', { count: 'exact', head: true });
-
-      // Get countries with questions
-      const { data: countriesWithQuestions } = await supabase
-        .from('questions')
-        .select('country_id')
-        .neq('country_id', null);
-
-      const uniqueCountriesWithQuestions = new Set(
-        countriesWithQuestions?.map(q => q.country_id) || []
-      ).size;
-
-      // Get continents
-      const { data: continentsData } = await supabase
-        .from('countries')
-        .select('continent');
-
-      const continents = continentsData?.reduce((acc, item) => {
-        acc[item.continent] = true;
-        return acc;
-      }, {} as Record<string, boolean>) || {};
-
-      const stats = {
-        totalCountries: countryCount || 0,
-        totalQuestions: questionCount || 0,
-        countriesWithQuestions: uniqueCountriesWithQuestions,
-        averageQuestionsPerCountry: countryCount ? Math.round((questionCount || 0) / countryCount * 10) / 10 : 0,
-        continents
-      };
-
-      console.log('📊 PRODUCTION Database Statistics:', stats);
-      return stats;
-    } catch (error) {
-      console.error('Failed to get database stats:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Audit questions - Check which questions are in wrong countries/categories
-   */
-  static async auditQuestions(): Promise<AuditResult> {
-    try {
-      console.log('🔍 Starting comprehensive question audit...');
-      
-      // Get all questions with their country assignments
-      const { data: questions, error } = await supabase
-        .from('questions')
-        .select(`
-          id,
-          text,
-          country_id,
-          category,
-          countries (name, continent)
-        `);
-
-      if (error) {
-        console.error('Error fetching questions for audit:', error);
-        throw error;
-      }
-
-      const auditResults: AuditResult = {
-        totalQuestions: questions?.length || 0,
-        wrongCountryQuestions: 0,
-        wrongCategoryQuestions: 0,
-        details: []
-      };
-
-      (questions || []).forEach(question => {
-        const issues: string[] = [];
-        const questionText = question.text.toLowerCase();
-        const countryName = question.countries?.name?.toLowerCase() || '';
-        
-        // Check if question mentions the assigned country
-        const mentionsAssignedCountry = questionText.includes(countryName);
-        
-        // Check if question mentions other countries (potential wrong assignment)
-        const otherCountries = countries.filter(c => 
-          c.name.toLowerCase() !== countryName && 
-          questionText.includes(c.name.toLowerCase())
-        );
-
-        if (!mentionsAssignedCountry && otherCountries.length > 0) {
-          issues.push(`Question mentions ${otherCountries[0].name} but assigned to ${question.countries?.name}`);
-          auditResults.wrongCountryQuestions++;
-        }
-
-        // Check category relevance (basic check)
-        const categoryKeywords: Record<string, string[]> = {
-          'Geography': ['capital', 'border', 'mountain', 'river', 'location', 'continent'],
-          'History': ['founded', 'independence', 'war', 'ancient', 'empire', 'century'],
-          'Culture': ['tradition', 'festival', 'language', 'custom', 'religion'],
-          'Economy': ['currency', 'export', 'industry', 'trade', 'gdp'],
-          'Nature': ['wildlife', 'animal', 'plant', 'climate', 'forest']
-        };
-
-        const categoryWords = categoryKeywords[question.category] || [];
-        const hasRelevantKeywords = categoryWords.some(keyword => 
-          questionText.includes(keyword)
-        );
-
-        if (!hasRelevantKeywords && !mentionsAssignedCountry) {
-          issues.push(`Question category '${question.category}' may not match content`);
-          auditResults.wrongCategoryQuestions++;
-        }
-
-        if (issues.length > 0) {
-          auditResults.details.push({
-            questionId: question.id,
-            text: question.text.substring(0, 100) + '...',
-            assignedCountry: question.countries?.name || 'Unknown',
-            assignedCategory: question.category,
-            issues
-          });
-        }
-      });
-
-      console.log('📊 Audit Results:', {
-        total: auditResults.totalQuestions,
-        wrongCountry: auditResults.wrongCountryQuestions,
-        wrongCategory: auditResults.wrongCategoryQuestions,
-        issuesFound: auditResults.details.length
-      });
-
-      return auditResults;
-    } catch (error) {
-      console.error('Failed to audit questions:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Generate template questions for a country - EASY LEVEL ONLY
-   */
-  static async generateEasyQuestionsForCountry(
-    country: FrontendCountry, 
-    questionsPerCategory: number = 10
-  ): Promise<void> {
-    const categories = ['Geography', 'History', 'Culture', 'Economy', 'Nature'];
-    const questions: any[] = [];
-    
-    for (const category of categories) {
-      for (let i = 0; i < questionsPerCategory; i++) {
-        const monthRotation = (i % 12) + 1;
-        
-        const question = {
-          id: `${country.id}-easy-${category.toLowerCase()}-${monthRotation}-${i}`,
-          country_id: country.id,
-          text: this.getEasyQuestionTemplate(country, category, i),
-          option_a: this.getEasyCorrectAnswer(country, category, i),
-          option_b: `Option B for ${country.name}`,
-          option_c: `Option C for ${country.name}`,
-          option_d: `Option D for ${country.name}`,
-          correct_answer: this.getEasyCorrectAnswer(country, category, i),
-          difficulty: 'easy',
-          category,
-          explanation: `This is an easy level ${category} question about ${country.name}.`,
-          month_rotation: monthRotation,
-          ai_generated: false
-        };
-        
-        questions.push(question);
-      }
-    }
-    
-    await this.saveQuestions(questions);
-    console.log(`✅ Generated ${questions.length} easy questions for ${country.name} across all categories`);
-  }
-
-  private static getEasyQuestionTemplate(country: FrontendCountry, category: string, index: number): string {
-    const templates = {
-      Geography: [
-        `What continent is ${country.name} located in?`,
-        `What is the capital of ${country.name}?`,
-        `Is ${country.name} a landlocked country?`,
-        `What ocean/sea borders ${country.name}?`,
-        `What is the approximate size of ${country.name}?`
-      ],
-      History: [
-        `When did ${country.name} gain independence?`,
-        `What was ${country.name} formerly known as?`,
-        `Who was the first leader of ${country.name}?`,
-        `What empire once controlled ${country.name}?`,
-        `When was ${country.name} founded?`
-      ],
-      Culture: [
-        `What is the main language spoken in ${country.name}?`,
-        `What is the dominant religion in ${country.name}?`,
-        `What is a traditional dish from ${country.name}?`,
-        `What is ${country.name}'s national sport?`,
-        `What festival is celebrated in ${country.name}?`
-      ],
-      Economy: [
-        `What is the currency of ${country.name}?`,
-        `What is ${country.name}'s main export?`,
-        `What industry is important in ${country.name}?`,
-        `What natural resource is found in ${country.name}?`,
-        `What is ${country.name} known for producing?`
-      ],
-      Nature: [
-        `What type of climate does ${country.name} have?`,
-        `What animal is native to ${country.name}?`,
-        `What is a famous landmark in ${country.name}?`,
-        `What natural feature is ${country.name} known for?`,
-        `What plant/tree is common in ${country.name}?`
-      ]
-    };
-    
-    const categoryTemplates = templates[category as keyof typeof templates] || templates.Geography;
-    return categoryTemplates[index % categoryTemplates.length];
-  }
-
-  private static getEasyCorrectAnswer(country: FrontendCountry, category: string, index: number): string {
-    if (category === 'Geography' && index % 5 === 0) return country.continent;
-    if (category === 'Geography' && index % 5 === 1) return country.name; // Placeholder for capital
-    
-    return `Correct answer for ${country.name} - ${category}`;
+    await TemplateService.generateEasyQuestionsForCountry(country, questionsPerDifficulty);
   }
 
   /**
@@ -529,14 +59,14 @@ export class QuizService {
     console.log('🚀 PRODUCTION: Initializing complete database...');
     
     // Step 1: Populate all countries
-    await this.populateAllCountries();
+    await CountryService.populateAllCountries();
     
     // Step 2: Generate easy questions for all countries and categories
-    const countries = await this.getAllCountries();
+    const countries = await CountryService.getAllCountries();
     console.log(`📝 PRODUCTION: Generating easy questions for ${countries.length} countries...`);
     
     for (const country of countries) {
-      await this.generateEasyQuestionsForCountry(country, 10); // 10 questions per category = 50 per country
+      await TemplateService.generateEasyQuestionsForCountry(country, 10); // 10 questions per category = 50 per country
     }
     
     console.log('🎉 PRODUCTION: Database initialization complete!');

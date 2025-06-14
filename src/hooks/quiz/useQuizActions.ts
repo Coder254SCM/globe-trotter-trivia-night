@@ -1,6 +1,6 @@
 
 import { useToast } from "@/hooks/use-toast";
-import { QuizService } from "@/services/supabase/quizService";
+import { QuestionService } from "@/services/supabase/questionService";
 import { AIService } from "@/services/aiService";
 import { supabase } from "@/integrations/supabase/client";
 import { Country } from "@/types/quiz";
@@ -38,7 +38,7 @@ export const useQuizActions = ({
     if (targetCountry) {
       try {
         // Load questions for the selected country
-        const questions = await QuizService.getQuestions(
+        const questions = await QuestionService.getQuestions(
           targetCountry.id, 
           targetCountry.difficulty || 'medium', 
           10
@@ -69,7 +69,7 @@ export const useQuizActions = ({
             await AIService.generateAllDifficultyQuestions(supabaseCountry, 10);
             
             // Try loading questions again
-            const newQuestions = await QuizService.getQuestions(
+            const newQuestions = await QuestionService.getQuestions(
               targetCountry.id, 
               targetCountry.difficulty || 'medium', 
               10

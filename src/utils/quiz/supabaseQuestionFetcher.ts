@@ -1,6 +1,7 @@
 
 import { Question } from "../../types/quiz";
-import { QuizService } from "../../services/supabase/quizService";
+import { QuestionService } from "../../services/supabase/questionService";
+import { CountryService } from "../../services/supabase/countryService";
 import { shuffleArray } from "./questionUtilities";
 
 export const getSupabaseQuizQuestions = async (
@@ -13,17 +14,17 @@ export const getSupabaseQuizQuestions = async (
   try {
     if (countryId && difficulty) {
       // Get country-specific questions with proper difficulty
-      const questions = await QuizService.getQuestions(countryId, difficulty, count);
+      const questions = await QuestionService.getQuestions(countryId, difficulty, count);
       console.log(`✅ Found ${questions.length} Supabase questions for ${countryId} (${difficulty})`);
       return shuffleArray(questions).slice(0, count);
     }
     
     // Fallback to getting questions from multiple countries
-    const countries = await QuizService.getAllCountries();
+    const countries = await CountryService.getAllCountries();
     const allQuestions: Question[] = [];
     
     for (const country of countries.slice(0, 10)) { // Limit to first 10 countries for performance
-      const countryQuestions = await QuizService.getQuestions(
+      const countryQuestions = await QuestionService.getQuestions(
         country.id, 
         difficulty || 'medium', 
         5
@@ -42,7 +43,7 @@ export const getSupabaseQuizQuestions = async (
 
 export const getSupabaseCountryStats = async () => {
   try {
-    const countries = await QuizService.getAllCountries();
+    const countries = await CountryService.getAllCountries();
     return {
       totalCountries: countries.length,
       countriesWithQuestions: countries.length, // All countries should have questions
@@ -65,11 +66,11 @@ export const initializeSupabaseData = async (): Promise<void> => {
   
   try {
     // First populate all countries
-    await QuizService.populateAllCountries();
+    await CountryService.populateAllCountries();
     console.log('✅ Countries populated');
     
     // Then generate questions for each country and difficulty
-    const countries = await QuizService.getAllCountries();
+    const countries = await CountryService.getAllCountries();
     const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
     
     for (const country of countries) {

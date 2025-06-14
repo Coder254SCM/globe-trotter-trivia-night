@@ -1,7 +1,7 @@
 
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { QuizService } from "@/services/supabase/quizService";
+import { CountryService } from "@/services/supabase/countryService";
 import { AIService } from "@/services/aiService";
 import { supabase } from "@/integrations/supabase/client";
 import { convertRawToSupabaseCountry } from "./countryConverter";
@@ -13,11 +13,11 @@ export const useDatabaseInit = () => {
     const initializeDatabase = async () => {
       try {
         console.log('🌍 Checking database for countries...');
-        const supabaseCountries = await QuizService.getAllCountries();
+        const supabaseCountries = await CountryService.getAllCountries();
         
         if (supabaseCountries.length < 195) {
           console.log(`⚠️ Only ${supabaseCountries.length} countries in database. Populating all 195...`);
-          await QuizService.populateAllCountries();
+          await CountryService.populateAllCountries();
           
           toast({
             title: "Database Updated",
@@ -25,7 +25,7 @@ export const useDatabaseInit = () => {
           });
           
           // Check if we need to generate questions
-          const stats = await QuizService.getDatabaseStats();
+          const stats = await CountryService.getDatabaseStats();
           if (stats.totalQuestions < 1000) {
             toast({
               title: "AI Question Generation",
@@ -39,7 +39,7 @@ export const useDatabaseInit = () => {
           console.log(`✅ Database already has ${supabaseCountries.length} countries`);
           
           // Check if we need more questions
-          const stats = await QuizService.getDatabaseStats();
+          const stats = await CountryService.getDatabaseStats();
           console.log('📊 Database stats:', stats);
           
           if (stats.totalQuestions < 500) {
