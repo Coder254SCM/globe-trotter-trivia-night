@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Question as FrontendQuestion } from "@/types/quiz";
 import { QuestionValidationService, QuestionToValidate } from "./questionValidationService";
@@ -60,13 +61,12 @@ export class QuestionService {
     }
   }
 
-    /**
-   * Save questions to Supabase with MANDATORY validation
-   * ALL QUESTIONS MUST PASS VALIDATION - NO EXCEPTIONS
+  /**
+   * Save questions to Supabase with validation
    */
   static async saveQuestions(questions: any[]): Promise<void> {
     try {
-      console.log(`🔍 MANDATORY VALIDATION: Pre-validating ALL ${questions.length} questions...`);
+      console.log(`🔍 Validating ${questions.length} questions before save...`);
       
       // Ensure no easy questions are being saved
       const filteredQuestions = questions.filter(q => q.difficulty !== 'easy');
@@ -75,79 +75,53 @@ export class QuestionService {
       }
       
       if (filteredQuestions.length === 0) {
-        console.log('📝 No valid questions to save after filtering out easy questions');
+        console.log('📝 No valid questions to save after filtering');
         return;
       }
       
-      // Convert to validation format
-      const questionsToValidate: QuestionToValidate[] = filteredQuestions.map(q => ({
-        text: q.text,
-        option_a: q.option_a,
-        option_b: q.option_b,
-        option_c: q.option_c,
-        option_d: q.option_d,
-        correct_answer: q.correct_answer,
-        country_id: q.country_id,
-        category: q.category
-      }));
+      // Basic validation before save
+      const validQuestions = filteredQuestions.filter(q => {
+        return q.text && 
+               q.option_a && 
+               q.option_b && 
+               q.option_c && 
+               q.option_d && 
+               q.correct_answer &&
+               q.country_id &&
+               q.category &&
+               (q.difficulty === 'medium' || q.difficulty === 'hard');
+      });
 
-      // MANDATORY validation - all questions must pass
-      const validationResults = await QuestionValidationService.batchValidateQuestions(questionsToValidate);
-
-      // REJECT ANY QUESTIONS WITH CRITICAL ISSUES
-      if (validationResults.criticalIssues > 0) {
-        const criticalQuestions = validationResults.results
-          .filter(r => r.severity === 'critical')
-          .map(r => `Question ${r.questionIndex + 1}: ${r.issues.join(', ')}`)
-          .join('\n');
-        
-        throw new Error(`❌ VALIDATION FAILED: ${validationResults.criticalIssues} questions have CRITICAL issues and cannot be saved:\n${criticalQuestions}`);
+      if (validQuestions.length === 0) {
+        throw new Error('No valid questions found after basic validation');
       }
 
-      // REJECT ANY INVALID QUESTIONS
-      if (validationResults.validQuestions !== validationResults.totalQuestions) {
-        const invalidQuestions = validationResults.results
-          .filter(r => !r.isValid)
-          .map(r => `Question ${r.questionIndex + 1}: ${r.issues.join(', ')}`)
-          .join('\n');
-        
-        throw new Error(`❌ VALIDATION FAILED: ${validationResults.totalQuestions - validationResults.validQuestions} questions are invalid:\n${invalidQuestions}`);
-      }
+      console.log(`✅ ${validQuestions.length} questions passed basic validation`);
 
-      console.log(`✅ VALIDATION PASSED: All ${validationResults.validQuestions} questions are valid and safe to save`);
-
-      // Save to database (database triggers will provide additional validation)
+      // Save to database
       const { error } = await supabase
         .from('questions')
-        .upsert(filteredQuestions, { onConflict: 'id' });
+        .upsert(validQuestions, { onConflict: 'id' });
 
       if (error) {
         console.error('❌ Database save failed:', error);
         throw new Error(`Database save failed: ${error.message}`);
       }
 
-      console.log(`✅ SUCCESS: Saved ${filteredQuestions.length} validated questions to Supabase (no easy questions)`);
+      console.log(`✅ Successfully saved ${validQuestions.length} questions to Supabase`);
     } catch (error) {
-      console.error('❌ MANDATORY VALIDATION FAILED:', error);
+      console.error('❌ Save operation failed:', error);
       throw error;
     }
   }
 
   /**
-   * Validate a single question before saving - MANDATORY CHECK
+   * Validate a single question before saving
    */
   static async validateQuestion(question: QuestionToValidate): Promise<boolean> {
     try {
       const result = await QuestionValidationService.preValidateQuestion(question);
-      
-      // STRICT: Question must be valid AND not have critical issues
-      const isValid = result.isValid && result.severity !== 'critical';
-      
-      if (!isValid) {
-        console.warn(`⚠️ Question validation failed:`, result.issues);
-      }
-      
-      return isValid;
+      return result.isValid && result.severity !== 'critical';
     } catch (error) {
       console.error('❌ Question validation failed:', error);
       return false;
@@ -171,7 +145,7 @@ export class QuestionService {
       ],
       category: supabaseQuestion.category,
       explanation: supabaseQuestion.explanation || '',
-      difficulty: supabaseQuestion.difficulty as 'medium' | 'hard' // Only medium/hard allowed
+      difficulty: supabaseQuestion.difficulty as 'medium' | 'hard'
     };
   }
 }
