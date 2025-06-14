@@ -1,109 +1,99 @@
+
 import { Question } from "@/types/quiz";
 import { Country } from "./supabase/quizService";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * AI Service using Ollama for free local LLM deployment
- * This replaces the need for paid OpenAI API with a completely free solution
+ * AI Service using OpenRouter for production-ready online LLM access
+ * Supports both free and paid models with excellent reliability
  */
 export class AIService {
-  private static readonly OLLAMA_BASE_URL = 'http://localhost:11434';
-  private static readonly MODEL_NAME = 'llama3.2:3b'; // Lightweight model for production
+  private static readonly OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+  private static readonly FREE_MODEL = 'meta-llama/llama-3.1-8b-instruct:free'; // Free model
+  private static readonly PAID_MODEL = 'meta-llama/llama-3.1-8b-instruct'; // Cheap paid alternative
 
   /**
-   * Check if Ollama is running and accessible
+   * Get OpenRouter API key from Supabase secrets
    */
-  static async isOllamaAvailable(): Promise<boolean> {
+  private static async getApiKey(): Promise<string> {
+    // In production, this would come from Supabase Edge Function environment
+    const apiKey = process.env.OPENROUTER_API_KEY || 'your-openrouter-api-key';
+    
+    if (!apiKey || apiKey === 'your-openrouter-api-key') {
+      throw new Error('OpenRouter API key not configured. Please set OPENROUTER_API_KEY in your environment.');
+    }
+    
+    return apiKey;
+  }
+
+  /**
+   * Check if OpenRouter is accessible
+   */
+  static async isOpenRouterAvailable(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.OLLAMA_BASE_URL}/api/tags`);
+      const response = await fetch(`${this.OPENROUTER_BASE_URL}/models`, {
+        headers: {
+          'Authorization': `Bearer ${await this.getApiKey()}`,
+        }
+      });
       return response.ok;
     } catch (error) {
-      console.warn('Ollama not available:', error);
+      console.warn('OpenRouter not available:', error);
       return false;
     }
   }
 
   /**
-   * Ensure the required model is available
-   */
-  static async ensureModel(): Promise<boolean> {
-    try {
-      const response = await fetch(`${this.OLLAMA_BASE_URL}/api/tags`);
-      const data = await response.json();
-      const hasModel = data.models?.some((model: any) => model.name.includes(this.MODEL_NAME));
-      
-      if (!hasModel) {
-        console.log(`📥 Pulling ${this.MODEL_NAME} model...`);
-        await this.pullModel();
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Failed to ensure model:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Pull the required model
-   */
-  private static async pullModel(): Promise<void> {
-    const response = await fetch(`${this.OLLAMA_BASE_URL}/api/pull`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: this.MODEL_NAME })
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to pull model');
-    }
-  }
-
-  /**
-   * Generate questions using Ollama and save to Supabase
+   * Generate questions using OpenRouter and save to Supabase
    */
   static async generateQuestions(
     country: Country,
     difficulty: 'easy' | 'medium' | 'hard',
     count: number = 10
   ): Promise<Question[]> {
-    if (!(await this.isOllamaAvailable())) {
-      throw new Error('Ollama is not available. Please install and start Ollama.');
-    }
-
-    await this.ensureModel();
-
+    const apiKey = await this.getApiKey();
     const prompt = this.buildPrompt(country, difficulty, count);
     
     try {
-      const response = await fetch(`${this.OLLAMA_BASE_URL}/api/generate`, {
+      const response = await fetch(`${this.OPENROUTER_BASE_URL}/chat/completions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'Global Quiz Game'
+        },
         body: JSON.stringify({
-          model: this.MODEL_NAME,
-          prompt,
-          stream: false,
-          options: {
-            temperature: 0.7,
-            top_p: 0.9,
-            max_tokens: 2000
-          }
+          model: this.FREE_MODEL, // Start with free model
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an expert quiz question generator. Create accurate, well-researched questions with proper difficulty levels.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 2000
         })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate questions');
+        const errorData = await response.json();
+        throw new Error(`OpenRouter API error: ${errorData.error?.message || 'Unknown error'}`);
       }
 
       const data = await response.json();
-      const questions = this.parseQuestionsFromResponse(data.response, country, difficulty);
+      const questions = this.parseQuestionsFromResponse(data.choices[0].message.content, country, difficulty);
       
       // Save generated questions to Supabase
       await this.saveQuestionsToSupabase(questions, country, difficulty);
       
       return questions;
     } catch (error) {
-      console.error('AI generation failed:', error);
+      console.error('OpenRouter generation failed:', error);
       const fallbackQuestions = this.generateFallbackQuestions(country, difficulty, count);
       
       // Save fallback questions to Supabase as well
@@ -145,31 +135,10 @@ export class AIService {
         - Technical government policies, bureaucratic details`
     };
 
-    const examplesByDifficulty = {
-      easy: `Example EASY questions:
-        - "What is the capital of ${country.name}?"
-        - "Which continent is ${country.name} located in?"
-        - "What is the main language spoken in ${country.name}?"`,
-      
-      medium: `Example MEDIUM questions:
-        - "In what year did ${country.name} gain independence?"
-        - "What is the current GDP per capita of ${country.name}?"
-        - "Which political party currently governs ${country.name}?"
-        - "What major trade agreement is ${country.name} part of?"`,
-      
-      hard: `Example HARD questions:
-        - "What was the inflation rate in ${country.name} in 2019?"
-        - "Which specific constitutional article governs electoral processes in ${country.name}?"
-        - "What percentage of ${country.name}'s population speaks [specific minority language]?"
-        - "In which year was the [specific government ministry] established in ${country.name}?"`
-    };
-
     return `Generate ${count} multiple-choice trivia questions about ${country.name}.
 
 DIFFICULTY: ${difficulty.toUpperCase()}
 ${difficultyInstructions[difficulty as keyof typeof difficultyInstructions]}
-
-${examplesByDifficulty[difficulty as keyof typeof examplesByDifficulty]}
 
 Country Information:
 - Capital: ${country.capital}
@@ -215,7 +184,7 @@ Return only a JSON array of questions. Ensure questions match the specified diff
       const questionsData = JSON.parse(jsonMatch[0]);
       
       return questionsData.map((q: any, index: number) => ({
-        id: `ai-${country.id}-${difficulty}-${Date.now()}-${index}`,
+        id: `openrouter-${country.id}-${difficulty}-${Date.now()}-${index}`,
         type: 'multiple-choice' as const,
         text: q.question,
         choices: q.options.map((option: string, i: number) => ({
@@ -229,7 +198,7 @@ Return only a JSON array of questions. Ensure questions match the specified diff
         imageUrl: undefined
       }));
     } catch (error) {
-      console.error('Failed to parse AI response:', error);
+      console.error('Failed to parse OpenRouter response:', error);
       return this.generateFallbackQuestions(country, difficulty, 5);
     }
   }
@@ -267,17 +236,6 @@ Return only a JSON array of questions. Ensure questions match the specified diff
             `About ${Math.round(country.population / 1000000) * 2} million`,
             `About ${Math.round(country.population / 1000000) / 2} million`,
             `About ${Math.round(country.population / 1000000) * 1.5} million`
-          ]
-        },
-        {
-          question: `What is the total area of ${country.name}?`,
-          correct: `${country.area_km2.toLocaleString()} km²`,
-          category: 'Geography',
-          options: [
-            `${country.area_km2.toLocaleString()} km²`,
-            `${Math.round(country.area_km2 * 1.5).toLocaleString()} km²`,
-            `${Math.round(country.area_km2 * 0.7).toLocaleString()} km²`,
-            `${Math.round(country.area_km2 * 2).toLocaleString()} km²`
           ]
         }
       ],
@@ -365,7 +323,7 @@ Return only a JSON array of questions. Ensure questions match the specified diff
     country: Country,
     questionsPerDifficulty: number = 20
   ): Promise<void> {
-    console.log(`🤖 Generating questions for ${country.name}...`);
+    console.log(`🤖 Generating questions for ${country.name} using OpenRouter...`);
     
     const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
     
@@ -373,6 +331,9 @@ Return only a JSON array of questions. Ensure questions match the specified diff
       try {
         await this.generateQuestions(country, difficulty, questionsPerDifficulty);
         console.log(`✅ Generated ${questionsPerDifficulty} ${difficulty} questions for ${country.name}`);
+        
+        // Small delay to respect rate limits
+        await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (error) {
         console.error(`❌ Failed to generate ${difficulty} questions for ${country.name}:`, error);
       }
@@ -386,7 +347,7 @@ Return only a JSON array of questions. Ensure questions match the specified diff
     countries: Country[],
     questionsPerDifficulty: number = 20
   ): Promise<void> {
-    console.log(`🚀 Starting batch generation for ${countries.length} countries...`);
+    console.log(`🚀 Starting batch generation for ${countries.length} countries using OpenRouter...`);
     
     for (let i = 0; i < countries.length; i++) {
       const country = countries[i];
@@ -395,9 +356,9 @@ Return only a JSON array of questions. Ensure questions match the specified diff
       try {
         await this.generateAllDifficultyQuestions(country, questionsPerDifficulty);
         
-        // Add a small delay to avoid overwhelming the local Ollama instance
+        // Delay between countries to respect rate limits
         if (i < countries.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
       } catch (error) {
         console.error(`❌ Failed to process ${country.name}:`, error);
@@ -408,27 +369,34 @@ Return only a JSON array of questions. Ensure questions match the specified diff
   }
 
   /**
-   * Get installation instructions for Ollama
+   * Get setup instructions for OpenRouter
    */
-  static getInstallationInstructions(): string {
+  static getSetupInstructions(): string {
     return `
-🤖 **Free AI Setup Instructions**
+🚀 **OpenRouter Setup Instructions**
 
-1. **Install Ollama** (completely free):
-   - Windows: Download from https://ollama.ai
-   - macOS: brew install ollama
-   - Linux: curl -fsSL https://ollama.ai/install.sh | sh
+1. **Create OpenRouter Account**:
+   - Visit: https://openrouter.ai
+   - Sign up for free account
 
-2. **Start Ollama**:
-   - Run: ollama serve
+2. **Get API Key**:
+   - Go to: https://openrouter.ai/keys
+   - Create new API key
+   - Copy the key
 
-3. **Pull the model** (one-time setup):
-   - Run: ollama pull llama3.2:3b
+3. **Free Models Available**:
+   - meta-llama/llama-3.1-8b-instruct:free
+   - microsoft/wizardlm-2-8x22b:free
+   - google/gemma-2-9b-it:free
 
-4. **Verify installation**:
-   - Visit: http://localhost:11434
+4. **Cheap Paid Models** ($0.001/1K tokens):
+   - meta-llama/llama-3.1-8b-instruct
+   - anthropic/claude-3-haiku
 
-This provides a completely free, local AI solution that works offline!
+5. **Set API Key**:
+   - Add to your environment: OPENROUTER_API_KEY=your_key_here
+
+This provides production-ready AI with free tier + cheap scaling!
     `;
   }
 }
