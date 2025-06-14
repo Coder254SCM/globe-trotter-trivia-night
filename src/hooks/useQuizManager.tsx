@@ -3,7 +3,9 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { QuizService } from "@/services/supabase/quizService";
 import { AIService } from "@/services/aiService";
+import { supabase } from "@/integrations/supabase/client";
 import { Country, DifficultyLevel } from "@/types/quiz";
+import { Country as SupabaseCountry } from "@/services/supabase/quizService";
 import countries from "@/data/countries";
 
 export const useQuizManager = () => {
@@ -88,23 +90,43 @@ export const useQuizManager = () => {
         return;
       }
       
-      // Get countries from Supabase - these are already in the correct format
-      const supabaseCountries = await QuizService.getAllCountries();
-      
-      // Start batch generation for countries with few questions
-      const countriesNeedingQuestions = supabaseCountries.slice(0, 10); // Start with first 10
+      // Get countries from Supabase in their native format for AI service
+      const { data: supabaseCountriesRaw, error } = await supabase
+        .from('countries')
+        .select('*')
+        .order('name')
+        .limit(10); // Start with first 10
+
+      if (error) {
+        throw error;
+      }
+
+      // Convert to the format expected by AIService
+      const supabaseCountries: SupabaseCountry[] = (supabaseCountriesRaw || []).map(country => ({
+        id: country.id,
+        name: country.name,
+        capital: country.capital || country.name,
+        continent: country.continent,
+        population: country.population || 1000000,
+        area_km2: country.area_km2 || 100000,
+        latitude: country.latitude || 0,
+        longitude: country.longitude || 0,
+        flag_url: country.flag_url,
+        categories: country.categories,
+        difficulty: country.difficulty
+      }));
       
       toast({
         title: "AI Generation Started",
-        description: `Generating questions for ${countriesNeedingQuestions.length} countries using OpenRouter AI...`,
+        description: `Generating questions for ${supabaseCountries.length} countries using OpenRouter AI...`,
       });
       
       // Generate questions in background
-      AIService.batchGenerateQuestions(countriesNeedingQuestions, 15)
+      AIService.batchGenerateQuestions(supabaseCountries, 15)
         .then(() => {
           toast({
             title: "AI Generation Complete",
-            description: `Successfully generated questions for ${countriesNeedingQuestions.length} countries!`,
+            description: `Successfully generated questions for ${supabaseCountries.length} countries!`,
           });
           setIsGeneratingQuestions(false);
         })
@@ -152,33 +174,51 @@ export const useQuizManager = () => {
           });
           
           try {
-            // Find the corresponding Supabase country data
-            const supabaseCountries = await QuizService.getAllCountries();
-            const supabaseCountry = supabaseCountries.find(c => c.name === targetCountry.name);
-            
-            if (supabaseCountry) {
-              await AIService.generateAllDifficultyQuestions(supabaseCountry, 10);
-              
-              // Try loading questions again
-              const newQuestions = await QuizService.getQuestions(
-                targetCountry.id, 
-                targetCountry.difficulty || 'medium', 
-                10
-              );
-              
-              if (newQuestions.length > 0) {
-                setQuizQuestions(newQuestions);
-                setShowQuiz(true);
-                setQuizResult(null);
-                toast({
-                  title: "Questions Ready",
-                  description: `Generated ${newQuestions.length} questions for ${targetCountry.name}!`,
-                });
-              } else {
-                throw new Error('No questions generated');
-              }
-            } else {
+            // Get the country from Supabase in the format expected by AI service
+            const { data: countryData, error } = await supabase
+              .from('countries')
+              .select('*')
+              .eq('name', targetCountry.name)
+              .single();
+
+            if (error || !countryData) {
               throw new Error('Country not found in database');
+            }
+
+            // Convert to SupabaseCountry format
+            const supabaseCountry: SupabaseCountry = {
+              id: countryData.id,
+              name: countryData.name,
+              capital: countryData.capital || countryData.name,
+              continent: countryData.continent,
+              population: countryData.population || 1000000,
+              area_km2: countryData.area_km2 || 100000,
+              latitude: countryData.latitude || 0,
+              longitude: countryData.longitude || 0,
+              flag_url: countryData.flag_url,
+              categories: countryData.categories,
+              difficulty: countryData.difficulty
+            };
+            
+            await AIService.generateAllDifficultyQuestions(supabaseCountry, 10);
+            
+            // Try loading questions again
+            const newQuestions = await QuizService.getQuestions(
+              targetCountry.id, 
+              targetCountry.difficulty || 'medium', 
+              10
+            );
+            
+            if (newQuestions.length > 0) {
+              setQuizQuestions(newQuestions);
+              setShowQuiz(true);
+              setQuizResult(null);
+              toast({
+                title: "Questions Ready",
+                description: `Generated ${newQuestions.length} questions for ${targetCountry.name}!`,
+              });
+            } else {
+              throw new Error('No questions generated');
             }
             
           } catch (aiError) {
