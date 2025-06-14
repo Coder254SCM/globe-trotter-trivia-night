@@ -33,13 +33,13 @@ export class QuestionService {
       let query = supabase
         .from('questions')
         .select('*')
-        .eq('country_id', countryId)
-        .neq('difficulty', 'easy');
+        .eq('country_id', countryId);
 
-      // Only allow medium and hard difficulties
-      if (difficulty && (difficulty === 'medium' || difficulty === 'hard')) {
+      // Only allow medium and hard difficulties - no easy questions exist anymore
+      if (difficulty === 'medium' || difficulty === 'hard') {
         query = query.eq('difficulty', difficulty);
       } else {
+        // Default to medium if no valid difficulty specified
         query = query.eq('difficulty', 'medium');
       }
 
@@ -62,7 +62,7 @@ export class QuestionService {
   /**
    * Save questions to Supabase with validation and rate limiting
    */
-  static async saveQuestions(questions: any[]): Promise<void> {
+  static async saveQuestions(questions: any[]): Promise<void> => {
     try {
       console.log(`🔍 Starting save operation for ${questions.length} questions...`);
       
@@ -71,7 +71,7 @@ export class QuestionService {
         return;
       }
       
-      // Basic validation and filtering
+      // Filter out any easy questions and validate
       const validQuestions = questions.filter(q => {
         const isValid = q.text && 
                        q.option_a && 
@@ -81,24 +81,30 @@ export class QuestionService {
                        q.correct_answer &&
                        q.country_id &&
                        q.category &&
-                       (q.difficulty === 'medium' || q.difficulty === 'hard');
+                       (q.difficulty === 'medium' || q.difficulty === 'hard'); // Only medium/hard allowed
         
         if (!isValid) {
           console.warn('⚠️ Skipping invalid question:', q.text?.substring(0, 50) + '...');
+        }
+        
+        // Reject any easy questions
+        if (q.difficulty === 'easy') {
+          console.warn('❌ Rejecting easy question - not allowed:', q.text?.substring(0, 50) + '...');
+          return false;
         }
         
         return isValid;
       });
 
       if (validQuestions.length === 0) {
-        console.warn('⚠️ No valid questions found after filtering');
+        console.warn('⚠️ No valid medium/hard questions found after filtering');
         return;
       }
 
-      console.log(`✅ ${validQuestions.length} questions passed validation`);
+      console.log(`✅ ${validQuestions.length} medium/hard questions passed validation`);
 
-      // Save with smaller batches and delays to prevent rate limiting
-      const batchSize = 20; // Reduced batch size
+      // Save with smaller batches to prevent rate limiting
+      const batchSize = 15;
       const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
       
       for (let i = 0; i < validQuestions.length; i += batchSize) {
@@ -119,9 +125,9 @@ export class QuestionService {
           
           console.log(`✅ Saved batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(validQuestions.length / batchSize)} (${batch.length} questions)`);
           
-          // Add delay between batches to prevent rate limiting
+          // Add delay between batches
           if (i + batchSize < validQuestions.length) {
-            await delay(500); // 500ms delay between batches
+            await delay(750); // Increased delay to prevent rate limiting
           }
           
         } catch (batchError) {
@@ -130,7 +136,7 @@ export class QuestionService {
         }
       }
 
-      console.log(`🎉 Successfully saved all ${validQuestions.length} questions to Supabase`);
+      console.log(`🎉 Successfully saved all ${validQuestions.length} medium/hard questions to Supabase`);
       
     } catch (error) {
       console.error('❌ Save operation failed:', error);
@@ -141,8 +147,14 @@ export class QuestionService {
   /**
    * Validate a single question before saving
    */
-  static async validateQuestion(question: QuestionToValidate): Promise<boolean> {
+  static async validateQuestion(question: QuestionToValidate): Promise<boolean> => {
     try {
+      // Reject easy questions immediately
+      if (question.difficulty === 'easy') {
+        console.warn('❌ Easy questions are not allowed');
+        return false;
+      }
+      
       const result = await QuestionValidationService.preValidateQuestion(question);
       return result.isValid && result.severity !== 'critical';
     } catch (error) {

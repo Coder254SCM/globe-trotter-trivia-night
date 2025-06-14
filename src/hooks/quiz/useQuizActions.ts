@@ -60,8 +60,17 @@ export const useQuizActions = ({
       try {
         console.log(`🎯 Loading ${targetCount} questions for ${targetCountry.name} with rotation system (medium/hard only)`);
         
-        // Ensure we never request easy questions - default to medium if easy is requested
-        const validDifficulty = targetCountry.difficulty === 'easy' ? 'medium' : (targetCountry.difficulty || 'medium');
+        // Force medium/hard difficulties only - no easy questions allowed
+        let validDifficulty = targetCountry.difficulty;
+        if (validDifficulty === 'easy') {
+          console.warn('❌ Easy difficulty requested but not available - using medium instead');
+          validDifficulty = 'medium';
+        }
+        
+        // Ensure only medium or hard
+        if (validDifficulty !== 'medium' && validDifficulty !== 'hard') {
+          validDifficulty = 'medium';
+        }
         
         // Check cache first
         const cacheKey = `${targetCountry.id}-${validDifficulty}-${targetCount}`;
@@ -69,14 +78,14 @@ export const useQuizActions = ({
         const cacheTime = cacheTimestamps.get(cacheKey) || 0;
         
         if (cachedQuestions && (Date.now() - cacheTime) < cacheTimeout) {
-          console.log(`✅ Using cached questions for ${targetCountry.name}`);
+          console.log(`✅ Using cached medium/hard questions for ${targetCountry.name}`);
           setQuizQuestions(cachedQuestions);
           setShowQuiz(true);
           setQuizResult(null);
           return;
         }
         
-        // Use rotation service to get current month questions (no easy questions)
+        // Use rotation service to get current month questions (medium/hard only)
         const questions = await RotationService.getCurrentMonthQuestions(
           targetCountry.id, 
           validDifficulty, 
@@ -86,7 +95,7 @@ export const useQuizActions = ({
         if (questions.length === 0) {
           toast({
             title: "No Questions Available",
-            description: `No medium/hard questions found for ${targetCountry.name}. Please check back later or try the question generator.`,
+            description: `No ${validDifficulty} questions found for ${targetCountry.name}. Easy questions have been removed from the system.`,
             variant: "destructive",
           });
           return;
@@ -102,13 +111,13 @@ export const useQuizActions = ({
         setQuizQuestions(transformedQuestions);
         setShowQuiz(true);
         setQuizResult(null);
-        console.log(`✅ Loaded ${questions.length} medium/hard questions for ${targetCountry.name}`);
+        console.log(`✅ Loaded ${questions.length} ${validDifficulty} questions for ${targetCountry.name} (no easy questions)`);
         
       } catch (error) {
         console.error('Failed to load quiz questions:', error);
         toast({
           title: "Database Error",
-          description: "Failed to load questions. Please try again.",
+          description: "Failed to load questions. Easy questions have been removed from the system.",
           variant: "destructive",
         });
       }
