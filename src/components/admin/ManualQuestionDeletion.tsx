@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ export const ManualQuestionDeletion = () => {
   const [deleting, setDeleting] = useState(false);
   const [deletedCount, setDeletedCount] = useState(0);
   const [errors, setErrors] = useState<string[]>([]);
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
   const { toast } = useToast();
 
   const handleDirectSQLDeletion = async () => {
@@ -26,15 +26,51 @@ export const ManualQuestionDeletion = () => {
     setDeleting(true);
     setErrors([]);
     setDeletedCount(0);
+    setDebugInfo([]);
     
     try {
-      console.log("🗑️ Starting comprehensive deletion of placeholder questions");
+      console.log("🗑️ Starting deletion with detailed analysis...");
 
-      // First, get all questions that match placeholder patterns
+      // First, let's see what we're actually dealing with - get a sample to debug
+      const { data: sampleQuestions, error: sampleError } = await supabase
+        .from('questions')
+        .select('id, text, option_a, option_b, option_c, option_d')
+        .limit(10);
+
+      if (sampleError) {
+        console.error("Error fetching sample:", sampleError);
+        setErrors([`Sample fetch error: ${sampleError.message}`]);
+        return;
+      }
+
+      console.log("📋 Sample questions for debugging:", sampleQuestions);
+      setDebugInfo([`Found ${sampleQuestions?.length || 0} sample questions to analyze`]);
+
+      // More comprehensive placeholder detection
+      const placeholderPatterns = [
+        'text.ilike.%correct answer for%',
+        'text.ilike.%option a for%',
+        'text.ilike.%option b for%',
+        'text.ilike.%option c for%',
+        'text.ilike.%option d for%',
+        'text.ilike.%incorrect option%',
+        'option_a.ilike.%correct answer for%',
+        'option_a.ilike.%incorrect option%',
+        'option_b.ilike.%correct answer for%',
+        'option_b.ilike.%correct answer for%',
+        'option_c.ilike.%correct answer for%',
+        'option_c.ilike.%correct answer for%',
+        'option_d.ilike.%correct answer for%',
+        'option_d.ilike.%incorrect option%'
+      ];
+
+      console.log("🔍 Using placeholder patterns:", placeholderPatterns);
+
+      // Get placeholder questions with detailed logging
       const { data: placeholderQuestions, error: fetchError } = await supabase
         .from('questions')
         .select('id, text, option_a, option_b, option_c, option_d')
-        .or('text.ilike.%correct answer for%,text.ilike.%option a for%,text.ilike.%option b for%,text.ilike.%option c for%,text.ilike.%option d for%,option_a.ilike.%correct answer for%,option_b.ilike.%correct answer for%,option_c.ilike.%correct answer for%,option_d.ilike.%correct answer for%,option_a.ilike.%incorrect option%,option_b.ilike.%incorrect option%,option_c.ilike.%incorrect option%,option_d.ilike.%incorrect option%');
+        .or(placeholderPatterns.join(','));
 
       if (fetchError) {
         console.error("Error fetching placeholder questions:", fetchError);
@@ -42,25 +78,48 @@ export const ManualQuestionDeletion = () => {
         return;
       }
 
-      const questionIdsToDelete = placeholderQuestions?.map(q => q.id) || [];
-      console.log(`📋 Found ${questionIdsToDelete.length} placeholder questions to delete`);
+      console.log("🎯 Found placeholder questions:", placeholderQuestions);
+      setDebugInfo(prev => [...prev, `Placeholder query returned ${placeholderQuestions?.length || 0} questions`]);
 
-      if (questionIdsToDelete.length === 0) {
+      if (!placeholderQuestions || placeholderQuestions.length === 0) {
+        console.log("✅ No placeholder questions found with current patterns");
+        
+        // Let's try a different approach - look for questions with template-like content
+        const { data: templateQuestions, error: templateError } = await supabase
+          .from('questions')
+          .select('id, text')
+          .or('text.cs.{"Correct answer for"},text.cs.{"Option A for"},text.cs.{"Incorrect option"}');
+
+        if (templateError) {
+          console.error("Template search error:", templateError);
+        } else {
+          console.log("🔍 Template search found:", templateQuestions);
+          setDebugInfo(prev => [...prev, `Template search found ${templateQuestions?.length || 0} questions`]);
+        }
+
         toast({
           title: "No Placeholder Questions Found",
-          description: "No questions with placeholder patterns were found.",
+          description: "No questions matching placeholder patterns were found. Check the debug info.",
         });
+        setDebugInfo(prev => [...prev, "No questions matched the placeholder patterns"]);
         return;
       }
 
-      // Delete in smaller batches of 50
-      const batchSize = 50;
+      const questionIdsToDelete = placeholderQuestions.map(q => q.id);
+      console.log(`📋 Will delete ${questionIdsToDelete.length} questions:`, questionIdsToDelete.slice(0, 5));
+      setDebugInfo(prev => [...prev, `Prepared ${questionIdsToDelete.length} question IDs for deletion`]);
+
+      // Delete in smaller batches with more detailed logging
+      const batchSize = 25; // Smaller batches for better reliability
       let totalDeleted = 0;
       
       for (let i = 0; i < questionIdsToDelete.length; i += batchSize) {
         const batch = questionIdsToDelete.slice(i, i + batchSize);
+        const batchNum = Math.floor(i/batchSize) + 1;
+        const totalBatches = Math.ceil(questionIdsToDelete.length/batchSize);
         
-        console.log(`🗑️ Deleting batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(questionIdsToDelete.length/batchSize)}: ${batch.length} questions`);
+        console.log(`🗑️ Deleting batch ${batchNum}/${totalBatches}: ${batch.length} questions`);
+        console.log(`📝 Batch IDs:`, batch);
         
         const { error, count } = await supabase
           .from('questions')
@@ -68,30 +127,45 @@ export const ManualQuestionDeletion = () => {
           .in('id', batch);
 
         if (error) {
-          console.error(`Error deleting batch:`, error);
-          setErrors(prev => [...prev, `Batch ${Math.floor(i/batchSize) + 1} error: ${error.message}`]);
+          console.error(`❌ Error deleting batch ${batchNum}:`, error);
+          setErrors(prev => [...prev, `Batch ${batchNum} error: ${error.message}`]);
+          setDebugInfo(prev => [...prev, `Batch ${batchNum} failed: ${error.message}`]);
         } else {
           const deletedInBatch = count || batch.length;
           totalDeleted += deletedInBatch;
-          console.log(`✅ Successfully deleted ${deletedInBatch} questions from batch`);
+          console.log(`✅ Successfully deleted ${deletedInBatch} questions from batch ${batchNum}`);
+          setDebugInfo(prev => [...prev, `Batch ${batchNum}: deleted ${deletedInBatch} questions`]);
         }
         
         setDeletedCount(totalDeleted);
         
-        // Small delay between batches to avoid overwhelming the database
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Small delay between batches
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
 
       console.log(`🎉 Deletion complete! Total deleted: ${totalDeleted}/${questionIdsToDelete.length}`);
+      setDebugInfo(prev => [...prev, `FINAL: Deleted ${totalDeleted} out of ${questionIdsToDelete.length} questions`]);
+
+      // Verify deletion by re-checking
+      const { data: remainingPlaceholders, error: verifyError } = await supabase
+        .from('questions')
+        .select('id')
+        .or(placeholderPatterns.join(','));
+
+      if (!verifyError) {
+        console.log(`🔍 Verification: ${remainingPlaceholders?.length || 0} placeholder questions remain`);
+        setDebugInfo(prev => [...prev, `Verification: ${remainingPlaceholders?.length || 0} placeholder questions still exist`]);
+      }
 
       toast({
-        title: "Cleanup Complete!",
+        title: "Deletion Complete!",
         description: `Successfully deleted ${totalDeleted} placeholder questions from Supabase.`,
       });
 
     } catch (error) {
       console.error("Failed to delete placeholder questions:", error);
       setErrors(prev => [...prev, `Unexpected error: ${error.message}`]);
+      setDebugInfo(prev => [...prev, `Fatal error: ${error.message}`]);
       toast({
         title: "Deletion Failed",
         description: "Could not delete placeholder questions. Check console for details.",
@@ -174,10 +248,10 @@ export const ManualQuestionDeletion = () => {
           <div className="border rounded p-4 space-y-4">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />
-              <h3 className="font-semibold">Automatic Placeholder Question Cleanup</h3>
+              <h3 className="font-semibold">Enhanced Placeholder Question Cleanup</h3>
             </div>
             <p className="text-sm text-muted-foreground">
-              This will find and delete ALL questions containing placeholder text patterns like "correct answer for", "option a for", "incorrect option", etc.
+              This will find and delete ALL questions containing placeholder text patterns with detailed debugging.
             </p>
             <Button 
               onClick={handleDirectSQLDeletion}
@@ -185,9 +259,24 @@ export const ManualQuestionDeletion = () => {
               variant="destructive"
               className="w-full"
             >
-              {deleting ? "Deleting..." : "🗑️ Find & Delete All Placeholder Questions"}
+              {deleting ? "Deleting with Debug..." : "🗑️ Find & Delete All Placeholder Questions (Debug Mode)"}
             </Button>
           </div>
+
+          {/* Debug Information */}
+          {debugInfo.length > 0 && (
+            <Alert className="border-blue-500 bg-blue-50">
+              <Database className="h-4 w-4" />
+              <AlertDescription>
+                <div className="space-y-1">
+                  <p className="font-semibold text-blue-800">Debug Information:</p>
+                  {debugInfo.map((info, idx) => (
+                    <p key={idx} className="text-sm text-blue-700">• {info}</p>
+                  ))}
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Manual ID-based Deletion */}
           <div className="border rounded p-4 space-y-4">
