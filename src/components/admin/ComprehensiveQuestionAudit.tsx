@@ -169,45 +169,58 @@ export const ComprehensiveQuestionAudit = () => {
     
     try {
       const questionIds = auditResults.placeholder_question_ids;
-      console.log(`🗑️ Deleting ${questionIds.length} placeholder questions:`, questionIds);
+      console.log(`🗑️ Attempting to delete ${questionIds.length} placeholder questions:`, questionIds);
 
-      // Delete questions in batches of 50
-      const batchSize = 50;
-      let deleted = 0;
-
+      let totalDeleted = 0;
+      const batchSize = 10; // Smaller batch size for better error handling
+      
       for (let i = 0; i < questionIds.length; i += batchSize) {
         const batch = questionIds.slice(i, i + batchSize);
         
-        console.log(`Deleting batch ${Math.floor(i/batchSize) + 1}: ${batch.length} questions`);
+        console.log(`Deleting batch ${Math.floor(i/batchSize) + 1}: IDs`, batch);
         
-        const { error, count } = await supabase
-          .from('questions')
-          .delete()
-          .in('id', batch);
+        // Delete each question individually to get better error reporting
+        for (const questionId of batch) {
+          const { error } = await supabase
+            .from('questions')
+            .delete()
+            .eq('id', questionId);
 
-        if (error) {
-          console.error('Error deleting batch:', error);
-          throw error;
+          if (error) {
+            console.error(`Error deleting question ${questionId}:`, error);
+            // Continue with other questions even if one fails
+          } else {
+            totalDeleted++;
+            console.log(`✅ Successfully deleted question ${questionId}`);
+          }
         }
-
-        deleted += batch.length;
-        setProgress((deleted / questionIds.length) * 100);
-        setCurrentStep(`Deleted ${deleted}/${questionIds.length} placeholder questions...`);
         
-        console.log(`✅ Deleted batch of ${batch.length} questions. Total deleted: ${deleted}`);
+        setProgress((totalDeleted / questionIds.length) * 100);
+        setCurrentStep(`Deleted ${totalDeleted}/${questionIds.length} placeholder questions...`);
+        
+        // Small delay to prevent overwhelming the database
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      toast({
-        title: "Cleanup Complete!",
-        description: `Successfully deleted ${deleted} placeholder questions.`,
-      });
+      if (totalDeleted > 0) {
+        toast({
+          title: "Cleanup Complete!",
+          description: `Successfully deleted ${totalDeleted} out of ${questionIds.length} placeholder questions.`,
+        });
 
-      console.log(`🎉 Successfully deleted ${deleted} placeholder questions from Supabase!`);
+        console.log(`🎉 Successfully deleted ${totalDeleted} placeholder questions from Supabase!`);
 
-      // Re-run audit to show updated results
-      setTimeout(() => {
-        runComprehensiveAudit();
-      }, 1000);
+        // Re-run audit to show updated results
+        setTimeout(() => {
+          runComprehensiveAudit();
+        }, 1000);
+      } else {
+        toast({
+          title: "No Questions Deleted",
+          description: "Could not delete any placeholder questions. Check console for details.",
+          variant: "destructive",
+        });
+      }
 
     } catch (error) {
       console.error("Failed to delete placeholder questions:", error);
