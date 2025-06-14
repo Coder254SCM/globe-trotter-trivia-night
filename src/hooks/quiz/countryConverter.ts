@@ -18,7 +18,7 @@ export const convertToCountryType = (supabaseCountries: any[]): Country[] => {
     const staticCountry = countries.find(c => c.name === country.name);
     
     // Filter and cast categories to valid QuestionCategory values with proper type assertion
-    const validCategories: QuestionCategory[] = (country.categories || [])
+    const validCategories = (country.categories || [])
       .filter((cat: any): cat is QuestionCategory => 
         typeof cat === 'string' && VALID_CATEGORIES.includes(cat as QuestionCategory)
       );
@@ -29,7 +29,7 @@ export const convertToCountryType = (supabaseCountries: any[]): Country[] => {
       code: staticCountry?.code || country.name.substring(0, 3).toUpperCase(),
       position: staticCountry?.position || { lat: country.latitude || 0, lng: country.longitude || 0 },
       difficulty: (country.difficulty || 'medium') as any,
-      categories: validCategories,
+      categories: validCategories, // Now properly typed as QuestionCategory[]
       flagImageUrl: country.flag_url,
       continent: country.continent
     };
@@ -48,7 +48,7 @@ export const convertToSupabaseCountry = (country: Country): SupabaseCountry => {
     latitude: country.position.lat,
     longitude: country.position.lng,
     flag_url: country.flagImageUrl || '',
-    categories: country.categories as string[], // Convert QuestionCategory[] to string[]
+    categories: country.categories.map(cat => String(cat)), // Convert QuestionCategory[] to string[]
     difficulty: country.difficulty
   };
 };
