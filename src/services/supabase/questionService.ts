@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Question as FrontendQuestion } from "@/types/quiz";
 import { QuestionValidationService, QuestionToValidate } from "./questionValidationService";
@@ -12,7 +11,7 @@ export interface Question {
   option_c: string;
   option_d: string;
   correct_answer: string;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: 'medium' | 'hard'; // Removed easy from valid difficulties
   category: string;
   explanation?: string;
   month_rotation?: number;
@@ -22,7 +21,7 @@ export interface Question {
 
 export class QuestionService {
   /**
-   * Get questions for a specific country and difficulty
+   * Get questions for a specific country and difficulty (medium/hard only)
    */
   static async getQuestions(
     countryId: string, 
@@ -33,10 +32,15 @@ export class QuestionService {
       let query = supabase
         .from('questions')
         .select('*')
-        .eq('country_id', countryId);
+        .eq('country_id', countryId)
+        .neq('difficulty', 'easy'); // Explicitly exclude easy questions
 
-      if (difficulty) {
+      // Only allow medium and hard difficulties
+      if (difficulty && (difficulty === 'medium' || difficulty === 'hard')) {
         query = query.eq('difficulty', difficulty);
+      } else {
+        // Default to medium if no valid difficulty specified
+        query = query.eq('difficulty', 'medium');
       }
 
       const { data, error } = await query
@@ -56,7 +60,7 @@ export class QuestionService {
     }
   }
 
-  /**
+    /**
    * Save questions to Supabase with MANDATORY validation
    * ALL QUESTIONS MUST PASS VALIDATION - NO EXCEPTIONS
    */
@@ -64,8 +68,19 @@ export class QuestionService {
     try {
       console.log(`🔍 MANDATORY VALIDATION: Pre-validating ALL ${questions.length} questions...`);
       
+      // Ensure no easy questions are being saved
+      const filteredQuestions = questions.filter(q => q.difficulty !== 'easy');
+      if (filteredQuestions.length !== questions.length) {
+        console.warn(`⚠️ Filtered out ${questions.length - filteredQuestions.length} easy questions`);
+      }
+      
+      if (filteredQuestions.length === 0) {
+        console.log('📝 No valid questions to save after filtering out easy questions');
+        return;
+      }
+      
       // Convert to validation format
-      const questionsToValidate: QuestionToValidate[] = questions.map(q => ({
+      const questionsToValidate: QuestionToValidate[] = filteredQuestions.map(q => ({
         text: q.text,
         option_a: q.option_a,
         option_b: q.option_b,
@@ -104,14 +119,14 @@ export class QuestionService {
       // Save to database (database triggers will provide additional validation)
       const { error } = await supabase
         .from('questions')
-        .upsert(questions, { onConflict: 'id' });
+        .upsert(filteredQuestions, { onConflict: 'id' });
 
       if (error) {
         console.error('❌ Database save failed:', error);
         throw new Error(`Database save failed: ${error.message}`);
       }
 
-      console.log(`✅ SUCCESS: Saved ${questions.length} validated questions to Supabase`);
+      console.log(`✅ SUCCESS: Saved ${filteredQuestions.length} validated questions to Supabase (no easy questions)`);
     } catch (error) {
       console.error('❌ MANDATORY VALIDATION FAILED:', error);
       throw error;
@@ -156,7 +171,7 @@ export class QuestionService {
       ],
       category: supabaseQuestion.category,
       explanation: supabaseQuestion.explanation || '',
-      difficulty: supabaseQuestion.difficulty as 'easy' | 'medium' | 'hard'
+      difficulty: supabaseQuestion.difficulty as 'medium' | 'hard' // Only medium/hard allowed
     };
   }
 }

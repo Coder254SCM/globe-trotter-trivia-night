@@ -53,19 +53,22 @@ export const useQuizActions = ({
     
     if (targetCountry) {
       try {
-        console.log(`🎯 Loading ${targetCount} questions for ${targetCountry.name} with rotation system`);
+        console.log(`🎯 Loading ${targetCount} questions for ${targetCountry.name} with rotation system (medium/hard only)`);
         
-        // Use new rotation service to get current month questions (includes community questions)
+        // Ensure we never request easy questions - default to medium if easy is requested
+        const validDifficulty = targetCountry.difficulty === 'easy' ? 'medium' : (targetCountry.difficulty || 'medium');
+        
+        // Use rotation service to get current month questions (no easy questions)
         const questions = await RotationService.getCurrentMonthQuestions(
           targetCountry.id, 
-          targetCountry.difficulty || 'medium', 
+          validDifficulty, 
           targetCount
         );
         
         if (questions.length === 0) {
           toast({
             title: "No Questions Available",
-            description: `No questions found for ${targetCountry.name}. Please check back later or try the manual question generator.`,
+            description: `No medium/hard questions found for ${targetCountry.name}. Please check back later or try the question generator.`,
             variant: "destructive",
           });
           return;
@@ -77,7 +80,7 @@ export const useQuizActions = ({
         setQuizQuestions(transformedQuestions);
         setShowQuiz(true);
         setQuizResult(null);
-        console.log(`✅ Loaded ${questions.length} questions for ${targetCountry.name} (including community questions)`);
+        console.log(`✅ Loaded ${questions.length} medium/hard questions for ${targetCountry.name}`);
         
       } catch (error) {
         console.error('Failed to load quiz questions:', error);
