@@ -4,8 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Question } from "@/types/quiz";
-import { QuizService } from "@/services/supabase/quizService";
+import { GameSessionService } from "@/services/supabase/gameSessionService";
+import { QuestionService } from "@/services/supabase/questionService";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Trophy, BookOpen, Target, RotateCcw } from "lucide-react";
 
 export const UltimateQuiz = () => {
   const [failedQuestions, setFailedQuestions] = useState<Question[]>([]);
@@ -14,8 +17,10 @@ export const UltimateQuiz = () => {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [score, setScore] = useState(0);
+  const [masteredCount, setMasteredCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadUserAndFailedQuestions();
@@ -31,27 +36,60 @@ export const UltimateQuiz = () => {
       }
       
       setUser(user);
-      const questions = await QuizService.getFailedQuestions(user.id);
-      setFailedQuestions(questions);
+      const questions = await GameSessionService.getFailedQuestions(user.id);
       
-      if (questions.length > 0) {
-        setCurrentQuestion(questions[0]);
+      if (questions.length === 0) {
+        setLoading(false);
+        return;
+      }
+      
+      // Transform to frontend format
+      const transformedQuestions = questions.map(q => QuestionService.transformToFrontendQuestion(q));
+      setFailedQuestions(transformedQuestions);
+      
+      if (transformedQuestions.length > 0) {
+        setCurrentQuestion(transformedQuestions[0]);
       }
       
       setLoading(false);
+      
+      toast({
+        title: "Ultimate Quiz Ready",
+        description: `${questions.length} challenging questions loaded for mastery!`,
+      });
+      
     } catch (error) {
       console.error('Error loading failed questions:', error);
       setLoading(false);
+      toast({
+        title: "Error",
+        description: "Failed to load your challenging questions",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleAnswerSelect = (answerId: string) => {
+  const handleAnswerSelect = async (answerId: string) => {
     setSelectedAnswer(answerId);
     setShowExplanation(true);
     
     const correct = currentQuestion?.choices.find(c => c.id === answerId)?.isCorrect;
     if (correct) {
       setScore(score + 1);
+      setMasteredCount(masteredCount + 1);
+      
+      // Mark question as mastered
+      if (user && currentQuestion) {
+        try {
+          await GameSessionService.markQuestionMastered(user.id, currentQuestion.id);
+          toast({
+            title: "Question Mastered!",
+            description: "This question won't appear in your Ultimate Quiz anymore.",
+          });
+        } catch (error) {
+          console.error('Error marking question as mastered:', error);
+        }
+      }
     }
   };
 
@@ -74,12 +112,27 @@ export const UltimateQuiz = () => {
     setSelectedAnswer(null);
     setShowExplanation(false);
     setScore(0);
+    setMasteredCount(0);
+  };
+
+  const handleReloadQuestions = async () => {
+    setLoading(true);
+    await loadUserAndFailedQuestions();
+    setCurrentIndex(0);
+    setSelectedAnswer(null);
+    setShowExplanation(false);
+    setScore(0);
+    setMasteredCount(0);
   };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="text-lg">Loading Ultimate Quiz...</div>
+        <div className="text-center">
+          <BookOpen className="h-12 w-12 mx-auto mb-4 animate-pulse" />
+          <div className="text-lg">Loading Ultimate Quiz...</div>
+          <p className="text-muted-foreground">Gathering your challenging questions</p>
+        </div>
       </div>
     );
   }
@@ -88,7 +141,10 @@ export const UltimateQuiz = () => {
     return (
       <Card className="max-w-2xl mx-auto mt-8">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">Ultimate Quiz</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2">
+            <Trophy className="h-6 w-6" />
+            Ultimate Quiz
+          </CardTitle>
           <CardDescription className="text-center">
             Please sign in to access your failed questions and master them!
           </CardDescription>
@@ -104,16 +160,31 @@ export const UltimateQuiz = () => {
     return (
       <Card className="max-w-2xl mx-auto mt-8">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">Ultimate Quiz</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2">
+            <Trophy className="h-6 w-6 text-amber-500" />
+            Ultimate Quiz
+          </CardTitle>
           <CardDescription className="text-center">
-            Great job! You don't have any failed questions to master yet.
+            Excellent! You don't have any failed questions to master yet.
           </CardDescription>
         </CardHeader>
-        <CardContent className="text-center">
-          <p className="text-muted-foreground mb-4">
-            Play some quizzes to build your collection of challenging questions!
-          </p>
-          <Button onClick={() => window.location.href = '/'}>Start Quiz</Button>
+        <CardContent className="text-center space-y-4">
+          <div className="p-6 bg-green-50 rounded-lg">
+            <Target className="h-12 w-12 mx-auto mb-4 text-green-600" />
+            <p className="text-green-700 font-medium mb-2">Perfect Performance!</p>
+            <p className="text-green-600 text-sm">
+              You haven't missed any questions yet. Keep up the great work!
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Button onClick={() => window.location.href = '/'} className="w-full">
+              Take a Quiz
+            </Button>
+            <Button onClick={handleReloadQuestions} variant="outline" className="w-full">
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Refresh Questions
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -123,21 +194,40 @@ export const UltimateQuiz = () => {
     return (
       <Card className="max-w-2xl mx-auto mt-8">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">Ultimate Quiz Complete!</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center flex items-center justify-center gap-2">
+            <Trophy className="h-6 w-6 text-amber-500" />
+            Ultimate Quiz Complete!
+          </CardTitle>
           <CardDescription className="text-center">
-            You've mastered {score} out of {failedQuestions.length} challenging questions!
+            You've worked through {failedQuestions.length} challenging questions!
           </CardDescription>
         </CardHeader>
-        <CardContent className="text-center">
+        <CardContent className="text-center space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">{score}</div>
+              <div className="text-sm text-blue-600">Questions Correct</div>
+            </div>
+            <div className="p-4 bg-green-50 rounded-lg">
+              <div className="text-2xl font-bold text-green-600">{masteredCount}</div>
+              <div className="text-sm text-green-600">Questions Mastered</div>
+            </div>
+          </div>
+          
           <div className="mb-6">
             <Badge variant="outline" className="text-lg px-4 py-2">
               Success Rate: {Math.round((score / failedQuestions.length) * 100)}%
             </Badge>
           </div>
+          
           <div className="space-x-4">
             <Button onClick={handleRetryQuiz}>Retry Quiz</Button>
+            <Button variant="outline" onClick={handleReloadQuestions}>
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Load New Questions
+            </Button>
             <Button variant="outline" onClick={() => window.location.href = '/'}>
-              New Quiz
+              Take New Quiz
             </Button>
           </div>
         </CardContent>
@@ -149,25 +239,28 @@ export const UltimateQuiz = () => {
     <div className="max-w-4xl mx-auto p-6">
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold">Ultimate Quiz</h1>
-          <Badge variant="outline">
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Trophy className="h-8 w-8 text-amber-500" />
+            Ultimate Quiz
+          </h1>
+          <Badge variant="outline" className="text-lg px-3 py-1">
             Question {currentIndex + 1} of {failedQuestions.length}
           </Badge>
         </div>
         <div className="flex justify-between items-center text-sm text-muted-foreground">
           <span>Master your challenging questions</span>
-          <span>Score: {score}/{currentIndex + (showExplanation ? 1 : 0)}</span>
+          <span>Mastered: {masteredCount} | Correct: {score}/{currentIndex + (showExplanation ? 1 : 0)}</span>
         </div>
       </div>
 
       <Card>
         <CardHeader>
           <div className="flex justify-between items-start">
-            <div>
+            <div className="space-x-2">
               <Badge variant="outline" className="mb-2">
                 {currentQuestion.difficulty}
               </Badge>
-              <Badge variant="secondary" className="mb-2 ml-2">
+              <Badge variant="secondary" className="mb-2">
                 {currentQuestion.category}
               </Badge>
             </div>
@@ -218,7 +311,7 @@ export const UltimateQuiz = () => {
               
               <div className="mt-4 flex justify-between items-center">
                 <Badge variant={selectedAnswer === currentQuestion.choices.find(c => c.isCorrect)?.id ? "default" : "destructive"}>
-                  {selectedAnswer === currentQuestion.choices.find(c => c.isCorrect)?.id ? "Correct!" : "Incorrect"}
+                  {selectedAnswer === currentQuestion.choices.find(c => c.isCorrect)?.id ? "Correct! ✨" : "Try Again Next Time"}
                 </Badge>
                 
                 <Button onClick={handleNextQuestion}>

@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import Globe from "@/components/Globe";
 import Quiz from "@/components/Quiz";
 import QuizResult from "@/components/QuizResult";
@@ -8,6 +9,8 @@ import { AppHeader } from "@/components/layout/AppHeader";
 import { useQuizManager } from "@/hooks/useQuizManager";
 
 export default function Index() {
+  const [weeklyChallenge, setWeeklyChallenge] = useState<{questions: any[], challengeId: string} | null>(null);
+  
   const {
     allCountries,
     selectedCountry,
@@ -22,6 +25,27 @@ export default function Index() {
     handleRetryQuiz,
     handleStartQuizWithCount
   } = useQuizManager();
+
+  const handleWeeklyChallengeStart = (questions: any[], challengeId: string) => {
+    setWeeklyChallenge({ questions, challengeId });
+  };
+
+  const handleWeeklyChallengeBack = () => {
+    setWeeklyChallenge(null);
+  };
+
+  if (weeklyChallenge) {
+    return (
+      <Quiz
+        country={null}
+        questions={weeklyChallenge.questions}
+        onFinish={handleQuizComplete}
+        onBack={handleWeeklyChallengeBack}
+        isWeeklyChallenge={true}
+        challengeId={weeklyChallenge.challengeId}
+      />
+    );
+  }
 
   if (showSettings && selectedCountry) {
     return (
@@ -49,7 +73,7 @@ export default function Index() {
     return (
       <QuizResult
         result={quizResult}
-        countryName={selectedCountry?.name || "Unknown"}
+        countryName={selectedCountry?.name || "Weekly Challenge"}
         onRestart={handleRetryQuiz}
         onBackToGlobe={handleBackToGlobe}
       />
@@ -65,7 +89,7 @@ export default function Index() {
       
       <Globe
         onCountrySelect={handleCountryClick}
-        onStartWeeklyChallenge={() => {}}
+        onStartWeeklyChallenge={handleWeeklyChallengeStart}
       />
     </MainLayout>
   );

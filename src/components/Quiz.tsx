@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
@@ -6,6 +5,8 @@ import { Progress } from "./ui/progress";
 import { Choice, Country, Question, QuizResult } from "../types/quiz";
 import { ArrowLeft, Clock, Globe, MapPin, Trophy, Flag } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { GameSessionService } from "@/services/supabase/gameSessionService";
+import { useAuth } from "@/hooks/useAuth";
 
 interface QuizProps {
   country: Country | null;
@@ -13,23 +14,49 @@ interface QuizProps {
   onFinish: (result: QuizResult) => void;
   onBack: () => void;
   isWeeklyChallenge?: boolean;
+  challengeId?: string;
 }
 
-const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false }: QuizProps) => {
+const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false, challengeId }: QuizProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [correctQuestions, setCorrectQuestions] = useState<number[]>([]);
+  const [failedQuestionIds, setFailedQuestionIds] = useState<string[]>([]);
   const [timeRemaining, setTimeRemaining] = useState(0);
-  const [totalTime, setTotalTime] = useState(0);
+  const [gameSession, setGameSession] = useState<any>(null);
   const [startTime] = useState(Date.now());
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const isMobile = useIsMobile();
+  const { user } = useAuth();
 
   const currentQuestion = useMemo(() => questions[currentQuestionIndex], [questions, currentQuestionIndex]);
   const progress = useMemo(() => ((currentQuestionIndex + 1) / questions.length) * 100, [currentQuestionIndex, questions.length]);
+
+  // Initialize game session
+  useEffect(() => {
+    const initSession = async () => {
+      if (!user) return;
+      
+      try {
+        const sessionType = isWeeklyChallenge ? 'weekly_challenge' : 'individual';
+        const session = await GameSessionService.startSession(
+          user.id,
+          sessionType,
+          questions.length,
+          country?.id,
+          country?.difficulty || 'medium'
+        );
+        setGameSession(session);
+      } catch (error) {
+        console.error('Failed to start game session:', error);
+      }
+    };
+
+    initSession();
+  }, [user, isWeeklyChallenge, questions.length, country]);
 
   useEffect(() => {
     // Reset state for each question
@@ -87,21 +114,36 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false 
     if (correct) {
       setCorrectAnswers((prev) => prev + 1);
       setCorrectQuestions((prev) => [...prev, currentQuestionIndex]);
+    } else {
+      // Record failed question
+      setFailedQuestionIds((prev) => [...prev, currentQuestion.id]);
     }
-  }, [isAnswered, currentQuestion.choices, currentQuestionIndex]);
+  }, [isAnswered, currentQuestion, currentQuestionIndex]);
 
-  const handleNext = useCallback(() => {
+  const handleNext = useCallback(async () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
     } else {
       const endTime = Date.now();
       const timeTaken = Math.round((endTime - startTime) / 1000);
-      setTotalTime(timeTaken);
       
-      // Calculate score - more points for harder questions and faster answers
-      const score = Math.round(
-        (correctAnswers / questions.length) * 100
-      );
+      // Calculate score
+      const score = Math.round((correctAnswers / questions.length) * 100);
+      
+      // Complete game session and record failed questions
+      if (gameSession && user) {
+        try {
+          await GameSessionService.completeSession(
+            gameSession.id,
+            correctAnswers,
+            score,
+            timeTaken,
+            failedQuestionIds
+          );
+        } catch (error) {
+          console.error('Failed to complete session:', error);
+        }
+      }
       
       onFinish({
         totalQuestions: questions.length,
@@ -109,9 +151,10 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false 
         score,
         timeTaken,
         correctQuestions,
+        failedQuestionIds
       });
     }
-  }, [currentQuestionIndex, questions.length, startTime, correctAnswers, onFinish]);
+  }, [currentQuestionIndex, questions.length, startTime, correctAnswers, gameSession, user, failedQuestionIds, onFinish]);
 
   const handleImageLoad = useCallback(() => {
     setImageLoaded(true);
@@ -224,15 +267,6 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false 
                 onLoad={handleImageLoad}
                 onError={handleImageError}
               />
-            </div>
-          )}
-          
-          {currentQuestion?.audioUrl && (
-            <div className={`${isMobile ? 'mt-3 mb-4' : 'mt-4 mb-6'} flex justify-center`}>
-              <audio controls className="w-full max-w-md">
-                <source src={currentQuestion.audioUrl} type="audio/mpeg" />
-                Your browser does not support the audio element.
-              </audio>
             </div>
           )}
         </div>

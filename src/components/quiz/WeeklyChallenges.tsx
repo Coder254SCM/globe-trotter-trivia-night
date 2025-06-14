@@ -4,18 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, Trophy, Users, Clock } from 'lucide-react';
-
-interface WeeklyChallenge {
-  id: string;
-  week_start: string;
-  week_end: string;
-  question_ids: string[];
-  participants: number;
-  created_at: string;
-}
+import { Calendar, Trophy, Users, Clock, Play } from 'lucide-react';
+import { WeeklyChallengeService, WeeklyChallenge } from '@/services/supabase/weeklyChallengeService';
+import { QuestionService } from '@/services/supabase/questionService';
 
 interface UserAttempt {
   id: string;
@@ -25,15 +17,22 @@ interface UserAttempt {
   total_questions: number;
 }
 
-export const WeeklyChallenges = () => {
+interface WeeklyChallengesProps {
+  onStartChallenge?: (questions: any[], challengeId: string) => void;
+}
+
+export const WeeklyChallenges = ({ onStartChallenge }: WeeklyChallengesProps) => {
   const [challenges, setChallenges] = useState<WeeklyChallenge[]>([]);
   const [userAttempts, setUserAttempts] = useState<{ [key: string]: UserAttempt }>({});
+  const [currentChallenge, setCurrentChallenge] = useState<WeeklyChallenge | null>(null);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
     loadChallenges();
+    loadCurrentChallenge();
     if (user) {
       loadUserAttempts();
     }
@@ -51,6 +50,15 @@ export const WeeklyChallenges = () => {
       setChallenges(data || []);
     } catch (error) {
       console.error('Error loading challenges:', error);
+    }
+  };
+
+  const loadCurrentChallenge = async () => {
+    try {
+      const challenge = await WeeklyChallengeService.getCurrentChallenge();
+      setCurrentChallenge(challenge);
+    } catch (error) {
+      console.error('Error loading current challenge:', error);
     } finally {
       setLoading(false);
     }
@@ -80,46 +88,27 @@ export const WeeklyChallenges = () => {
 
   const createWeeklyChallenge = async () => {
     if (!isAdmin) return;
-
+    
+    setCreating(true);
     try {
-      const today = new Date();
-      const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6);
-
-      // Get random questions for the challenge
-      const { data: questions, error: questionsError } = await supabase
-        .from('questions')
-        .select('id')
-        .limit(20);
-
-      if (questionsError) throw questionsError;
-
-      const questionIds = questions?.map(q => q.id) || [];
-
-      const { error } = await supabase
-        .from('weekly_challenges')
-        .insert({
-          week_start: startOfWeek.toISOString().split('T')[0],
-          week_end: endOfWeek.toISOString().split('T')[0],
-          question_ids: questionIds
-        });
-
-      if (error) throw error;
-
+      const challenge = await WeeklyChallengeService.createWeeklyChallenge();
+      
       toast({
         title: "Success!",
-        description: "Weekly challenge created successfully!",
+        description: `Weekly challenge created with ${challenge.question_ids.length} questions!`,
       });
 
-      loadChallenges();
+      await loadChallenges();
+      await loadCurrentChallenge();
     } catch (error) {
       console.error('Error creating challenge:', error);
       toast({
         title: "Error",
-        description: "Failed to create weekly challenge",
+        description: "Failed to create weekly challenge. Make sure there are enough hard questions available.",
         variant: "destructive",
       });
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -143,11 +132,39 @@ export const WeeklyChallenges = () => {
       return;
     }
 
-    // Simulate starting a challenge (in a real app, this would navigate to quiz)
-    toast({
-      title: "Challenge Started!",
-      description: `Starting weekly challenge with ${challenge.question_ids.length} questions`,
-    });
+    try {
+      // Get challenge questions
+      const questions = await WeeklyChallengeService.getChallengeQuestions(challenge);
+      
+      if (questions.length === 0) {
+        toast({
+          title: "No Questions Available",
+          description: "This challenge has no questions available",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Transform questions to frontend format
+      const transformedQuestions = questions.map(q => QuestionService.transformToFrontendQuestion(q));
+
+      // Start the challenge
+      if (onStartChallenge) {
+        onStartChallenge(transformedQuestions, challenge.id);
+      }
+      
+      toast({
+        title: "Challenge Started!",
+        description: `Starting weekly challenge with ${questions.length} questions`,
+      });
+    } catch (error) {
+      console.error('Error starting challenge:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start challenge",
+        variant: "destructive",
+      });
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -183,12 +200,81 @@ export const WeeklyChallenges = () => {
           </p>
         </div>
         {isAdmin && (
-          <Button onClick={createWeeklyChallenge}>
-            Create New Challenge
+          <Button onClick={createWeeklyChallenge} disabled={creating}>
+            {creating ? "Creating..." : "Create New Challenge"}
           </Button>
         )}
       </div>
 
+      {/* Current Challenge Highlight */}
+      {currentChallenge && (
+        <Card className="border-primary bg-gradient-to-r from-primary/5 to-secondary/5">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="h-6 w-6 text-amber-500" />
+                  Current Weekly Challenge
+                  <Badge variant="default">Live Now</Badge>
+                </CardTitle>
+                <CardDescription>
+                  {formatDate(currentChallenge.week_start)} - {formatDate(currentChallenge.week_end)}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">
+                  {currentChallenge.question_ids.length} Hard Questions
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">
+                  {currentChallenge.participants} Participants
+                </span>
+              </div>
+              {userAttempts[currentChallenge.id] && (
+                <div className="flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">
+                    Your Score: {userAttempts[currentChallenge.id].questions_correct}/{userAttempts[currentChallenge.id].total_questions}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {!user ? (
+              <Button disabled className="w-full">
+                Sign In to Participate
+              </Button>
+            ) : userAttempts[currentChallenge.id] ? (
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <p className="text-green-700 font-medium">
+                  Challenge Completed!
+                </p>
+                <p className="text-sm text-green-600">
+                  Final Score: {userAttempts[currentChallenge.id].score} points
+                </p>
+              </div>
+            ) : (
+              <Button 
+                onClick={() => startChallenge(currentChallenge)}
+                className="w-full"
+                size="lg"
+              >
+                <Play className="h-4 w-4 mr-2" />
+                Start Challenge
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Past Challenges */}
       <div className="grid gap-4">
         {challenges.length === 0 ? (
           <Card>
@@ -198,84 +284,87 @@ export const WeeklyChallenges = () => {
               <p className="text-muted-foreground">
                 Weekly challenges will appear here. Check back soon!
               </p>
+              {isAdmin && (
+                <Button onClick={createWeeklyChallenge} className="mt-4" disabled={creating}>
+                  {creating ? "Creating..." : "Create First Challenge"}
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
-          challenges.map((challenge) => {
-            const userAttempt = userAttempts[challenge.id];
-            const isCurrent = isCurrentWeek(challenge);
-            
-            return (
-              <Card key={challenge.id} className={isCurrent ? "border-primary" : ""}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <Calendar className="h-5 w-5" />
-                        Weekly Challenge
-                        {isCurrent && <Badge variant="default">Current</Badge>}
-                      </CardTitle>
-                      <CardDescription>
-                        {formatDate(challenge.week_start)} - {formatDate(challenge.week_end)}
-                      </CardDescription>
+          challenges
+            .filter(challenge => !currentChallenge || challenge.id !== currentChallenge.id)
+            .map((challenge) => {
+              const userAttempt = userAttempts[challenge.id];
+              
+              return (
+                <Card key={challenge.id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Calendar className="h-5 w-5" />
+                          Weekly Challenge
+                          <Badge variant="outline">Past</Badge>
+                        </CardTitle>
+                        <CardDescription>
+                          {formatDate(challenge.week_start)} - {formatDate(challenge.week_end)}
+                        </CardDescription>
+                      </div>
+                      {userAttempt && (
+                        <Badge variant="outline" className="text-green-600">
+                          Completed
+                        </Badge>
+                      )}
                     </div>
-                    {userAttempt && (
-                      <Badge variant="outline" className="text-green-600">
-                        Completed
-                      </Badge>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">
-                        {challenge.question_ids.length} Questions
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">
-                        {challenge.participants} Participants
-                      </span>
-                    </div>
-                    {userAttempt && (
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                       <div className="flex items-center gap-2">
-                        <Trophy className="h-4 w-4 text-muted-foreground" />
+                        <Clock className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm">
-                          Score: {userAttempt.questions_correct}/{userAttempt.total_questions}
+                          {challenge.question_ids.length} Questions
                         </span>
                       </div>
-                    )}
-                  </div>
-
-                  {!user ? (
-                    <Button disabled className="w-full">
-                      Sign In to Participate
-                    </Button>
-                  ) : userAttempt ? (
-                    <div className="text-center p-4 bg-green-50 rounded-lg">
-                      <p className="text-green-700 font-medium">
-                        Challenge Completed!
-                      </p>
-                      <p className="text-sm text-green-600">
-                        Final Score: {userAttempt.score} points
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">
+                          {challenge.participants} Participants
+                        </span>
+                      </div>
+                      {userAttempt && (
+                        <div className="flex items-center gap-2">
+                          <Trophy className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            Score: {userAttempt.questions_correct}/{userAttempt.total_questions}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <Button 
-                      onClick={() => startChallenge(challenge)}
-                      className="w-full"
-                      variant={isCurrent ? "default" : "outline"}
-                    >
-                      {isCurrent ? "Start Challenge" : "View Challenge"}
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })
+
+                    {userAttempt ? (
+                      <div className="text-center p-4 bg-green-50 rounded-lg">
+                        <p className="text-green-700 font-medium">
+                          Challenge Completed!
+                        </p>
+                        <p className="text-sm text-green-600">
+                          Final Score: {userAttempt.score} points
+                        </p>
+                      </div>
+                    ) : (
+                      <Button 
+                        onClick={() => startChallenge(challenge)}
+                        className="w-full"
+                        variant="outline"
+                        disabled={!user}
+                      >
+                        {!user ? "Sign In to Participate" : "View Challenge"}
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })
         )}
       </div>
     </div>
