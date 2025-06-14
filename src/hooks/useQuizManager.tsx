@@ -88,18 +88,25 @@ export const useQuizManager = () => {
         return;
       }
       
-      // Get countries from Supabase
+      // Get countries from Supabase and map to Country format
       const supabaseCountries = await QuizService.getAllCountries();
       
-      // Convert to Country format for AI service
-      const countriesForAI = supabaseCountries.map(country => ({
-        id: country.id,
-        name: country.name,
-        capital: country.name, // Placeholder until we have real capital data
-        continent: country.continent || 'Unknown',
-        population: 1000000, // Placeholder
-        area_km2: 100000, // Placeholder
-      }));
+      // Convert Supabase countries to Country format for AI service
+      const countriesForAI: Country[] = supabaseCountries.map(country => {
+        // Find matching country from static data to get position info
+        const staticCountry = allCountries.find(c => c.name === country.name);
+        
+        return {
+          id: country.id,
+          name: country.name,
+          code: country.id.substring(0, 3).toUpperCase(), // Generate code from ID
+          position: staticCountry?.position || { lat: 0, lng: 0 }, // Use static data or default
+          difficulty: (country.difficulty as DifficultyLevel) || 'medium',
+          categories: [], // Will be populated by AI
+          continent: country.continent,
+          flagImageUrl: country.flag_url || undefined,
+        };
+      });
       
       // Start batch generation for countries with few questions
       const countriesNeedingQuestions = countriesForAI.slice(0, 10); // Start with first 10
@@ -162,13 +169,16 @@ export const useQuizManager = () => {
           });
           
           try {
-            const countryForAI = {
+            // Create proper Country object for AI generation
+            const countryForAI: Country = {
               id: targetCountry.id,
               name: targetCountry.name,
-              capital: targetCountry.name,
-              continent: targetCountry.continent || 'Unknown',
-              population: 1000000,
-              area_km2: 100000,
+              code: targetCountry.code,
+              position: targetCountry.position,
+              difficulty: targetCountry.difficulty || 'medium',
+              categories: targetCountry.categories || [],
+              continent: targetCountry.continent,
+              flagImageUrl: targetCountry.flagImageUrl,
             };
             
             await AIService.generateAllDifficultyQuestions(countryForAI, 10);
