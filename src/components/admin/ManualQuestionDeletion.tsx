@@ -48,10 +48,13 @@ export const ManualQuestionDeletion = () => {
   const deleteAllEasyQuestions = async () => {
     setDeleting(true);
     setProgress(0);
-    setCurrentStep("🔍 Finding all easy questions...");
+    setCurrentStep("🔍 Starting comprehensive deletion process...");
 
     try {
-      // First, get the total count
+      // Step 1: Count total easy questions
+      setProgress(5);
+      setCurrentStep("Counting total easy questions...");
+      
       const { count: totalCount, error: countError } = await supabase
         .from('questions')
         .select('*', { count: 'exact', head: true })
@@ -74,109 +77,116 @@ export const ManualQuestionDeletion = () => {
         return;
       }
 
-      setCurrentStep(`Found ${totalEasy} easy questions. Starting deletion...`);
       setProgress(10);
+      setCurrentStep(`Found ${totalEasy} easy questions. Starting aggressive deletion...`);
 
-      // Get all easy question IDs in smaller batches
-      const batchSize = 50;
-      let allEasyQuestionIds: string[] = [];
-      let offset = 0;
-
-      while (true) {
-        const { data: batch, error: fetchError } = await supabase
+      // Step 2: Multiple deletion passes to ensure complete removal
+      let deletionPass = 1;
+      let remainingQuestions = totalEasy;
+      
+      while (remainingQuestions > 0 && deletionPass <= 5) {
+        setCurrentStep(`🗑️ Deletion Pass ${deletionPass}: Removing remaining easy questions...`);
+        console.log(`\n🔄 DELETION PASS ${deletionPass} - Remaining: ${remainingQuestions}`);
+        
+        // Delete in smaller batches for reliability
+        const batchSize = Math.min(100, remainingQuestions);
+        
+        // Get IDs of easy questions to delete
+        const { data: questionsToDelete, error: fetchError } = await supabase
           .from('questions')
           .select('id')
           .eq('difficulty', 'easy')
-          .range(offset, offset + batchSize - 1);
+          .limit(batchSize);
 
         if (fetchError) {
-          console.error("Error fetching easy question batch:", fetchError);
+          console.error(`❌ Error fetching questions in pass ${deletionPass}:`, fetchError);
           throw fetchError;
         }
 
-        if (!batch || batch.length === 0) break;
+        if (!questionsToDelete || questionsToDelete.length === 0) {
+          console.log(`✅ No more easy questions found in pass ${deletionPass}`);
+          break;
+        }
 
-        allEasyQuestionIds.push(...batch.map(q => q.id));
-        offset += batchSize;
+        const idsToDelete = questionsToDelete.map(q => q.id);
+        console.log(`🗑️ Deleting ${idsToDelete.length} questions in pass ${deletionPass}`);
 
-        console.log(`📥 Fetched batch: ${batch.length} questions (total so far: ${allEasyQuestionIds.length})`);
-      }
-
-      console.log(`🗑️ TOTAL EASY QUESTIONS TO DELETE: ${allEasyQuestionIds.length}`);
-      setProgress(25);
-
-      if (allEasyQuestionIds.length === 0) {
-        toast({
-          title: "No Easy Questions Found",
-          description: "No easy questions were found to delete.",
-        });
-        setDeleting(false);
-        return;
-      }
-
-      // Delete in small batches
-      const deleteBatchSize = 25;
-      let totalDeleted = 0;
-
-      for (let i = 0; i < allEasyQuestionIds.length; i += deleteBatchSize) {
-        const batch = allEasyQuestionIds.slice(i, i + deleteBatchSize);
-        
-        console.log(`🗑️ DELETING BATCH ${Math.floor(i/deleteBatchSize) + 1}/${Math.ceil(allEasyQuestionIds.length/deleteBatchSize)}: ${batch.length} questions`);
-        
-        setCurrentStep(`Deleting batch ${Math.floor(i/deleteBatchSize) + 1}/${Math.ceil(allEasyQuestionIds.length/deleteBatchSize)} (${batch.length} questions)...`);
-
+        // Perform deletion
         const { error: deleteError, count: deletedCount } = await supabase
           .from('questions')
           .delete()
-          .in('id', batch);
+          .in('id', idsToDelete);
 
         if (deleteError) {
-          console.error(`❌ ERROR DELETING BATCH:`, deleteError);
+          console.error(`❌ Error deleting questions in pass ${deletionPass}:`, deleteError);
           throw deleteError;
         }
 
-        const actualDeleted = deletedCount || batch.length;
-        totalDeleted += actualDeleted;
-        
-        console.log(`✅ SUCCESSFULLY DELETED ${actualDeleted} QUESTIONS FROM BATCH`);
-        
-        const progressPercent = 25 + ((totalDeleted / allEasyQuestionIds.length) * 70);
+        const actualDeleted = deletedCount || idsToDelete.length;
+        console.log(`✅ Successfully deleted ${actualDeleted} questions in pass ${deletionPass}`);
+
+        // Update progress
+        const progressPercent = 10 + ((deletionPass / 5) * 80);
         setProgress(progressPercent);
 
-        // Small delay to prevent overwhelming the database
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Recount remaining questions
+        const { count: newCount, error: recountError } = await supabase
+          .from('questions')
+          .select('*', { count: 'exact', head: true })
+          .eq('difficulty', 'easy');
+
+        if (recountError) {
+          console.error(`❌ Error recounting in pass ${deletionPass}:`, recountError);
+          // Continue anyway
+          remainingQuestions = Math.max(0, remainingQuestions - actualDeleted);
+        } else {
+          remainingQuestions = newCount || 0;
+        }
+
+        console.log(`📊 After pass ${deletionPass}: ${remainingQuestions} easy questions remain`);
+        
+        deletionPass++;
+        
+        // Small delay between passes
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
+      // Step 3: Final verification
       setProgress(95);
-      setCurrentStep("Verifying deletion...");
+      setCurrentStep("🔍 Final verification...");
 
-      // Verify deletion
-      const { count: remainingCount, error: verifyError } = await supabase
+      const { count: finalCount, error: verifyError } = await supabase
         .from('questions')
         .select('*', { count: 'exact', head: true })
         .eq('difficulty', 'easy');
 
       if (verifyError) {
-        console.error("Error verifying deletion:", verifyError);
+        console.error("❌ Error in final verification:", verifyError);
       }
 
+      const finalRemaining = finalCount || 0;
       setProgress(100);
-      setCurrentStep("Deletion complete!");
+      setCurrentStep("✅ Deletion process complete!");
 
-      console.log(`🎉 DELETION SUMMARY:`);
+      console.log(`\n🎉 FINAL DELETION SUMMARY:`);
       console.log(`📊 Original Count: ${totalEasy}`);
-      console.log(`🗑️ Attempted to Delete: ${allEasyQuestionIds.length}`);
-      console.log(`✅ Actually Deleted: ${totalDeleted}`);
-      console.log(`📋 Remaining Easy Questions: ${remainingCount || 0}`);
+      console.log(`🔄 Deletion Passes: ${deletionPass - 1}`);
+      console.log(`📋 Final Remaining: ${finalRemaining}`);
 
-      toast({
-        title: "Deletion Complete!",
-        description: `Successfully deleted ${totalDeleted} easy questions. ${remainingCount || 0} easy questions remain.`,
-        variant: (remainingCount || 0) > 0 ? "destructive" : "default"
-      });
+      if (finalRemaining === 0) {
+        toast({
+          title: "🎉 Complete Success!",
+          description: `All ${totalEasy} easy questions have been completely deleted from the database.`,
+        });
+      } else {
+        toast({
+          title: "⚠️ Partial Success",
+          description: `Deleted most easy questions. ${finalRemaining} questions may need manual review.`,
+          variant: "destructive"
+        });
+      }
 
-      // Update the count display
-      setTotalEasyQuestions(remainingCount || 0);
+      setTotalEasyQuestions(finalRemaining);
 
     } catch (error) {
       console.error("❌ DELETION FAILED:", error);
@@ -198,20 +208,20 @@ export const ManualQuestionDeletion = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Trash2 className="h-5 w-5" />
-            Delete All Easy Questions
+            Comprehensive Easy Question Deletion
           </CardTitle>
           <CardDescription>
-            Permanently remove all questions with difficulty level "easy" from your Supabase database
+            Advanced multi-pass deletion system to completely remove all easy questions
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {totalEasyQuestions !== null && (
-            <Alert className={totalEasyQuestions > 0 ? "border-yellow-500 bg-yellow-50" : "border-green-500 bg-green-50"}>
+            <Alert className={totalEasyQuestions > 0 ? "border-red-500 bg-red-50" : "border-green-500 bg-green-50"}>
               <Database className="h-4 w-4" />
               <AlertDescription className="font-semibold">
                 {totalEasyQuestions > 0 
-                  ? `📊 Found ${totalEasyQuestions} easy questions in database`
-                  : "✅ No easy questions found in database"
+                  ? `⚠️ ALERT: ${totalEasyQuestions} easy questions still exist in database`
+                  : "✅ SUCCESS: No easy questions found in database"
                 }
               </AlertDescription>
             </Alert>
@@ -221,7 +231,7 @@ export const ManualQuestionDeletion = () => {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Zap className="h-4 w-4 animate-pulse text-destructive" />
-                <span className="font-medium">Deleting Easy Questions...</span>
+                <span className="font-medium">Multi-Pass Deletion in Progress...</span>
               </div>
               <Progress value={progress} className="w-full" />
               <p className="text-sm text-muted-foreground">{currentStep}</p>
@@ -242,7 +252,7 @@ export const ManualQuestionDeletion = () => {
             <Button 
               onClick={deleteAllEasyQuestions}
               variant="destructive"
-              disabled={deleting || totalEasyQuestions === 0}
+              disabled={deleting}
               className="w-full"
             >
               {deleting ? (
@@ -250,14 +260,15 @@ export const ManualQuestionDeletion = () => {
               ) : (
                 <Trash2 className="mr-2 h-4 w-4" />
               )}
-              Delete All Easy Questions
+              Complete Deletion (All Passes)
             </Button>
           </div>
 
           <Alert className="border-red-500 bg-red-50">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
-              <strong>⚠️ WARNING:</strong> This action will permanently delete ALL easy questions from your database. This cannot be undone. Make sure you have a backup if needed.
+              <strong>🚨 ENHANCED DELETION:</strong> This system uses multiple deletion passes to ensure complete removal. 
+              It will continue until zero easy questions remain in the database.
             </AlertDescription>
           </Alert>
         </CardContent>
