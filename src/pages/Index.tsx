@@ -34,6 +34,12 @@ export default function Index() {
     setWeeklyChallenge(null);
   };
 
+  // Simple handler for Globe component that doesn't expect parameters
+  const handleStartWeeklyChallenge = () => {
+    // This will be handled by the WeeklyChallenges component instead
+    console.log('Weekly challenge requested from globe');
+  };
+
   if (weeklyChallenge) {
     return (
       <Quiz
@@ -89,7 +95,7 @@ export default function Index() {
       
       <Globe
         onCountrySelect={handleCountryClick}
-        onStartWeeklyChallenge={handleWeeklyChallengeStart}
+        onStartWeeklyChallenge={handleStartWeeklyChallenge}
       />
     </MainLayout>
   );
