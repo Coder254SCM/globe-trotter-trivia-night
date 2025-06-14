@@ -33,6 +33,19 @@ export interface Question {
   image_url?: string;
 }
 
+export interface AuditResult {
+  totalQuestions: number;
+  wrongCountryQuestions: number;
+  wrongCategoryQuestions: number;
+  details: Array<{
+    questionId: string;
+    text: string;
+    assignedCountry: string;
+    assignedCategory: string;
+    issues: string[];
+  }>;
+}
+
 export class QuizService {
   /**
    * Get all countries from Supabase and transform to frontend format
@@ -331,18 +344,7 @@ export class QuizService {
   /**
    * Audit questions - Check which questions are in wrong countries/categories
    */
-  static async auditQuestions(): Promise<{
-    totalQuestions: number;
-    wrongCountryQuestions: number;
-    wrongCategoryQuestions: number;
-    details: Array<{
-      questionId: string;
-      text: string;
-      assignedCountry: string;
-      assignedCategory: string;
-      issues: string[];
-    }>;
-  }> {
+  static async auditQuestions(): Promise<AuditResult> {
     try {
       console.log('🔍 Starting comprehensive question audit...');
       
@@ -362,17 +364,11 @@ export class QuizService {
         throw error;
       }
 
-      const auditResults = {
+      const auditResults: AuditResult = {
         totalQuestions: questions?.length || 0,
         wrongCountryQuestions: 0,
         wrongCategoryQuestions: 0,
-        details: [] as Array<{
-          questionId: string;
-          text: string;
-          assignedCountry: string;
-          assignedCategory: string;
-          issues: string[];
-        }>
+        details: []
       };
 
       (questions || []).forEach(question => {

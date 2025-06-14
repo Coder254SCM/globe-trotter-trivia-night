@@ -1,10 +1,10 @@
-
 /**
  * Database Setup Script
  * 
  * This script helps initialize the Globe Trotter Trivia database with:
  * 1. All 195 countries
  * 2. Template-generated questions for all difficulty levels
+ * 3. Comprehensive audit of question quality
  * 
  * Usage:
  * 1. Run: npm run setup-db
@@ -14,7 +14,7 @@ import { QuizService } from '../services/supabase/quizService';
 
 class DatabaseSetup {
   /**
-   * Initialize the complete database setup
+   * Initialize the complete database setup with audit
    */
   static async initializeDatabase(): Promise<void> {
     console.log('🚀 Starting Globe Trotter Trivia database setup...');
@@ -31,11 +31,29 @@ class DatabaseSetup {
       
       await QuizService.generateQuestionsForAllCountries(20); // 20 questions per difficulty per country
       
+      // Step 3: Run comprehensive audit
+      console.log('\n📋 Step 3: Running comprehensive question audit...');
+      const auditResults = await QuizService.auditQuestions();
+      
       console.log('\n🎉 Database setup completed successfully!');
       console.log('📊 Summary:');
       console.log('   • 195 countries added');
       console.log('   • ~11,700 questions generated (20 per difficulty × 3 difficulties × 195 countries)');
-      console.log('   • Ready for trivia gameplay!');
+      console.log('\n🔍 Audit Results:');
+      console.log(`   • Total Questions: ${auditResults.totalQuestions}`);
+      console.log(`   • Wrong Country Assignment: ${auditResults.wrongCountryQuestions}`);
+      console.log(`   • Wrong Category Assignment: ${auditResults.wrongCategoryQuestions}`);
+      console.log(`   • Issues Found: ${auditResults.details.length}`);
+      
+      if (auditResults.details.length > 0) {
+        console.log('\n⚠️ Top Issues Found:');
+        auditResults.details.slice(0, 5).forEach((issue, index) => {
+          console.log(`${index + 1}. ${issue.assignedCountry} - ${issue.text}`);
+          console.log(`   Issues: ${issue.issues.join(', ')}`);
+        });
+      }
+      
+      console.log('\n✅ Ready for trivia gameplay!');
       
     } catch (error) {
       console.error('❌ Database setup failed:', error);
@@ -43,6 +61,38 @@ class DatabaseSetup {
     }
   }
   
+  /**
+   * Run audit only (no database changes)
+   */
+  static async auditOnly(): Promise<void> {
+    try {
+      console.log('🔍 Running comprehensive question audit...');
+      
+      const auditResults = await QuizService.auditQuestions();
+      
+      console.log('\n📊 AUDIT RESULTS:');
+      console.log(`Total Questions: ${auditResults.totalQuestions}`);
+      console.log(`Questions in Wrong Country: ${auditResults.wrongCountryQuestions}`);
+      console.log(`Questions in Wrong Category: ${auditResults.wrongCategoryQuestions}`);
+      console.log(`Total Issues Found: ${auditResults.details.length}`);
+      
+      if (auditResults.details.length > 0) {
+        console.log('\n🚨 DETAILED ISSUES:');
+        auditResults.details.forEach((issue, index) => {
+          console.log(`\n${index + 1}. Question ID: ${issue.questionId}`);
+          console.log(`   Country: ${issue.assignedCountry}`);
+          console.log(`   Category: ${issue.assignedCategory}`);
+          console.log(`   Text: ${issue.text}`);
+          console.log(`   Issues: ${issue.issues.join(', ')}`);
+        });
+      }
+      
+    } catch (error) {
+      console.error('❌ Audit failed:', error);
+      throw error;
+    }
+  }
+
   /**
    * Generate questions for a specific country
    */
@@ -109,6 +159,9 @@ if (require.main === module) {
     case 'full':
       DatabaseSetup.initializeDatabase();
       break;
+    case 'audit':
+      DatabaseSetup.auditOnly();
+      break;
     case 'quick':
       DatabaseSetup.quickSetup();
       break;
@@ -124,6 +177,7 @@ if (require.main === module) {
       console.log('');
       console.log('Usage:');
       console.log('  npm run setup-db full     - Complete setup (all countries, all questions)');
+      console.log('  npm run setup-db audit    - Run audit only (no database changes)');
       console.log('  npm run setup-db quick    - Quick setup (10 countries, fewer questions)');
       console.log('  npm run setup-db country "Country Name" - Generate questions for specific country');
       console.log('');
