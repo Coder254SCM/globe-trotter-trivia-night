@@ -122,9 +122,9 @@ export class QuestionFetcher {
 
     return {
       id: dbQuestion.id,
+      type: 'multiple-choice',
       text: dbQuestion.text,
       choices,
-      correctAnswer: dbQuestion.correct_answer,
       explanation: dbQuestion.explanation || `The correct answer is ${dbQuestion.correct_answer}.`,
       category: dbQuestion.category,
       difficulty: dbQuestion.difficulty,

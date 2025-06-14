@@ -202,7 +202,7 @@ export class QuestionCleanupService {
     // Check each image URL
     for (const question of questionsWithImages) {
       try {
-        const response = await fetch(question.image_url, { method: 'HEAD', timeout: 5000 });
+        const response = await fetch(question.image_url, { method: 'HEAD' });
         if (!response.ok) {
           brokenImageIds.push(question.id);
         }
