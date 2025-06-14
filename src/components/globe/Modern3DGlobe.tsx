@@ -31,7 +31,7 @@ export const Modern3DGlobe = ({ onCountryClick }: Modern3DGlobeProps) => {
       0.1,
       1000
     );
-    camera.position.set(0, 0, 5);
+    camera.position.set(0, 0, 8); // Move camera further back for better view
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ 
@@ -46,8 +46,8 @@ export const Modern3DGlobe = ({ onCountryClick }: Modern3DGlobeProps) => {
     rendererRef.current = renderer;
     containerRef.current.appendChild(renderer.domElement);
 
-    // Create the Earth sphere
-    const globeGeometry = new THREE.SphereGeometry(2, 128, 128);    
+    // Create the Earth sphere - much larger and more visible
+    const globeGeometry = new THREE.SphereGeometry(3, 128, 128); // Increased from 2 to 3
     const textureLoader = new THREE.TextureLoader();
     const earthTexture = textureLoader.load(
       '/lovable-uploads/ea2e8c03-0ad4-4868-9ddc-ba9172d51587.png',
@@ -71,9 +71,9 @@ export const Modern3DGlobe = ({ onCountryClick }: Modern3DGlobeProps) => {
     globeRef.current = globe;
     scene.add(globe);
 
-    // Add atmospheric glow
+    // Add atmospheric glow - adjusted for larger globe
     const globeGlow = new THREE.Mesh(
-      new THREE.SphereGeometry(2.10, 128, 128),
+      new THREE.SphereGeometry(3.15, 128, 128), // Adjusted for larger globe
       new THREE.MeshBasicMaterial({
         color: 0x7ddfff,
         transparent: true,
@@ -83,25 +83,47 @@ export const Modern3DGlobe = ({ onCountryClick }: Modern3DGlobeProps) => {
     );
     scene.add(globeGlow);
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+    // Enhanced lighting for better visibility
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2); // Increased intensity
     scene.add(ambientLight);
 
-    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.5);
+    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.8); // Increased intensity
     directionalLight1.position.set(10, 20, 10);
     directionalLight1.castShadow = true;
     scene.add(directionalLight1);
 
-    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 1.0);
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 1.2); // Increased intensity
     directionalLight2.position.set(-10, -20, -5);
     scene.add(directionalLight2);
 
-    const pointLight = new THREE.PointLight(0xffffff, 0.8);
-    pointLight.position.set(0, 0, 10);
+    const pointLight = new THREE.PointLight(0xffffff, 1.0);
+    pointLight.position.set(0, 0, 15); // Adjusted for larger globe
     scene.add(pointLight);
 
-    // 🚨 Country Markers ONLY. No POIs, museums, etc.
-    generateCountryMarkers(globe);
+    // Generate country markers with larger globe radius
+    generateCountryMarkers(globe, 3.05); // Adjusted for larger globe
+
+    // Click detection
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    const handleClick = (event: MouseEvent) => {
+      if (!containerRef.current || !camera) return;
+      
+      const rect = containerRef.current.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(globe.children, true);
+      
+      if (intersects.length > 0) {
+        const intersectedObject = intersects[0].object;
+        if (intersectedObject.userData?.countryId && onCountryClick) {
+          onCountryClick(intersectedObject.userData.countryId);
+        }
+      }
+    };
 
     // Mouse Controls
     let isDragging = false;
@@ -132,9 +154,10 @@ export const Modern3DGlobe = ({ onCountryClick }: Modern3DGlobeProps) => {
     const handleWheel = (event: WheelEvent) => {
       if (!cameraRef.current) return;
       camera.position.z += event.deltaY * 0.01;
-      camera.position.z = Math.max(3, Math.min(8, camera.position.z));
+      camera.position.z = Math.max(4, Math.min(12, camera.position.z)); // Adjusted for larger globe
     };
 
+    containerRef.current.addEventListener('click', handleClick);
     containerRef.current.addEventListener('mousedown', handleMouseDown);
     containerRef.current.addEventListener('mousemove', handleMouseMove);
     containerRef.current.addEventListener('mouseup', handleMouseUp);
@@ -165,6 +188,7 @@ export const Modern3DGlobe = ({ onCountryClick }: Modern3DGlobeProps) => {
     return () => {
       window.removeEventListener('resize', handleResize);
       if (containerRef.current) {
+        containerRef.current.removeEventListener('click', handleClick);
         containerRef.current.removeEventListener('mousedown', handleMouseDown);
         containerRef.current.removeEventListener('mousemove', handleMouseMove);
         containerRef.current.removeEventListener('mouseup', handleMouseUp);
@@ -175,7 +199,7 @@ export const Modern3DGlobe = ({ onCountryClick }: Modern3DGlobeProps) => {
       }
       renderer.dispose();
     };
-  }, [isRotating]);
+  }, [isRotating, onCountryClick]);
 
   // UI actions
   const handleResetRotation = () => {
