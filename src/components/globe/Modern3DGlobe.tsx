@@ -105,10 +105,7 @@ export const Modern3DGlobe = ({ onCountryClick }: Modern3DGlobeProps) => {
     );
     scene.add(globeGlow);
 
-    // Remove the hardcoded countryPositions, generate from canonical data:
-    // Sample before:
-    // const countryPositions = [{ lat: 40, lng: -74, name: 'USA' }, ...];
-
+    // Country markers: Only loop over canonical countries, never over POIs!
     countries.forEach(country => {
       // Defensive: ensure position is valid
       if (
@@ -127,6 +124,7 @@ export const Modern3DGlobe = ({ onCountryClick }: Modern3DGlobeProps) => {
       const y = 2.05 * Math.cos(phi);
       const z = 2.05 * Math.sin(phi) * Math.sin(theta);
 
+      // Only create markers for countries!
       const markerGeometry = new THREE.SphereGeometry(0.02, 8, 8);
       const markerMaterial = new THREE.MeshBasicMaterial({
         color: 0x00ff88
@@ -135,32 +133,7 @@ export const Modern3DGlobe = ({ onCountryClick }: Modern3DGlobeProps) => {
       marker.position.set(x, y, z);
       marker.userData = { country: country.name, countryId: country.id };
 
-      // Optionally, add a basic label using Sprite
-      // Only add for large globes (~200 labels creates clutter, so keep minimal)
-      // To show all: uncomment the following if desired
-      // let labelSprite: THREE.Sprite | null = null;
-      // const fontSize = 40;
-      // const canvas = document.createElement('canvas');
-      // canvas.width = 256;
-      // canvas.height = 64;
-      // const ctx = canvas.getContext('2d');
-      // if (ctx) {
-      //   ctx.font = `bold ${fontSize}px sans-serif`;
-      //   ctx.fillStyle = 'white';
-      //   ctx.textAlign = 'center';
-      //   ctx.textBaseline = 'middle';
-      //   ctx.fillText(country.name, 128, 32);
-      //   const texture = new THREE.CanvasTexture(canvas);
-      //   const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
-      //   labelSprite = new THREE.Sprite(spriteMaterial);
-      //   labelSprite.position.set(x, y + 0.08, z);
-      //   labelSprite.scale.set(0.24, 0.06, 1);
-      // }
-
       globe.add(marker);
-      // if (labelSprite) {
-      //   globe.add(labelSprite);
-      // }
     });
 
     // Professional mouse controls
