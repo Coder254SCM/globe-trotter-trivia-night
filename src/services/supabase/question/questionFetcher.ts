@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Question as FrontendQuestion } from "@/types/quiz";
 import { Question, QuestionFilter } from "./questionTypes";
@@ -49,6 +50,32 @@ export class QuestionFetcher {
   ];
 
   /**
+   * Geographic context mapping for better validation
+   */
+  private static readonly GEOGRAPHIC_CONTEXTS = {
+    'africa': ['ouagadougou', 'cairo', 'lagos', 'nairobi', 'cape town', 'accra', 'dakar', 'addis ababa', 'khartoum', 'kampala'],
+    'asia': ['beijing', 'tokyo', 'delhi', 'bangkok', 'jakarta', 'manila', 'seoul', 'kuala lumpur', 'singapore', 'dhaka'],
+    'europe': ['london', 'paris', 'berlin', 'rome', 'madrid', 'warsaw', 'vienna', 'athens', 'oslo', 'stockholm'],
+    'north_america': ['washington', 'ottawa', 'mexico city', 'havana', 'guatemala city', 'san jose', 'panama city'],
+    'south_america': ['brasilia', 'buenos aires', 'lima', 'santiago', 'bogota', 'caracas', 'quito', 'asuncion'],
+    'oceania': ['canberra', 'wellington', 'suva', 'port moresby', 'apia', 'nuku\'alofa']
+  };
+
+  /**
+   * US cities that shouldn't appear in non-US questions
+   */
+  private static readonly US_CITIES = [
+    'new york', 'los angeles', 'chicago', 'houston', 'phoenix', 'philadelphia', 
+    'san antonio', 'san diego', 'dallas', 'san jose', 'austin', 'jacksonville',
+    'fort worth', 'columbus', 'charlotte', 'san francisco', 'indianapolis', 
+    'seattle', 'denver', 'washington dc', 'boston', 'el paso', 'detroit', 
+    'nashville', 'portland', 'memphis', 'oklahoma city', 'las vegas', 'louisville',
+    'baltimore', 'milwaukee', 'albuquerque', 'tucson', 'fresno', 'mesa', 'sacramento',
+    'atlanta', 'kansas city', 'colorado springs', 'omaha', 'raleigh', 'miami', 'oakland',
+    'minneapolis', 'tulsa', 'cleveland', 'wichita', 'arlington'
+  ];
+
+  /**
    * Get questions for a specific country with filtering and validation
    */
   static async getQuestions(
@@ -72,7 +99,7 @@ export class QuestionFetcher {
 
       const { data, error } = await query
         .order('created_at', { ascending: false })
-        .limit(limit * 3); // Get more questions to filter out bad ones
+        .limit(limit * 5); // Get more questions to filter out bad ones
 
       if (error) {
         console.error('❌ Error fetching questions:', error);
@@ -89,7 +116,7 @@ export class QuestionFetcher {
       // Transform and validate all questions with enhanced filtering
       const transformedQuestions = data
         .map(q => this.transformToFrontendQuestion(q))
-        .filter(q => this.validateQuestion(q))
+        .filter(q => this.validateQuestion(q, countryId))
         .slice(0, limit); // Take only the requested number after filtering
       
       console.log(`✅ Successfully transformed and validated ${transformedQuestions.length} questions out of ${data.length} raw questions`);
@@ -102,9 +129,9 @@ export class QuestionFetcher {
   }
 
   /**
-   * Enhanced validation with stricter quality checks
+   * Enhanced validation with stricter quality checks and geographic context
    */
-  static validateQuestion(question: FrontendQuestion): boolean {
+  static validateQuestion(question: FrontendQuestion, countryId?: string): boolean {
     // Check for invalid patterns in question text
     const questionText = question.text.toLowerCase();
     for (const pattern of this.INVALID_PATTERNS) {
@@ -152,6 +179,12 @@ export class QuestionFetcher {
       return false;
     }
 
+    // Enhanced geographic context validation
+    if (countryId && !this.validateGeographicContext(question, countryId)) {
+      console.warn('❌ Question has incorrect geographic context for country:', countryId);
+      return false;
+    }
+
     // Check for sensible country-specific content
     const hasCountryContext = this.hasRelevantContent(question, questionText);
     if (!hasCountryContext) {
@@ -160,6 +193,58 @@ export class QuestionFetcher {
     }
 
     return true;
+  }
+
+  /**
+   * Validate geographic context of question choices
+   */
+  private static validateGeographicContext(question: FrontendQuestion, countryId: string): boolean {
+    const questionText = question.text.toLowerCase();
+    const choiceTexts = question.choices.map(c => c.text.toLowerCase());
+    
+    // If it's a capital city question, check geographic appropriateness
+    if (questionText.includes('capital')) {
+      // Check if any US cities appear in non-US questions
+      const hasUSCities = choiceTexts.some(choice => 
+        this.US_CITIES.some(usCity => choice.includes(usCity))
+      );
+      
+      if (hasUSCities && !countryId.toLowerCase().includes('usa') && !countryId.toLowerCase().includes('united states')) {
+        console.warn('❌ Non-US question contains US cities:', choiceTexts);
+        return false;
+      }
+      
+      // For African countries, ensure we don't have random US/European cities
+      if (this.isAfricanCountry(countryId)) {
+        const hasNonAfricanCities = choiceTexts.some(choice => 
+          this.US_CITIES.some(usCity => choice.includes(usCity)) ||
+          ['london', 'paris', 'berlin', 'rome', 'madrid'].some(euroCity => choice.includes(euroCity))
+        );
+        
+        if (hasNonAfricanCities) {
+          console.warn('❌ African country question contains non-African cities:', choiceTexts);
+          return false;
+        }
+      }
+    }
+    
+    return true;
+  }
+
+  /**
+   * Check if country is African (simple heuristic)
+   */
+  private static isAfricanCountry(countryId: string): boolean {
+    const africanCountryPatterns = [
+      'burkina', 'faso', 'nigeria', 'ghana', 'kenya', 'egypt', 'south africa', 
+      'morocco', 'algeria', 'tunisia', 'libya', 'sudan', 'ethiopia', 'uganda',
+      'tanzania', 'angola', 'mozambique', 'madagascar', 'cameroon', 'ivory coast',
+      'mali', 'niger', 'chad', 'congo', 'zambia', 'zimbabwe', 'botswana', 'namibia'
+    ];
+    
+    return africanCountryPatterns.some(pattern => 
+      countryId.toLowerCase().includes(pattern)
+    );
   }
 
   /**
@@ -206,7 +291,7 @@ export class QuestionFetcher {
       if (error) throw error;
 
       console.log(`✅ Found ${data?.length || 0} filtered questions`);
-      const validQuestions = (data || []).map(q => this.transformToFrontendQuestion(q)).filter(q => this.validateQuestion(q));
+      const validQuestions = (data || []).map(q => this.transformToFrontendQuestion(q)).filter(q => this.validateQuestion(q, filters.countryId));
       console.log(`✅ ${validQuestions.length} questions passed validation`);
       
       return validQuestions;
