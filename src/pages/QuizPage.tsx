@@ -16,6 +16,11 @@ export default function QuizPage() {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Force scroll to top immediately when component mounts
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
     const loadQuizData = async () => {
       try {
         // Get stored data

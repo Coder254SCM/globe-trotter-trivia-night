@@ -35,9 +35,18 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
   const currentQuestion = useMemo(() => questions[currentQuestionIndex], [questions, currentQuestionIndex]);
   const progress = useMemo(() => ((currentQuestionIndex + 1) / questions.length) * 100, [currentQuestionIndex, questions.length]);
 
-  // Scroll to top whenever component mounts or question changes
+  // Force scroll to top immediately when quiz component mounts
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, []);
+
+  // Scroll to top whenever question changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   }, [currentQuestionIndex]);
 
   // Debug logging with validation
@@ -334,9 +343,10 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
   }
 
   return (
-    <div className="min-h-screen w-full bg-background">
-      <div className={`${isMobile ? 'p-2' : 'p-4'} flex flex-col gap-${isMobile ? '4' : '8'} max-w-4xl mx-auto`}>
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen w-full bg-background" style={{ paddingTop: 0, marginTop: 0 }}>
+      {/* Fixed header that stays at the very top */}
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+        <div className={`${isMobile ? 'p-2' : 'p-4'} flex items-center justify-between max-w-4xl mx-auto`}>
           <Button 
             variant="ghost" 
             size={isMobile ? "sm" : "sm"}
@@ -360,7 +370,10 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
             </span>
           </div>
         </div>
-        
+      </div>
+
+      {/* Main content with proper spacing from top */}
+      <div className={`${isMobile ? 'p-2 pt-4' : 'p-4 pt-6'} flex flex-col gap-${isMobile ? '4' : '6'} max-w-4xl mx-auto`}>
         <div className="flex flex-col gap-2">
           <div className={`flex justify-between ${isMobile ? 'text-xs' : 'text-sm'}`}>
             <span>Question {currentQuestionIndex + 1}/{questions.length}</span>
