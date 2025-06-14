@@ -5,7 +5,7 @@ import { Question, QuestionFilter } from "./questionTypes";
 
 export class QuestionFetcher {
   /**
-   * Get questions for a specific country with filtering
+   * Get questions for a specific country with filtering and validation
    */
   static async getQuestions(
     countryId: string, 
@@ -50,12 +50,16 @@ export class QuestionFetcher {
             .limit(limit);
           
           if (fallbackError) throw fallbackError;
-          return (fallbackData || []).map(q => this.transformToFrontendQuestion(q));
+          return (fallbackData || []).map(q => this.transformToFrontendQuestion(q)).filter(q => this.validateQuestion(q));
         }
         return [];
       }
 
-      return data.map(q => this.transformToFrontendQuestion(q));
+      // Transform and validate all questions
+      const transformedQuestions = data.map(q => this.transformToFrontendQuestion(q)).filter(q => this.validateQuestion(q));
+      console.log(`✅ Successfully transformed and validated ${transformedQuestions.length} questions`);
+      
+      return transformedQuestions;
     } catch (error) {
       console.error('💥 Failed to fetch questions:', error);
       throw error;
@@ -90,11 +94,62 @@ export class QuestionFetcher {
       if (error) throw error;
 
       console.log(`✅ Found ${data?.length || 0} filtered questions`);
-      return (data || []).map(q => this.transformToFrontendQuestion(q));
+      const validQuestions = (data || []).map(q => this.transformToFrontendQuestion(q)).filter(q => this.validateQuestion(q));
+      console.log(`✅ ${validQuestions.length} questions passed validation`);
+      
+      return validQuestions;
     } catch (error) {
       console.error('💥 Failed to fetch filtered questions:', error);
       throw error;
     }
+  }
+
+  /**
+   * Validate question has proper content and structure
+   */
+  static validateQuestion(question: FrontendQuestion): boolean {
+    // Check for placeholder text in question
+    if (question.text.includes('[country]') || 
+        question.text.includes('[capital]') || 
+        question.text.toLowerCase().includes('placeholder') ||
+        question.text.toLowerCase().includes('option a for') ||
+        question.text.toLowerCase().includes('correct answer for')) {
+      console.warn('❌ Question contains placeholder text:', question.text.substring(0, 50));
+      return false;
+    }
+
+    // Check for placeholder text in choices
+    for (const choice of question.choices) {
+      if (choice.text.toLowerCase().includes('placeholder') ||
+          choice.text.toLowerCase().includes('option a for') ||
+          choice.text.toLowerCase().includes('incorrect option')) {
+        console.warn('❌ Choice contains placeholder text:', choice.text);
+        return false;
+      }
+    }
+
+    // Check that we have exactly 4 choices
+    if (question.choices.length !== 4) {
+      console.warn('❌ Question does not have exactly 4 choices:', question.choices.length);
+      return false;
+    }
+
+    // Check that exactly one choice is correct
+    const correctChoices = question.choices.filter(c => c.isCorrect);
+    if (correctChoices.length !== 1) {
+      console.warn('❌ Question does not have exactly 1 correct choice:', correctChoices.length);
+      return false;
+    }
+
+    // Check for duplicate choices
+    const choiceTexts = question.choices.map(c => c.text.toLowerCase());
+    const uniqueChoices = new Set(choiceTexts);
+    if (uniqueChoices.size !== 4) {
+      console.warn('❌ Question has duplicate choices');
+      return false;
+    }
+
+    return true;
   }
 
   /**
@@ -118,33 +173,44 @@ export class QuestionFetcher {
       console.warn('⚠️ Question has missing options:', supabaseQuestion.id);
     }
 
+    // Create choices with proper validation
+    const choices = [
+      { 
+        id: 'a', 
+        text: supabaseQuestion.option_a || 'Option A missing', 
+        isCorrect: supabaseQuestion.correct_answer === supabaseQuestion.option_a 
+      },
+      { 
+        id: 'b', 
+        text: supabaseQuestion.option_b || 'Option B missing', 
+        isCorrect: supabaseQuestion.correct_answer === supabaseQuestion.option_b 
+      },
+      { 
+        id: 'c', 
+        text: supabaseQuestion.option_c || 'Option C missing', 
+        isCorrect: supabaseQuestion.correct_answer === supabaseQuestion.option_c 
+      },
+      { 
+        id: 'd', 
+        text: supabaseQuestion.option_d || 'Option D missing', 
+        isCorrect: supabaseQuestion.correct_answer === supabaseQuestion.option_d 
+      }
+    ];
+
+    // Log the transformation for debugging
+    console.log('🔄 Transforming question:', {
+      id: supabaseQuestion.id,
+      text: supabaseQuestion.text?.substring(0, 50) + '...',
+      correctAnswer: supabaseQuestion.correct_answer,
+      choices: choices.map(c => ({ id: c.id, text: c.text.substring(0, 20) + '...', isCorrect: c.isCorrect }))
+    });
+
     return {
       id: supabaseQuestion.id,
       type: 'multiple-choice',
       text: supabaseQuestion.text || 'Question text missing',
       imageUrl: supabaseQuestion.image_url,
-      choices: [
-        { 
-          id: 'a', 
-          text: supabaseQuestion.option_a || 'Option A missing', 
-          isCorrect: supabaseQuestion.correct_answer === supabaseQuestion.option_a 
-        },
-        { 
-          id: 'b', 
-          text: supabaseQuestion.option_b || 'Option B missing', 
-          isCorrect: supabaseQuestion.correct_answer === supabaseQuestion.option_b 
-        },
-        { 
-          id: 'c', 
-          text: supabaseQuestion.option_c || 'Option C missing', 
-          isCorrect: supabaseQuestion.correct_answer === supabaseQuestion.option_c 
-        },
-        { 
-          id: 'd', 
-          text: supabaseQuestion.option_d || 'Option D missing', 
-          isCorrect: supabaseQuestion.correct_answer === supabaseQuestion.option_d 
-        }
-      ],
+      choices,
       category: supabaseQuestion.category || 'General',
       explanation: supabaseQuestion.explanation || 'No explanation available',
       difficulty: (supabaseQuestion.difficulty as 'easy' | 'medium' | 'hard') || 'medium'

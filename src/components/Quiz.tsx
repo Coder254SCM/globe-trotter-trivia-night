@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
@@ -36,14 +35,37 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
   const currentQuestion = useMemo(() => questions[currentQuestionIndex], [questions, currentQuestionIndex]);
   const progress = useMemo(() => ((currentQuestionIndex + 1) / questions.length) * 100, [currentQuestionIndex, questions.length]);
 
-  // Debug logging
+  // Debug logging with validation
   useEffect(() => {
     console.log('📋 Quiz initialized with:', {
       questionsCount: questions.length,
       currentQuestion: currentQuestion?.text?.substring(0, 50),
       difficulty: currentQuestion?.difficulty,
-      hasChoices: currentQuestion?.choices?.length
+      hasChoices: currentQuestion?.choices?.length,
+      choicesPreview: currentQuestion?.choices?.map(c => ({ id: c.id, text: c.text.substring(0, 20), isCorrect: c.isCorrect }))
     });
+
+    // Validate current question quality
+    if (currentQuestion) {
+      const hasPlaceholder = currentQuestion.text?.toLowerCase().includes('placeholder') ||
+                            currentQuestion.text?.includes('[country]') ||
+                            currentQuestion.text?.includes('[capital]');
+      
+      const hasPlaceholderChoices = currentQuestion.choices?.some(c => 
+        c.text.toLowerCase().includes('placeholder') ||
+        c.text.toLowerCase().includes('option a for') ||
+        c.text.toLowerCase().includes('incorrect option')
+      );
+
+      if (hasPlaceholder || hasPlaceholderChoices) {
+        console.error('❌ INVALID QUESTION DETECTED:', {
+          hasPlaceholder,
+          hasPlaceholderChoices,
+          questionText: currentQuestion.text,
+          choices: currentQuestion.choices?.map(c => c.text)
+        });
+      }
+    }
   }, [questions, currentQuestion]);
 
   // Initialize game session
@@ -232,7 +254,7 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
     return country ? `${country.name} Quiz` : "Global Quiz";
   }, [isWeeklyChallenge, country]);
 
-  // Validate current question
+  // Enhanced validation for current question
   if (!currentQuestion) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -247,20 +269,47 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
     );
   }
 
-  if (!currentQuestion.choices || currentQuestion.choices.length < 4) {
-    console.error('❌ Invalid question structure:', currentQuestion);
+  // Check for invalid question data
+  const hasPlaceholderText = currentQuestion.text?.toLowerCase().includes('placeholder') ||
+                             currentQuestion.text?.includes('[country]') ||
+                             currentQuestion.text?.includes('[capital]');
+
+  const hasInvalidChoices = !currentQuestion.choices || 
+                           currentQuestion.choices.length < 4 ||
+                           currentQuestion.choices.some(c => 
+                             c.text.toLowerCase().includes('placeholder') ||
+                             c.text.toLowerCase().includes('option a for') ||
+                             c.text.toLowerCase().includes('incorrect option')
+                           );
+
+  if (hasPlaceholderText || hasInvalidChoices) {
+    console.error('❌ Invalid question structure detected:', {
+      hasPlaceholderText,
+      hasInvalidChoices,
+      currentQuestion
+    });
+    
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Question Error</h2>
+          <h2 className="text-xl font-semibold mb-2">Question Quality Issue</h2>
           <p className="text-muted-foreground mb-4">
-            This question has invalid data. Please try another one.
+            This question contains placeholder text or invalid data. Skipping to next question.
           </p>
-          <Button onClick={onBack}>Back to Globe</Button>
+          <Button onClick={() => {
+            if (currentQuestionIndex < questions.length - 1) {
+              setCurrentQuestionIndex(prev => prev + 1);
+            } else {
+              onBack();
+            }
+          }}>
+            {currentQuestionIndex < questions.length - 1 ? "Next Question" : "Back to Globe"}
+          </Button>
         </div>
       </div>
     );
   }
+
   
   return (
     <div className={`min-h-screen w-full ${isMobile ? 'p-2' : 'p-4'} flex flex-col gap-${isMobile ? '4' : '8'} max-w-4xl mx-auto`}>
