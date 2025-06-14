@@ -68,8 +68,10 @@ export const MediumQuestionGenerator = () => {
           setCurrentCountry(country.name);
           setProgress((i / totalCountries) * 100);
 
+          // Convert to service type before passing to service
+          const serviceCountry = CountryConverter.toServiceCountry(country);
           await MediumQuestionService.generateMediumQuestionsForCountry(
-            country, 
+            serviceCountry, 
             questionsPerCategory
           );
 
@@ -89,8 +91,10 @@ export const MediumQuestionGenerator = () => {
           setCurrentCountry(country.name);
           setProgress(50);
 
+          // Convert to service type before passing to service
+          const serviceCountry = CountryConverter.toServiceCountry(country);
           await MediumQuestionService.generateMediumQuestionsForCountry(
-            country, 
+            serviceCountry, 
             questionsPerCategory
           );
 

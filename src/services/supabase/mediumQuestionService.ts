@@ -1,3 +1,4 @@
+
 import { Country } from "./country/countryTypes";
 import { QuestionService } from "./questionService";
 
@@ -46,8 +47,11 @@ export class MediumQuestionService {
     
     console.log(`📝 Generating medium questions for ${countries.length} countries...`);
     
-    for (const country of countries) {
-      await this.generateMediumQuestionsForCountry(country, questionsPerCategory);
+    for (const frontendCountry of countries) {
+      // Convert frontend country to service country type
+      const { CountryConverter } = await import('../admin/mediumQuestions/CountryConverter');
+      const serviceCountry = CountryConverter.toServiceCountry(frontendCountry);
+      await this.generateMediumQuestionsForCountry(serviceCountry, questionsPerCategory);
     }
     
     console.log('✅ Completed generating medium questions for all countries');

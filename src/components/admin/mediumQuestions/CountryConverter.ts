@@ -7,7 +7,7 @@ export class CountryConverter {
     return {
       id: frontendCountry.id,
       name: frontendCountry.name,
-      capital: frontendCountry.name, // Use name as fallback
+      capital: frontendCountry.name, // Use name as fallback if capital not available
       continent: frontendCountry.continent,
       population: 1000000, // Default value
       area_km2: 100000, // Default value
