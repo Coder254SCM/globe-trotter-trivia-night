@@ -1,7 +1,5 @@
 
 import { Question } from "../../types/quiz";
-import globalQuestions from "../../data/questions/globalQuestions";
-import easyGlobalQuestions from "../../data/questions/easyGlobalQuestions";
 import { countryQuestions } from "./questionSets";
 import { continentQuestions } from "./questionSets";
 import { shuffleArray } from "./questionUtilities";
@@ -12,6 +10,7 @@ import {
 } from "./questionDeduplication";
 import { performGlobalAudit } from "./questionAudit";
 import { filterQuestionsForCountry } from "./questionFilter";
+import { QuizService } from "../../services/supabase/quizService";
 
 // Set to track used questions to prevent repetition within sessions
 let usedQuestionIds: Set<string> = new Set();
@@ -61,14 +60,14 @@ const runStartupAudit = async () => {
   }
 };
 
-// Enhanced question fetching with proper filtering
-export const getQuizQuestions = (
+// Enhanced question fetching with Supabase integration
+export const getQuizQuestions = async (
   countryId?: string,
   continentId?: string,
   count: number = 10,
   includeGlobal: boolean = true,
   difficulty?: string
-): Question[] => {
+): Promise<Question[]> => {
   if (!auditCompleted) {
     runStartupAudit();
   }
@@ -77,8 +76,21 @@ export const getQuizQuestions = (
   
   let questionPool: Question[] = [];
   
-  // Step 1: Add country-specific questions with STRICT filtering
-  if (countryId && countryQuestions[countryId]) {
+  // Step 1: Try to get questions from Supabase first
+  if (countryId) {
+    try {
+      const supabaseQuestions = await QuizService.getQuestions(countryId, difficulty, count);
+      if (supabaseQuestions.length > 0) {
+        questionPool.push(...supabaseQuestions);
+        console.log(`✅ Loaded ${supabaseQuestions.length} questions from Supabase for ${countryId}`);
+      }
+    } catch (error) {
+      console.error('Failed to load questions from Supabase:', error);
+    }
+  }
+  
+  // Step 2: Add country-specific questions from static data if needed
+  if (countryId && countryQuestions[countryId] && questionPool.length < count) {
     let countryQs = countryQuestions[countryId];
     
     // Apply difficulty filter
@@ -86,14 +98,14 @@ export const getQuizQuestions = (
       countryQs = countryQs.filter(q => q.difficulty === difficulty);
     }
     
-    // CRITICAL: Apply strict relevance filtering
+    // Apply strict relevance filtering
     countryQs = filterQuestionsForCountry(countryQs, countryId);
     
-    questionPool.push(...countryQs);
-    console.log(`✅ Added ${countryQs.length} RELEVANT country-specific questions for ${countryId}`);
+    questionPool.push(...countryQs.slice(0, count - questionPool.length));
+    console.log(`✅ Added ${Math.min(countryQs.length, count - questionPool.length)} static country questions for ${countryId}`);
   }
   
-  // Step 2: Add continent questions if needed
+  // Step 3: Add continent questions if needed
   if (continentId && continentQuestions[continentId] && questionPool.length < count) {
     let continentQs = continentQuestions[continentId];
     
@@ -106,36 +118,8 @@ export const getQuizQuestions = (
       continentQs = filterQuestionsForCountry(continentQs, countryId);
     }
     
-    questionPool.push(...continentQs);
-    console.log(`🌍 Added ${continentQs.length} continent-specific questions`);
-  }
-  
-  // Step 3: Add ONLY general global questions (FIXED: Use valid category)
-  if (includeGlobal && questionPool.length < count) {
-    let globalPool: Question[] = [];
-    
-    if (difficulty === "easy") {
-      globalPool = [...easyGlobalQuestions];
-    } else {
-      globalPool = [...globalQuestions];
-      
-      if (difficulty) {
-        globalPool = globalPool.filter(q => q.difficulty === difficulty);
-      }
-    }
-    
-    // Filter global questions to only include truly general ones
-    globalPool = globalPool.filter(q => {
-      const text = q.text.toLowerCase();
-      return text.includes("world") || 
-             text.includes("global") || 
-             text.includes("international") ||
-             q.category === "History" || // Use valid categories from our type
-             q.category === "Geography";
-    });
-    
-    questionPool.push(...globalPool.slice(0, count - questionPool.length));
-    console.log(`🌐 Added ${Math.min(globalPool.length, count - questionPool.length)} GENERAL global questions`);
+    questionPool.push(...continentQs.slice(0, count - questionPool.length));
+    console.log(`🌍 Added ${Math.min(continentQs.length, count - questionPool.length)} continent-specific questions`);
   }
   
   // Step 4: Comprehensive deduplication
@@ -184,8 +168,6 @@ export const getQuestionCountForCountry = (countryId: string): number => {
 
 export const getRecentlyUpdatedQuestions = (since: Date, count: number = 10): Question[] => {
   const allQuestions = [
-    ...globalQuestions,
-    ...easyGlobalQuestions,
     ...Object.values(countryQuestions).flat(),
     ...Object.values(continentQuestions).flat()
   ];
@@ -204,8 +186,6 @@ export const getRecentlyUpdatedQuestions = (since: Date, count: number = 10): Qu
 
 export const getQuestionsByDifficulty = (difficulty: string, count: number = 10): Question[] => {
   const allQuestions = [
-    ...globalQuestions,
-    ...easyGlobalQuestions,
     ...Object.values(countryQuestions).flat(),
     ...Object.values(continentQuestions).flat()
   ];
