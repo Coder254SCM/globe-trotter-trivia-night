@@ -47,7 +47,7 @@ export const convertToSupabaseCountry = (country: Country): SupabaseCountry => {
     latitude: country.position.lat,
     longitude: country.position.lng,
     flag_url: country.flagImageUrl || '',
-    categories: country.categories.map(cat => cat as string), // Convert to string[] for AI service
+    categories: country.categories as string[], // Convert QuestionCategory[] to string[]
     difficulty: country.difficulty
   };
 };
