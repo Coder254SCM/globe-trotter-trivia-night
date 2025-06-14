@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { QuizService } from "@/services/supabase/quizService";
 import { AIService } from "@/services/aiService";
 import { supabase } from "@/integrations/supabase/client";
-import { Country, DifficultyLevel } from "@/types/quiz";
+import { Country, DifficultyLevel, QuestionCategory } from "@/types/quiz";
 import { Country as SupabaseCountry } from "@/services/supabase/quizService";
 import countries from "@/data/countries";
 
@@ -18,6 +18,45 @@ export const useQuizManager = () => {
 
   // Use the static countries data directly - all 195 countries
   const allCountries = countries;
+
+  // Helper function to convert Supabase countries to our Country type
+  const convertToCountryType = (supabaseCountries: any[]): Country[] => {
+    return supabaseCountries.map(country => {
+      // Find matching country in static data for position and code
+      const staticCountry = countries.find(c => c.name === country.name);
+      
+      return {
+        id: country.id,
+        name: country.name,
+        code: staticCountry?.code || country.name.substring(0, 3).toUpperCase(),
+        position: staticCountry?.position || { lat: country.latitude || 0, lng: country.longitude || 0 },
+        difficulty: (country.difficulty || 'medium') as DifficultyLevel,
+        categories: (country.categories || []).filter((cat: string) => 
+          // Only include valid QuestionCategory values
+          ['History', 'Culture', 'Geography', 'Economy', 'Politics', 'Demographics', 'Science', 'Sports', 'Food', 'Art'].includes(cat)
+        ) as QuestionCategory[],
+        flagImageUrl: country.flag_url,
+        continent: country.continent
+      };
+    });
+  };
+
+  // Helper function to convert Country to SupabaseCountry for AI service
+  const convertToSupabaseCountry = (country: Country): SupabaseCountry => {
+    return {
+      id: country.id,
+      name: country.name,
+      capital: country.name, // Use name as fallback for capital
+      continent: country.continent,
+      population: 1000000, // Default population
+      area_km2: 100000, // Default area
+      latitude: country.position.lat,
+      longitude: country.position.lng,
+      flag_url: country.flagImageUrl || '',
+      categories: country.categories,
+      difficulty: country.difficulty
+    };
+  };
 
   // Load countries into Supabase and initialize AI question generation
   useEffect(() => {
