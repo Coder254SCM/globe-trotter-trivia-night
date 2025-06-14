@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
@@ -37,16 +38,28 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
 
   // Force scroll to top immediately when quiz component mounts
   useEffect(() => {
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
+    const scrollToTop = () => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+    
+    scrollToTop();
+    // Ensure scroll happens after any layout changes
+    setTimeout(scrollToTop, 0);
   }, []);
 
   // Scroll to top whenever question changes
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
+    const scrollToTop = () => {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+    
+    scrollToTop();
+    // Ensure scroll happens after any layout changes
+    setTimeout(scrollToTop, 0);
   }, [currentQuestionIndex]);
 
   // Debug logging with validation
@@ -157,7 +170,7 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
     }, 1000);
     
     return () => clearInterval(timer);
-  }, [currentQuestionIndex, currentQuestion?.difficulty, isMobile]);
+  }, [currentQuestionIndex, currentQuestion?.difficulty, isMobile, isAnswered]);
 
   const handleTimeUp = useCallback(() => {
     console.log('⏰ Time up! Auto-selecting wrong answer');
@@ -373,7 +386,7 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
       </div>
 
       {/* Main content with proper spacing from top */}
-      <div className={`${isMobile ? 'p-2 pt-4' : 'p-4 pt-6'} flex flex-col gap-${isMobile ? '4' : '6'} max-w-4xl mx-auto`}>
+      <div className={`${isMobile ? 'p-2 pt-4' : 'p-4 pt-6'} flex flex-col ${isMobile ? 'gap-4' : 'gap-6'} max-w-4xl mx-auto`}>
         <div className="flex flex-col gap-2">
           <div className={`flex justify-between ${isMobile ? 'text-xs' : 'text-sm'}`}>
             <span>Question {currentQuestionIndex + 1}/{questions.length}</span>
@@ -416,7 +429,7 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
             )}
           </div>
           
-          <div className={`grid gap-${isMobile ? '2' : '3'}`}>
+          <div className={`grid ${isMobile ? 'gap-2' : 'gap-3'}`}>
             {currentQuestion.choices.map((choice) => (
               <button
                 key={choice.id}
@@ -433,7 +446,7 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
           </div>
           
           {isAnswered && (
-            <div className={`${isMobile ? 'mt-4' : 'mt-6'} flex flex-col gap-${isMobile ? '3' : '4'}`}>
+            <div className={`${isMobile ? 'mt-4' : 'mt-6'} flex flex-col ${isMobile ? 'gap-3' : 'gap-4'}`}>
               <div className={`bg-secondary/50 ${isMobile ? 'p-3' : 'p-4'} rounded-md`}>
                 <p className={`font-medium mb-1 ${isMobile ? 'text-sm' : ''}`}>Explanation:</p>
                 <p className={isMobile ? 'text-sm' : ''}>{currentQuestion.explanation}</p>

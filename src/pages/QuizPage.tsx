@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Country, Question } from "@/types/quiz";
 import Quiz from "@/components/Quiz";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { RotationService } from "@/services/supabase/rotationService";
 import { QuestionService } from "@/services/supabase/questionService";
 import { useToast } from "@/hooks/use-toast";
@@ -16,10 +17,28 @@ export default function QuizPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Force scroll to top immediately when component mounts
-    window.scrollTo(0, 0);
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
+    // Force immediate scroll to top with multiple methods for maximum compatibility
+    const scrollToTop = () => {
+      try {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        
+        // Additional method for some browsers
+        if (document.scrollingElement) {
+          document.scrollingElement.scrollTop = 0;
+        }
+      } catch (error) {
+        console.warn('Scroll to top failed:', error);
+      }
+    };
+    
+    // Execute immediately
+    scrollToTop();
+    
+    // Execute after any potential layout changes
+    setTimeout(scrollToTop, 0);
+    setTimeout(scrollToTop, 50);
 
     const loadQuizData = async () => {
       try {
@@ -135,11 +154,13 @@ export default function QuizPage() {
   }
 
   return (
-    <Quiz
-      country={selectedCountry}
-      questions={quizQuestions}
-      onFinish={handleQuizComplete}
-      onBack={handleBack}
-    />
+    <ErrorBoundary>
+      <Quiz
+        country={selectedCountry}
+        questions={quizQuestions}
+        onFinish={handleQuizComplete}
+        onBack={handleBack}
+      />
+    </ErrorBoundary>
   );
 }
