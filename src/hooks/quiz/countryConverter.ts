@@ -21,7 +21,8 @@ export const convertToCountryType = (supabaseCountries: any[]): Country[] => {
       .filter((cat: any): cat is string => typeof cat === 'string')
       .filter((cat: string): cat is QuestionCategory => 
         VALID_CATEGORIES.includes(cat as QuestionCategory)
-      )) as QuestionCategory[];
+      )
+      .map(cat => cat as QuestionCategory); // Cast each string to QuestionCategory
     
     return {
       id: country.id,
@@ -56,10 +57,12 @@ export const convertToSupabaseCountry = (country: Country): SupabaseCountry => {
 // Convert raw Supabase data to SupabaseCountry format with proper typing
 export const convertRawToSupabaseCountry = (countryData: any): SupabaseCountry => {
   // Filter categories to valid QuestionCategory values, then convert to string[]
-  const validCategories = ((countryData.categories || [])
-    .filter((cat: any): cat is string => typeof cat === 'string')
-    .filter((cat: string): cat is QuestionCategory => VALID_CATEGORIES.includes(cat as QuestionCategory))
-  ) as QuestionCategory[];
+  const validCategories = (countryData.categories || [])
+    .filter((cat: any): cat is string => typeof cat === "string")
+    .filter((cat: string): cat is QuestionCategory =>
+      VALID_CATEGORIES.includes(cat as QuestionCategory)
+    )
+    .map(cat => cat as QuestionCategory);
 
   return {
     id: countryData.id,
