@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import countries from "@/data/countries";
 import { Country as FrontendCountry, QuestionCategory } from "@/types/quiz";
@@ -114,10 +113,9 @@ export class CountryService {
       for (let i = 0; i < countriesToInsert.length; i += batchSize) {
         const batch = countriesToInsert.slice(i, i + batchSize);
         
-        const { error, count } = await supabase
+        const { error } = await supabase
           .from('countries')
           .insert(batch)
-          .select('*', { count: 'exact', head: true });
 
         if (error) {
           console.error(`Error inserting batch ${Math.floor(i/batchSize) + 1}:`, error);
