@@ -9,9 +9,9 @@ import { GlobeLegend } from "./globe/GlobeLegend";
 import { GlobeSearch } from "./globe/GlobeSearch";
 import { useGlobe } from "../hooks/useGlobe";
 import { useCountryFilter } from "../hooks/useCountryFilter";
-import { QuizService } from "../services/supabase/quizService";
 import { getQuestionStats } from "../utils/quiz/questionSets";
 import { toast } from "@/components/ui/use-toast";
+import countries from "@/data/countries";
 
 interface GlobeProps {
   onCountrySelect: (country: Country) => void;
@@ -22,32 +22,9 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [rotating, setRotating] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [loading, setLoading] = useState(true);
   
-  // Load all 195 countries from Supabase
-  useEffect(() => {
-    const loadCountries = async () => {
-      try {
-        setLoading(true);
-        const allCountries = await QuizService.getAllCountries();
-        // Countries are already in the correct frontend format
-        setCountries(allCountries);
-        console.log(`🌍 Loaded ${allCountries.length} countries from database`);
-      } catch (error) {
-        console.error('Failed to load countries:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load countries. Please refresh the page.",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadCountries();
-  }, []);
+  // Use static countries data - all 195 countries
+  const allCountries = countries;
   
   // Custom hooks for country filtering
   const {
@@ -59,7 +36,7 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
     handleContinentChange,
     handleCategoryChange,
     clearFilters
-  } = useCountryFilter({ allCountries: countries });
+  } = useCountryFilter({ allCountries });
 
   // Handle country selection (intercept to stop rotation)
   const handleCountrySelect = (country: Country) => {
@@ -114,7 +91,7 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
 
   // Focus on a specific country by ID (for search)
   const handleCountryFocus = (countryId: string) => {
-    const country = countries.find(c => c.id === countryId);
+    const country = allCountries.find(c => c.id === countryId);
     if (country) {
       focusCountry(country);
       setRotating(false);
@@ -131,23 +108,15 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
     
     toast({
       title: "🌍 Global Quiz Explorer Ready!",
-      description: `All ${stats.totalCountries} countries loaded with ${stats.totalQuestions} questions. Every country is now playable!`,
+      description: `All ${allCountries.length} countries loaded with ${stats.totalQuestions} questions. Every country is now playable!`,
     });
     
     console.log("🌍 Globe Statistics:");
-    console.log(`- Total Countries: ${stats.totalCountries}`);
+    console.log(`- Total Countries: ${allCountries.length}`);
     console.log(`- Countries with Questions: ${stats.countriesWithQuestions}`);
     console.log(`- Total Questions: ${stats.totalQuestions}`);
     console.log(`- Average Questions per Country: ${stats.averageQuestionsPerCountry.toFixed(1)}`);
   }, []);
-
-  if (loading) {
-    return (
-      <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-slate-900 via-blue-900 to-black flex items-center justify-center">
-        <div className="text-white text-xl">🌍 Loading all 195 countries...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-slate-900 via-blue-900 to-black">
@@ -172,7 +141,7 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
         selectedContinent={selectedContinent}
         selectedCategory={selectedCategory}
         filteredCountriesCount={filteredCountries.length}
-        totalCountriesCount={countries.length}
+        totalCountriesCount={allCountries.length}
         onContinentChange={handleEnhancedContinentChange}
         onCategoryChange={handleCategoryChange}
         onClearFilters={handleClearFilters}

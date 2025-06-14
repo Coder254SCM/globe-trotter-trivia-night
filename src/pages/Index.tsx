@@ -3,65 +3,53 @@ import { useState, useEffect } from "react";
 import Globe from "@/components/Globe";
 import Quiz from "@/components/Quiz";
 import QuizResult from "@/components/QuizResult";
-import { GlobeFilters } from "@/components/globe/GlobeFilters";
-import { GlobeSearch } from "@/components/globe/GlobeSearch";
-import { GlobeHeader } from "@/components/globe/GlobeHeader";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { QuizService } from "@/services/supabase/quizService";
 import { Country, QuestionCategory } from "@/types/quiz";
+import countries from "@/data/countries";
 
 export default function Index() {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizResult, setQuizResult] = useState<any>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedContinent, setSelectedContinent] = useState<string>("all");
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [showLabels, setShowLabels] = useState(true);
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [loading, setLoading] = useState(true);
   const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
   const { toast } = useToast();
 
-  // Load countries from Supabase
+  // Use the static countries data directly - all 195 countries
+  const allCountries = countries;
+
+  // Load countries into Supabase if not already there
   useEffect(() => {
-    const loadCountries = async () => {
+    const initializeDatabase = async () => {
       try {
-        console.log('🌍 Loading countries from Supabase...');
+        console.log('🌍 Checking database for countries...');
         const supabaseCountries = await QuizService.getAllCountries();
-        console.log(`✅ Loaded ${supabaseCountries.length} countries from Supabase`);
         
-        if (supabaseCountries.length === 0) {
-          console.log('⚠️ No countries found in database. Populating now...');
+        if (supabaseCountries.length < 195) {
+          console.log(`⚠️ Only ${supabaseCountries.length} countries in database. Populating all 195...`);
           await QuizService.populateAllCountries();
           
-          // Reload countries after population
-          const newCountries = await QuizService.getAllCountries();
-          setCountries(newCountries);
-          
           toast({
-            title: "Database Initialized",
-            description: `Successfully populated ${newCountries.length} countries!`,
+            title: "Database Updated",
+            description: `Successfully populated all 195 countries!`,
           });
         } else {
-          setCountries(supabaseCountries);
+          console.log(`✅ Database already has ${supabaseCountries.length} countries`);
         }
         
       } catch (error) {
-        console.error('❌ Failed to load countries from Supabase:', error);
+        console.error('❌ Failed to initialize database:', error);
         toast({
-          title: "Error",
-          description: "Failed to load countries. Please try again.",
+          title: "Database Error",
+          description: "Failed to initialize countries database.",
           variant: "destructive",
         });
-      } finally {
-        setLoading(false);
       }
     };
 
-    loadCountries();
+    initializeDatabase();
   }, [toast]);
 
   const handleCountryClick = (country: Country) => {
@@ -119,36 +107,6 @@ export default function Index() {
     setShowQuiz(true);
   };
 
-  const handleToggleLabels = () => {
-    setShowLabels(!showLabels);
-  };
-
-  const handleClearFilters = () => {
-    setSelectedContinent("all");
-    setSelectedCategory("all");
-    setSearchTerm("");
-  };
-
-  // Get unique continents and categories from countries
-  const availableContinents = Array.from(new Set(countries.map(c => c.continent))).sort();
-  const allCategories = Array.from(new Set(countries.flatMap(c => c.categories || []))).sort();
-
-  const filteredCountries = countries.filter(country => {
-    const matchesSearch = country.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesContinent = selectedContinent === "all" || country.continent === selectedContinent;
-    const matchesCategory = selectedCategory === "all" || (country.categories && country.categories.includes(selectedCategory as QuestionCategory));
-    
-    return matchesSearch && matchesContinent && matchesCategory;
-  });
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading Globe Trotter Trivia...</div>
-      </div>
-    );
-  }
-
   if (showQuiz && selectedCountry && quizQuestions.length > 0) {
     return (
       <Quiz
@@ -184,37 +142,10 @@ export default function Index() {
         <ThemeToggle />
       </div>
       
-      <GlobeHeader 
-        onToggleLabels={handleToggleLabels}
-        showLabels={showLabels}
-      />
-      
       <div className="container mx-auto px-4 relative z-10">
-        <div className="flex flex-col lg:flex-row gap-6 mb-6">
-          <div className="flex-1">
-            <GlobeSearch 
-              onCountrySelect={handleCountryClick}
-              onCountryFocus={() => {}}
-            />
-          </div>
-          <div className="lg:w-80">
-            <GlobeFilters
-              availableContinents={availableContinents}
-              allCategories={allCategories}
-              selectedContinent={selectedContinent}
-              selectedCategory={selectedCategory}
-              filteredCountriesCount={filteredCountries.length}
-              totalCountriesCount={countries.length}
-              onContinentChange={setSelectedContinent}
-              onCategoryChange={setSelectedCategory}
-              onClearFilters={handleClearFilters}
-            />
-          </div>
-        </div>
-
-        <div className="text-center mb-4">
+        <div className="text-center mb-4 pt-20">
           <p className="text-sm text-gray-300">
-            Showing {filteredCountries.length} of {countries.length} countries
+            Showing {allCountries.length} of {allCountries.length} countries
           </p>
         </div>
 
