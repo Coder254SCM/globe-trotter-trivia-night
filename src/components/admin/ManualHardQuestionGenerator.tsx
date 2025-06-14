@@ -23,7 +23,7 @@ export const ManualHardQuestionGeneratorComponent = () => {
     try {
       toast({
         title: "Manual PhD Question Generation Started",
-        description: "Generating 50 manually crafted hard questions for each country...",
+        description: "Generating 30 manually crafted hard questions for each country...",
       });
 
       // Monitor progress (simplified - in real implementation you'd track actual progress)
@@ -43,8 +43,8 @@ export const ManualHardQuestionGeneratorComponent = () => {
 
       // Update stats
       setStats({
-        totalQuestions: "9,750",
-        avgPerCountry: 50,
+        totalQuestions: "5,850",
+        avgPerCountry: 30,
         difficulty: "PhD Level (Manual)"
       });
 
@@ -79,7 +79,7 @@ export const ManualHardQuestionGeneratorComponent = () => {
       
       toast({
         title: "Country Questions Generated",
-        description: `Generated 50 manually crafted PhD-level questions for ${countryName}!`,
+        description: `Generated 30 manually crafted PhD-level questions for ${countryName}!`,
       });
     } catch (error) {
       console.error(`Failed to generate questions for ${countryName}:`, error);
@@ -100,7 +100,7 @@ export const ManualHardQuestionGeneratorComponent = () => {
         <FileText className="h-8 w-8 text-primary" />
         <div>
           <h2 className="text-2xl font-bold">Manual PhD-Level Question Generator</h2>
-          <p className="text-muted-foreground">Generate 50 manually crafted hard academic questions for each country</p>
+          <p className="text-muted-foreground">Generate 30 manually crafted hard academic questions for each country</p>
         </div>
       </div>
 
@@ -112,12 +112,12 @@ export const ManualHardQuestionGeneratorComponent = () => {
               <h3 className="text-lg font-semibold">Generate All Countries</h3>
             </div>
             <p className="text-sm text-muted-foreground">
-              Generate 50 manually crafted PhD-level questions for all 195 countries. These questions are written by expert knowledge across 10 academic categories.
+              Generate 30 manually crafted PhD-level questions for all 195 countries. These questions are written by expert knowledge across 30 academic categories.
             </p>
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Badge variant="secondary">PhD Level</Badge>
-                <Badge variant="outline">50 Questions/Country</Badge>
+                <Badge variant="outline">30 Questions/Country</Badge>
                 <Badge variant="outline">Manual Craft</Badge>
               </div>
               {isGenerating && !currentCountry && (
@@ -223,25 +223,45 @@ export const ManualHardQuestionGeneratorComponent = () => {
       )}
 
       <Card className="p-6 bg-muted/50">
-        <h3 className="text-lg font-semibold mb-2">Manual PhD-Level Question Categories</h3>
+        <h3 className="text-lg font-semibold mb-2">Manual PhD-Level Question Categories (30 Total)</h3>
         <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
           <ul className="space-y-1">
-            <li>• Constitutional Law (5 questions per country)</li>
-            <li>• Economic Policy (5 questions per country)</li>
-            <li>• Diplomatic History (5 questions per country)</li>
-            <li>• Archaeological Research (5 questions per country)</li>
-            <li>• Linguistic Studies (5 questions per country)</li>
+            <li>• Constitutional Law</li>
+            <li>• Economic Policy</li>
+            <li>• Diplomatic History</li>
+            <li>• Archaeological Research</li>
+            <li>• Linguistic Studies</li>
+            <li>• Environmental Science</li>
+            <li>• Anthropological Studies</li>
+            <li>• Neuropsychology</li>
+            <li>• Quantum Physics</li>
+            <li>• Molecular Biology</li>
+            <li>• Astrophysics</li>
+            <li>• Computational Mathematics</li>
+            <li>• Materials Science</li>
+            <li>• Cognitive Science</li>
+            <li>• Biochemistry</li>
           </ul>
           <ul className="space-y-1">
-            <li>• Demographics (5 questions per country)</li>
-            <li>• Legal Systems (5 questions per country)</li>
-            <li>• Political Theory (5 questions per country)</li>
-            <li>• Academic Research (5 questions per country)</li>
-            <li>• Historical Analysis (5 questions per country)</li>
+            <li>• Geophysics</li>
+            <li>• Epidemiology</li>
+            <li>• Behavioral Economics</li>
+            <li>• Information Theory</li>
+            <li>• Robotics Engineering</li>
+            <li>• Pharmacology</li>
+            <li>• Crystallography</li>
+            <li>• Fluid Dynamics</li>
+            <li>• Social Network Analysis</li>
+            <li>• Proteomics</li>
+            <li>• Game Theory</li>
+            <li>• Synthetic Biology</li>
+            <li>• Metamaterials</li>
+            <li>• Complexity Science</li>
+            <li>• Space Technology</li>
           </ul>
         </div>
         <p className="text-xs text-muted-foreground mt-3">
-          All questions are manually crafted to require doctoral-level expertise and cover specialized academic knowledge across multiple disciplines.
+          All questions are manually crafted to require doctoral-level expertise and cover specialized academic knowledge across multiple advanced disciplines.
         </p>
       </Card>
     </div>
