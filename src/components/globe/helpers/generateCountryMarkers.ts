@@ -30,9 +30,9 @@ export function generateCountryMarkers(
     const y = markerRadius * Math.cos(phi);
     const z = markerRadius * Math.sin(phi) * Math.sin(theta);
 
-    // Create much larger and more visible markers
+    // Create much larger and more visible markers with country labels
     const markerGeometry = new THREE.SphereGeometry(0.08, 16, 16); // Increased from 0.02 to 0.08
-    const markerMaterial = new THREE.MeshBasicMaterial({
+    const markerMaterial = new THREE.MeshPhongMaterial({
       color: 0x00ff88,
       emissive: 0x004422, // Add glow effect
       emissiveIntensity: 0.3
@@ -40,6 +40,40 @@ export function generateCountryMarkers(
     const marker = new THREE.Mesh(markerGeometry, markerMaterial);
     marker.position.set(x, y, z);
     marker.userData = { country: country.name, countryId: country.id };
+
+    // Create text label for each country
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (context) {
+      const fontSize = 32;
+      context.font = `bold ${fontSize}px Arial`;
+      const textWidth = context.measureText(country.name).width;
+      canvas.width = textWidth + 20;
+      canvas.height = fontSize + 10;
+      
+      // Clear and draw background
+      context.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw text
+      context.fillStyle = 'white';
+      context.font = `bold ${fontSize}px Arial`;
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText(country.name, canvas.width / 2, canvas.height / 2);
+      
+      // Create sprite from canvas
+      const texture = new THREE.CanvasTexture(canvas);
+      const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+      const sprite = new THREE.Sprite(spriteMaterial);
+      
+      // Scale and position the label
+      const scale = 0.3;
+      sprite.scale.set(canvas.width * scale, canvas.height * scale, 1);
+      sprite.position.set(x * 1.1, y * 1.1, z * 1.1); // Position slightly outside the marker
+      
+      globe.add(sprite);
+    }
 
     // Add a subtle pulsing animation
     const animate = () => {
@@ -53,5 +87,5 @@ export function generateCountryMarkers(
     globe.add(marker);
   });
 
-  console.log(`Generated ${countries.length} visible country markers`);
+  console.log(`Generated ${countries.length} visible country markers with labels`);
 }
