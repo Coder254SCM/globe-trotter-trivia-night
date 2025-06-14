@@ -54,6 +54,7 @@ export const ComprehensiveQuestionAudit = () => {
   const [fixing, setFixing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState("");
+  const [lastAuditTime, setLastAuditTime] = useState<string>("");
   const { toast } = useToast();
 
   const analyzeQuestion = (question: any): QuestionAnalysis => {
@@ -156,6 +157,125 @@ export const ComprehensiveQuestionAudit = () => {
       issues,
       quality_score: Math.max(0, qualityScore)
     };
+  };
+
+  const runFreshDeletionVerification = async () => {
+    setLoading(true);
+    setProgress(0);
+    setCurrentStep("🔍 VERIFICATION: Checking if placeholder questions were actually deleted...");
+
+    try {
+      const timestamp = Date.now();
+      console.log(`🕐 Starting fresh verification at ${new Date().toISOString()}`);
+
+      // Force fresh count with no caching
+      const { count: totalCount, error: countError } = await supabase
+        .from('questions')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) {
+        console.error("❌ Error getting total count:", countError);
+        throw countError;
+      }
+
+      console.log(`📊 CURRENT TOTAL QUESTIONS: ${totalCount}`);
+      setProgress(20);
+      setCurrentStep(`Found ${totalCount} total questions. Checking for placeholders...`);
+
+      // Check for placeholder questions with multiple detection methods
+      const placeholderPatterns = [
+        'text.ilike.%correct answer for%',
+        'text.ilike.%option a for%', 
+        'text.ilike.%option b for%',
+        'text.ilike.%option c for%',
+        'text.ilike.%option d for%',
+        'text.ilike.%incorrect option%',
+        'option_a.ilike.%correct answer for%',
+        'option_a.ilike.%incorrect option%',
+        'option_b.ilike.%correct answer for%',
+        'option_b.ilike.%incorrect option%',
+        'option_c.ilike.%correct answer for%',
+        'option_c.ilike.%incorrect option%',
+        'option_d.ilike.%correct answer for%',
+        'option_d.ilike.%incorrect option%'
+      ];
+
+      console.log("🔍 Checking for placeholder patterns:", placeholderPatterns);
+
+      const { data: remainingPlaceholders, error: placeholderError } = await supabase
+        .from('questions')
+        .select('id, text, option_a, option_b, option_c, option_d')
+        .or(placeholderPatterns.join(','));
+
+      if (placeholderError) {
+        console.error("❌ Error checking placeholders:", placeholderError);
+        throw placeholderError;
+      }
+
+      setProgress(50);
+      console.log(`🎯 PLACEHOLDER CHECK RESULT: Found ${remainingPlaceholders?.length || 0} questions`);
+
+      if (remainingPlaceholders && remainingPlaceholders.length > 0) {
+        console.log("🚨 REMAINING PLACEHOLDER QUESTIONS:");
+        remainingPlaceholders.slice(0, 5).forEach((q, idx) => {
+          console.log(`${idx + 1}. ID: ${q.id}`);
+          console.log(`   Text: ${q.text.substring(0, 100)}...`);
+          console.log(`   Option A: ${q.option_a?.substring(0, 50)}...`);
+        });
+      }
+
+      setCurrentStep(`Found ${remainingPlaceholders?.length || 0} placeholder questions remaining`);
+      setProgress(75);
+
+      // Get a sample of all questions to verify database state
+      const { data: sampleQuestions, error: sampleError } = await supabase
+        .from('questions')
+        .select('id, text, country_id, created_at')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (sampleError) {
+        console.error("❌ Error getting sample:", sampleError);
+      } else {
+        console.log("📋 LATEST 10 QUESTIONS IN DATABASE:");
+        sampleQuestions?.forEach((q, idx) => {
+          console.log(`${idx + 1}. ${q.id} - "${q.text.substring(0, 60)}..." (${q.country_id})`);
+        });
+      }
+
+      setProgress(100);
+      setCurrentStep("Verification complete!");
+      setLastAuditTime(new Date().toISOString());
+
+      const verificationResults = {
+        timestamp: new Date().toISOString(),
+        totalQuestions: totalCount || 0,
+        placeholderQuestions: remainingPlaceholders?.length || 0,
+        wasDeleted: (remainingPlaceholders?.length || 0) === 0,
+        sampleData: sampleQuestions?.slice(0, 5) || []
+      };
+
+      toast({
+        title: "Verification Complete!",
+        description: `Found ${totalCount} total questions, ${remainingPlaceholders?.length || 0} placeholders remaining`,
+        variant: (remainingPlaceholders?.length || 0) > 0 ? "destructive" : "default"
+      });
+
+      console.log("✅ VERIFICATION SUMMARY:", verificationResults);
+      
+      // Run full audit after verification
+      await runComprehensiveAudit();
+
+    } catch (error) {
+      console.error("❌ Verification failed:", error);
+      toast({
+        title: "Verification Failed",
+        description: `Could not verify deletion: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const deletePlaceholderQuestions = async () => {
@@ -263,6 +383,8 @@ export const ComprehensiveQuestionAudit = () => {
   };
 
   const runComprehensiveAudit = async () => {
+    if (loading) return; // Prevent multiple simultaneous audits
+    
     setLoading(true);
     setProgress(0);
     setCurrentStep("Getting fresh question count...");
@@ -423,7 +545,7 @@ export const ComprehensiveQuestionAudit = () => {
   };
 
   useEffect(() => {
-    runComprehensiveAudit();
+    runFreshDeletionVerification();
   }, []);
 
   if (loading) {
@@ -432,10 +554,13 @@ export const ComprehensiveQuestionAudit = () => {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Zap className="h-5 w-5 animate-pulse text-primary" />
-            <span className="font-medium">Running Comprehensive Question Audit...</span>
+            <span className="font-medium">Verifying Deletion Status...</span>
           </div>
           <Progress value={progress} className="w-full" />
           <p className="text-sm text-muted-foreground">{currentStep}</p>
+          {lastAuditTime && (
+            <p className="text-xs text-muted-foreground">Last check: {new Date(lastAuditTime).toLocaleString()}</p>
+          )}
         </div>
       </Card>
     );
@@ -464,6 +589,23 @@ export const ComprehensiveQuestionAudit = () => {
 
   return (
     <div className="space-y-6">
+      {/* Deletion Status Alert */}
+      {auditResults.placeholder_questions === 0 ? (
+        <Alert className="border-green-500 bg-green-50">
+          <CheckCircle className="h-4 w-4" />
+          <AlertDescription className="font-semibold text-green-800">
+            ✅ SUCCESS: All placeholder questions have been successfully deleted from your Supabase database!
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <Alert className="border-red-500 bg-red-50">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription className="font-semibold text-red-800">
+            🚨 STILL FOUND: {auditResults.placeholder_questions} placeholder questions remain in your database. Deletion may not have worked properly.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Critical Alert */}
       {criticalIssues > auditResults.total_questions * 0.1 && (
         <Alert className="border-red-500 bg-red-50">
@@ -493,7 +635,9 @@ export const ComprehensiveQuestionAudit = () => {
             </div>
             
             <div className="text-center">
-              <div className="text-3xl font-bold text-red-600">{auditResults.placeholder_questions}</div>
+              <div className={`text-3xl font-bold ${auditResults.placeholder_questions === 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {auditResults.placeholder_questions}
+              </div>
               <div className="text-sm text-muted-foreground">Placeholder Questions</div>
             </div>
             
@@ -532,6 +676,12 @@ export const ComprehensiveQuestionAudit = () => {
                 </Button>
               )}
             </div>
+
+            {lastAuditTime && (
+              <p className="text-xs text-muted-foreground text-center">
+                Last verified: {new Date(lastAuditTime).toLocaleString()}
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
