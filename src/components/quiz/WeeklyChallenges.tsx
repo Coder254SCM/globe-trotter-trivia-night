@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, Trophy, Users, Clock, Play } from 'lucide-react';
+import { Calendar, Trophy, Users, Clock, Play, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { WeeklyChallengeService, WeeklyChallenge } from '@/services/supabase/weeklyChallengeService';
 import { QuestionService } from '@/services/supabase/questionService';
@@ -28,6 +28,7 @@ export const WeeklyChallenges = ({ onStartChallenge }: WeeklyChallengesProps) =>
   const [currentChallenge, setCurrentChallenge] = useState<WeeklyChallenge | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [startingChallenge, setStartingChallenge] = useState<string | null>(null);
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
 
@@ -49,6 +50,7 @@ export const WeeklyChallenges = ({ onStartChallenge }: WeeklyChallengesProps) =>
 
       if (error) throw error;
       setChallenges(data || []);
+      console.log(`📅 Loaded ${data?.length || 0} challenges`);
     } catch (error) {
       console.error('Error loading challenges:', error);
     }
@@ -58,6 +60,7 @@ export const WeeklyChallenges = ({ onStartChallenge }: WeeklyChallengesProps) =>
     try {
       const challenge = await WeeklyChallengeService.getCurrentChallenge();
       setCurrentChallenge(challenge);
+      console.log('🏆 Current challenge:', challenge?.id);
     } catch (error) {
       console.error('Error loading current challenge:', error);
     } finally {
@@ -82,6 +85,7 @@ export const WeeklyChallenges = ({ onStartChallenge }: WeeklyChallengesProps) =>
       }, {} as { [key: string]: UserAttempt });
       
       setUserAttempts(attemptsMap);
+      console.log(`👤 Loaded ${Object.keys(attemptsMap).length} user attempts`);
     } catch (error) {
       console.error('Error loading user attempts:', error);
     }
@@ -92,6 +96,7 @@ export const WeeklyChallenges = ({ onStartChallenge }: WeeklyChallengesProps) =>
     
     setCreating(true);
     try {
+      console.log('🔨 Creating weekly challenge...');
       const challenge = await WeeklyChallengeService.createWeeklyChallenge();
       
       toast({
@@ -133,7 +138,11 @@ export const WeeklyChallenges = ({ onStartChallenge }: WeeklyChallengesProps) =>
       return;
     }
 
+    setStartingChallenge(challenge.id);
+    
     try {
+      console.log(`🚀 Starting challenge: ${challenge.id}`);
+      
       // Get challenge questions
       const questions = await WeeklyChallengeService.getChallengeQuestions(challenge);
       
@@ -146,17 +155,35 @@ export const WeeklyChallenges = ({ onStartChallenge }: WeeklyChallengesProps) =>
         return;
       }
 
+      console.log(`📋 Found ${questions.length} questions for challenge`);
+
       // Transform questions to frontend format
       const transformedQuestions = questions.map(q => QuestionService.transformToFrontendQuestion(q));
 
+      // Validate transformed questions
+      const validQuestions = transformedQuestions.filter(q => 
+        q.text && q.choices && q.choices.length === 4 && q.choices.some(c => c.isCorrect)
+      );
+
+      if (validQuestions.length === 0) {
+        toast({
+          title: "Invalid Questions",
+          description: "No valid questions found for this challenge",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log(`✅ Using ${validQuestions.length} valid questions`);
+
       // Start the challenge
       if (onStartChallenge) {
-        onStartChallenge(transformedQuestions, challenge.id);
+        onStartChallenge(validQuestions, challenge.id);
       }
       
       toast({
         title: "Challenge Started!",
-        description: `Starting weekly challenge with ${questions.length} questions`,
+        description: `Starting weekly challenge with ${validQuestions.length} questions`,
       });
     } catch (error) {
       console.error('Error starting challenge:', error);
@@ -165,6 +192,8 @@ export const WeeklyChallenges = ({ onStartChallenge }: WeeklyChallengesProps) =>
         description: "Failed to start challenge",
         variant: "destructive",
       });
+    } finally {
+      setStartingChallenge(null);
     }
   };
 
@@ -176,17 +205,10 @@ export const WeeklyChallenges = ({ onStartChallenge }: WeeklyChallengesProps) =>
     });
   };
 
-  const isCurrentWeek = (challenge: WeeklyChallenge) => {
-    const today = new Date();
-    const start = new Date(challenge.week_start);
-    const end = new Date(challenge.week_end);
-    return today >= start && today <= end;
-  };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[200px]">
-        <div>Loading challenges...</div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -266,9 +288,37 @@ export const WeeklyChallenges = ({ onStartChallenge }: WeeklyChallengesProps) =>
                 onClick={() => startChallenge(currentChallenge)}
                 className="w-full"
                 size="lg"
+                disabled={startingChallenge === currentChallenge.id}
               >
-                <Play className="h-4 w-4 mr-2" />
-                Start Challenge
+                {startingChallenge === currentChallenge.id ? (
+                  <>
+                    <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    Starting...
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4 mr-2" />
+                    Start Challenge
+                  </>
+                )}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* No challenges state */}
+      {challenges.length === 0 && (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">No Challenges Yet</h3>
+            <p className="text-muted-foreground">
+              Weekly challenges will appear here. Check back soon!
+            </p>
+            {isAdmin && (
+              <Button onClick={createWeeklyChallenge} className="mt-4" disabled={creating}>
+                {creating ? "Creating..." : "Create First Challenge"}
               </Button>
             )}
           </CardContent>
@@ -276,24 +326,9 @@ export const WeeklyChallenges = ({ onStartChallenge }: WeeklyChallengesProps) =>
       )}
 
       {/* Past Challenges */}
-      <div className="grid gap-4">
-        {challenges.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Trophy className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">No Challenges Yet</h3>
-              <p className="text-muted-foreground">
-                Weekly challenges will appear here. Check back soon!
-              </p>
-              {isAdmin && (
-                <Button onClick={createWeeklyChallenge} className="mt-4" disabled={creating}>
-                  {creating ? "Creating..." : "Create First Challenge"}
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          challenges
+      {challenges.length > 0 && (
+        <div className="grid gap-4">
+          {challenges
             .filter(challenge => !currentChallenge || challenge.id !== currentChallenge.id)
             .map((challenge) => {
               const userAttempt = userAttempts[challenge.id];
@@ -357,17 +392,18 @@ export const WeeklyChallenges = ({ onStartChallenge }: WeeklyChallengesProps) =>
                         onClick={() => startChallenge(challenge)}
                         className="w-full"
                         variant="outline"
-                        disabled={!user}
+                        disabled={!user || startingChallenge === challenge.id}
                       >
-                        {!user ? "Sign In to Participate" : "View Challenge"}
+                        {!user ? "Sign In to Participate" : 
+                         startingChallenge === challenge.id ? "Starting..." : "View Challenge"}
                       </Button>
                     )}
                   </CardContent>
                 </Card>
               );
-            })
-        )}
-      </div>
+            })}
+        </div>
+      )}
     </div>
   );
 };

@@ -35,6 +35,16 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
   const currentQuestion = useMemo(() => questions[currentQuestionIndex], [questions, currentQuestionIndex]);
   const progress = useMemo(() => ((currentQuestionIndex + 1) / questions.length) * 100, [currentQuestionIndex, questions.length]);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('📋 Quiz initialized with:', {
+      questionsCount: questions.length,
+      currentQuestion: currentQuestion?.text?.substring(0, 50),
+      difficulty: currentQuestion?.difficulty,
+      hasChoices: currentQuestion?.choices?.length
+    });
+  }, [questions, currentQuestion]);
+
   // Initialize game session
   useEffect(() => {
     const initSession = async () => {
@@ -102,8 +112,12 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
   }, [currentQuestionIndex, currentQuestion?.difficulty, isMobile, isAnswered]);
 
   const handleAnswer = useCallback((choiceId: string | null) => {
-    if (isAnswered) return;
+    if (isAnswered) {
+      console.log('⚠️ Answer already given for this question');
+      return;
+    }
     
+    console.log('🎯 Answer selected:', choiceId);
     setSelectedChoice(choiceId);
     setIsAnswered(true);
     
@@ -112,9 +126,11 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
     );
     
     if (correct) {
+      console.log('✅ Correct answer!');
       setCorrectAnswers((prev) => prev + 1);
       setCorrectQuestions((prev) => [...prev, currentQuestionIndex]);
     } else {
+      console.log('❌ Wrong answer');
       // Record failed question
       setFailedQuestionIds((prev) => [...prev, currentQuestion.id]);
     }
@@ -156,19 +172,11 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
     }
   }, [currentQuestionIndex, questions.length, startTime, correctAnswers, gameSession, user, failedQuestionIds, onFinish]);
 
-  const handleImageLoad = useCallback(() => {
-    setImageLoaded(true);
-  }, []);
-
-  const handleImageError = useCallback(() => {
-    setImageError(true);
-  }, []);
-
   const getChoiceClassName = useCallback((choice: Choice) => {
     if (!isAnswered) {
       return selectedChoice === choice.id
-        ? "border-primary bg-primary/10"
-        : "border-border hover:border-primary/50";
+        ? "border-primary bg-primary/10 cursor-pointer"
+        : "border-border hover:border-primary/50 cursor-pointer";
     }
     
     if (choice.isCorrect) {
@@ -181,6 +189,14 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
     
     return "border-border opacity-50";
   }, [isAnswered, selectedChoice]);
+
+  const handleImageLoad = useCallback(() => {
+    setImageLoaded(true);
+  }, []);
+
+  const handleImageError = useCallback(() => {
+    setImageError(true);
+  }, []);
 
   const getHeaderIcon = useMemo(() => {
     if (isWeeklyChallenge) {
@@ -201,6 +217,36 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
     
     return country ? `${country.name} Quiz` : "Global Quiz";
   }, [isWeeklyChallenge, country]);
+
+  // Validate current question
+  if (!currentQuestion) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">No Questions Available</h2>
+          <p className="text-muted-foreground mb-4">
+            No questions found for this difficulty level or country.
+          </p>
+          <Button onClick={onBack}>Back to Globe</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentQuestion.choices || currentQuestion.choices.length < 4) {
+    console.error('❌ Invalid question structure:', currentQuestion);
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Question Error</h2>
+          <p className="text-muted-foreground mb-4">
+            This question has invalid data. Please try another one.
+          </p>
+          <Button onClick={onBack}>Back to Globe</Button>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className={`min-h-screen w-full ${isMobile ? 'p-2' : 'p-4'} flex flex-col gap-${isMobile ? '4' : '8'} max-w-4xl mx-auto`}>
@@ -240,10 +286,10 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
       <Card className={`${isMobile ? 'p-4' : 'p-6'} border-primary/20 shadow-lg shadow-primary/20`}>
         <div className={isMobile ? "mb-6" : "mb-8"}>
           <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-medium mb-2`}>
-            {currentQuestion?.text}
+            {currentQuestion.text}
           </h2>
           
-          {currentQuestion?.imageUrl && (
+          {currentQuestion.imageUrl && (
             <div className={`${isMobile ? 'mt-3 mb-4' : 'mt-4 mb-6'} flex justify-center`}>
               {!imageLoaded && !imageError && (
                 <div className={`w-full ${isMobile ? 'max-h-40' : 'max-h-60'} flex items-center justify-center bg-muted rounded-md`}>
@@ -272,7 +318,7 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
         </div>
         
         <div className={`grid gap-${isMobile ? '2' : '3'}`}>
-          {currentQuestion?.choices.map((choice) => (
+          {currentQuestion.choices.map((choice) => (
             <button
               key={choice.id}
               onClick={() => handleAnswer(choice.id)}
@@ -280,9 +326,10 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
               className={`
                 ${isMobile ? 'p-3' : 'p-4'} rounded-md border-2 transition-all text-left flex items-center
                 ${getChoiceClassName(choice)}
+                ${!isAnswered ? 'hover:shadow-md' : ''}
               `}
             >
-              <span className={`${isMobile ? 'w-6 h-6 mr-2' : 'w-8 h-8 mr-3'} rounded-full bg-muted flex items-center justify-center ${isMobile ? 'text-sm' : ''}`}>
+              <span className={`${isMobile ? 'w-6 h-6 mr-2' : 'w-8 h-8 mr-3'} rounded-full bg-muted flex items-center justify-center ${isMobile ? 'text-sm' : ''} font-medium`}>
                 {choice.id.toUpperCase()}
               </span>
               <span className={isMobile ? 'text-sm' : ''}>{choice.text}</span>
@@ -294,7 +341,7 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
           <div className={`${isMobile ? 'mt-4' : 'mt-6'} flex flex-col gap-${isMobile ? '3' : '4'}`}>
             <div className={`bg-secondary/50 ${isMobile ? 'p-3' : 'p-4'} rounded-md`}>
               <p className={`font-medium mb-1 ${isMobile ? 'text-sm' : ''}`}>Explanation:</p>
-              <p className={isMobile ? 'text-sm' : ''}>{currentQuestion?.explanation}</p>
+              <p className={isMobile ? 'text-sm' : ''}>{currentQuestion.explanation}</p>
             </div>
             
             <Button onClick={handleNext} size={isMobile ? "default" : "default"} className="w-full">
