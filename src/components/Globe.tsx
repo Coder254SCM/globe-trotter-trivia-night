@@ -1,12 +1,12 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Country, DifficultyLevel } from "../types/quiz";
-import { useGlobe } from "../hooks/useGlobe";
 import { CountryCard } from "./globe/CountryCard";
 import { GlobeHeader } from "./globe/GlobeHeader";
 import { GlobeFilters } from "./globe/GlobeFilters";
 import { GlobeLegend } from "./globe/GlobeLegend";
 import { GlobeSearch } from "./globe/GlobeSearch";
+import { Modern3DGlobe } from "./globe/Modern3DGlobe";
 import { useCountryFilter } from "../hooks/useCountryFilter";
 import { getQuestionStats } from "../utils/quiz/questionSets";
 import { toast } from "@/components/ui/use-toast";
@@ -41,22 +41,17 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
     clearFilters
   } = useCountryFilter({ allCountries });
 
-  // Use the original globe hook with proper functionality
-  const { containerRef, zoomToContinent, focusCountry } = useGlobe({
-    filteredCountries,
-    showLabels,
-    rotating,
-    onCountrySelect: handleCountryClick
-  });
-
   // Handle country selection from globe
-  function handleCountryClick(country: Country) {
-    setSelectedCountry(country);
-    setRotating(false); // Stop rotation when country is selected
-    toast({
-      title: `🌍 ${country.name}`,
-      description: `Ready to explore ${country.name}? Choose your quiz difficulty!`,
-    });
+  function handleCountryClick(countryId: string) {
+    const country = allCountries.find(c => c.id === countryId);
+    if (country) {
+      setSelectedCountry(country);
+      setRotating(false); // Stop rotation when country is selected
+      toast({
+        title: `🌍 ${country.name}`,
+        description: `Ready to explore ${country.name}? Choose your quiz difficulty!`,
+      });
+    }
   }
 
   const handleStartQuiz = useCallback((difficulty: string) => {
@@ -79,14 +74,13 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
     const country = allCountries.find(c => c.id === countryId);
     if (country) {
       setSelectedCountry(country);
-      focusCountry(country);
       setRotating(false);
       toast({
         title: country.name,
         description: `Focused on ${country.name}. Click to start a quiz!`
       });
     }
-  }, [allCountries, focusCountry]);
+  }, [allCountries]);
 
   // Handle weekly challenge navigation
   const handleWeeklyChallengeClick = useCallback(() => {
@@ -119,8 +113,8 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
 
   return (
     <div className={`relative w-full h-screen overflow-hidden bg-gradient-to-b from-slate-900 via-blue-900 to-black ${isMobile ? 'touch-none' : ''}`}>
-      {/* 3D Globe Container */}
-      <div ref={containerRef} className="w-full h-full" />
+      {/* Modern 3D Globe */}
+      <Modern3DGlobe onCountryClick={handleCountryClick} />
       
       <GlobeHeader 
         onToggleLabels={handleToggleLabels}
