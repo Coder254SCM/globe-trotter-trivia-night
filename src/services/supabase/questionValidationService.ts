@@ -63,7 +63,7 @@ export class QuestionValidationService {
   }
 
   /**
-   * Enhanced validation with improved placeholder detection
+   * Enhanced validation with improved placeholder detection - only hard questions allowed
    */
   static quickValidate(question: QuestionToValidate): ValidationResult {
     const issues: string[] = [];
@@ -92,9 +92,9 @@ export class QuestionValidationService {
       severity = 'critical';
     }
 
-    // Reject easy questions
-    if (question.difficulty === 'easy') {
-      issues.push('Easy questions are no longer allowed in the system');
+    // Reject non-hard questions - only hard difficulty is allowed
+    if (question.difficulty && question.difficulty !== 'hard') {
+      issues.push('Only hard questions are allowed - medium and easy questions have been disabled');
       severity = 'critical';
     }
 
