@@ -12,10 +12,10 @@ export const getSupabaseQuizQuestions = async (
   console.log(`🎯 Fetching ${count} questions from Supabase for country: ${countryId}, difficulty: ${difficulty}`);
   
   try {
-    if (countryId && difficulty) {
-      // Get country-specific questions with proper difficulty
+    if (countryId) {
+      // Get country-specific questions
       const questions = await QuestionService.getQuestions(countryId, difficulty, count);
-      console.log(`✅ Found ${questions.length} Supabase questions for ${countryId} (${difficulty})`);
+      console.log(`✅ Found ${questions.length} Supabase questions for ${countryId} (${difficulty || 'any'})`);
       return shuffleArray(questions).slice(0, count);
     }
     
@@ -27,7 +27,7 @@ export const getSupabaseQuizQuestions = async (
       const countryQuestions = await QuestionService.getQuestions(
         country.id, 
         difficulty || 'medium', 
-        5
+        Math.ceil(count / 10)
       );
       allQuestions.push(...countryQuestions);
     }

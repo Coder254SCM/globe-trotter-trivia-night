@@ -1,10 +1,8 @@
 
 import { useToast } from "@/hooks/use-toast";
 import { QuestionService } from "@/services/supabase/questionService";
-import { AIService } from "@/services/aiService";
 import { supabase } from "@/integrations/supabase/client";
 import { Country } from "@/types/quiz";
-import { convertRawToSupabaseCountry } from "./countryConverter";
 import { QuizManagerActions } from "./types";
 
 interface UseQuizActionsProps {
@@ -37,7 +35,9 @@ export const useQuizActions = ({
     const targetCountry = country || selectedCountry;
     if (targetCountry) {
       try {
-        // Load questions for the selected country
+        console.log(`🎯 Loading questions for ${targetCountry.name} from Supabase only`);
+        
+        // Load questions for the selected country from Supabase ONLY
         const questions = await QuestionService.getQuestions(
           targetCountry.id, 
           targetCountry.difficulty || 'medium', 
@@ -45,68 +45,47 @@ export const useQuizActions = ({
         );
         
         if (questions.length === 0) {
-          // Try to generate questions on-demand
-          toast({
-            title: "Generating Questions",
-            description: `AI is creating questions for ${targetCountry.name}...`,
-          });
+          // Try different difficulties if no questions found
+          const difficulties = ['easy', 'medium', 'hard'];
+          let foundQuestions = [];
           
-          try {
-            // Get the country from Supabase in the format expected by AI service
-            const { data: countryData, error } = await supabase
-              .from('countries')
-              .select('*')
-              .eq('name', targetCountry.name)
-              .single();
-
-            if (error || !countryData) {
-              throw new Error('Country not found in database');
-            }
-
-            // Convert to SupabaseCountry format with proper type casting
-            const supabaseCountry = convertRawToSupabaseCountry(countryData);
-            
-            await AIService.generateAllDifficultyQuestions(supabaseCountry, 10);
-            
-            // Try loading questions again
-            const newQuestions = await QuestionService.getQuestions(
+          for (const difficulty of difficulties) {
+            foundQuestions = await QuestionService.getQuestions(
               targetCountry.id, 
-              targetCountry.difficulty || 'medium', 
+              difficulty, 
               10
             );
-            
-            if (newQuestions.length > 0) {
-              setQuizQuestions(newQuestions);
-              setShowQuiz(true);
-              setQuizResult(null);
-              toast({
-                title: "Questions Ready",
-                description: `Generated ${newQuestions.length} questions for ${targetCountry.name}!`,
-              });
-            } else {
-              throw new Error('No questions generated');
+            if (foundQuestions.length > 0) {
+              console.log(`✅ Found ${foundQuestions.length} ${difficulty} questions for ${targetCountry.name}`);
+              break;
             }
-            
-          } catch (aiError) {
-            console.error('AI generation failed:', aiError);
-            toast({
-              title: "No Questions Available",
-              description: `Unable to generate questions for ${targetCountry.name}. Please try another country.`,
-              variant: "destructive",
-            });
           }
           
+          if (foundQuestions.length === 0) {
+            toast({
+              title: "No Questions Available",
+              description: `No questions found for ${targetCountry.name} in the database. Please use the admin panel to generate questions first.`,
+              variant: "destructive",
+            });
+            return;
+          }
+          
+          setQuizQuestions(foundQuestions);
+          setShowQuiz(true);
+          setQuizResult(null);
           return;
         }
         
         setQuizQuestions(questions);
         setShowQuiz(true);
         setQuizResult(null);
+        console.log(`✅ Loaded ${questions.length} questions for ${targetCountry.name} from Supabase`);
+        
       } catch (error) {
-        console.error('Failed to load quiz questions:', error);
+        console.error('Failed to load quiz questions from Supabase:', error);
         toast({
-          title: "Error",
-          description: "Failed to load questions for this country.",
+          title: "Database Error",
+          description: "Failed to load questions from the database. Please try again.",
           variant: "destructive",
         });
       }

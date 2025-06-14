@@ -1,7 +1,5 @@
-
 import { Question } from "../../types/quiz";
 import { getSupabaseQuizQuestions, getSupabaseCountryStats, initializeSupabaseData } from "./supabaseQuestionFetcher";
-import { shuffleArray } from "./questionUtilities";
 
 // Initialize Supabase data on first load
 let initialized = false;
@@ -13,19 +11,19 @@ const initializeOnce = async () => {
   }
 };
 
-// PRODUCTION: Supabase-powered question fetcher for all 195 countries
+// PRODUCTION: Supabase-only question fetcher (NO AI)
 export const getDynamicQuizQuestions = async (
   countryId?: string,
   count: number = 10,
   difficulty?: string
 ): Promise<Question[]> => {
-  console.log(`🎯 PRODUCTION: Fetching ${count} questions from Supabase for country: ${countryId}, difficulty: ${difficulty}`);
+  console.log(`🎯 PRODUCTION: Fetching ${count} questions from Supabase ONLY for country: ${countryId}, difficulty: ${difficulty}`);
   
   // Initialize database if needed
   await initializeOnce();
   
   try {
-    // Use Supabase for production-quality questions
+    // Use Supabase for production-quality questions (NO AI FALLBACK)
     const questions = await getSupabaseQuizQuestions(countryId, count, difficulty);
     
     if (questions.length > 0) {
@@ -33,19 +31,18 @@ export const getDynamicQuizQuestions = async (
       return questions;
     }
     
-    // If no questions found for the specific difficulty, try easy questions
-    // (since all questions were migrated to easy)
-    if (difficulty && difficulty !== 'easy') {
-      console.log(`⚠️ No ${difficulty} questions found, falling back to easy questions`);
-      const easyQuestions = await getSupabaseQuizQuestions(countryId, count, 'easy');
-      if (easyQuestions.length > 0) {
-        console.log(`✅ Retrieved ${easyQuestions.length} easy questions as fallback`);
-        return easyQuestions;
+    // If no questions found for the specific difficulty, try any difficulty
+    if (difficulty) {
+      console.log(`⚠️ No ${difficulty} questions found, trying any difficulty`);
+      const anyQuestions = await getSupabaseQuizQuestions(countryId, count);
+      if (anyQuestions.length > 0) {
+        console.log(`✅ Retrieved ${anyQuestions.length} questions (any difficulty) as fallback`);
+        return anyQuestions;
       }
     }
     
-    // If no questions found, return empty array
-    console.warn(`⚠️ No questions found in Supabase for ${countryId} (${difficulty})`);
+    // If no questions found, return empty array (NO AI GENERATION)
+    console.warn(`⚠️ No questions found in Supabase for ${countryId} - AI generation disabled`);
     return [];
     
   } catch (error) {
