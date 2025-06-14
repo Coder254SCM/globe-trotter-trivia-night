@@ -57,11 +57,14 @@ export class QuestionService {
   }
 
   /**
-   * Save questions to Supabase with validation
+   * Save questions to Supabase with MANDATORY validation
+   * ALL QUESTIONS MUST PASS VALIDATION - NO EXCEPTIONS
    */
   static async saveQuestions(questions: any[]): Promise<void> {
     try {
-      // Pre-validate all questions before attempting to save
+      console.log(`🔍 MANDATORY VALIDATION: Pre-validating ALL ${questions.length} questions...`);
+      
+      // Convert to validation format
       const questionsToValidate: QuestionToValidate[] = questions.map(q => ({
         text: q.text,
         option_a: q.option_a,
@@ -73,49 +76,65 @@ export class QuestionService {
         category: q.category
       }));
 
-      console.log(`🔍 Pre-validating ${questions.length} questions...`);
+      // MANDATORY validation - all questions must pass
       const validationResults = await QuestionValidationService.batchValidateQuestions(questionsToValidate);
 
+      // REJECT ANY QUESTIONS WITH CRITICAL ISSUES
       if (validationResults.criticalIssues > 0) {
         const criticalQuestions = validationResults.results
           .filter(r => r.severity === 'critical')
           .map(r => `Question ${r.questionIndex + 1}: ${r.issues.join(', ')}`)
           .join('\n');
         
-        throw new Error(`❌ ${validationResults.criticalIssues} questions have critical issues:\n${criticalQuestions}`);
+        throw new Error(`❌ VALIDATION FAILED: ${validationResults.criticalIssues} questions have CRITICAL issues and cannot be saved:\n${criticalQuestions}`);
       }
 
+      // REJECT ANY INVALID QUESTIONS
       if (validationResults.validQuestions !== validationResults.totalQuestions) {
-        console.warn(`⚠️ ${validationResults.totalQuestions - validationResults.validQuestions} questions have non-critical issues but will be saved`);
+        const invalidQuestions = validationResults.results
+          .filter(r => !r.isValid)
+          .map(r => `Question ${r.questionIndex + 1}: ${r.issues.join(', ')}`)
+          .join('\n');
+        
+        throw new Error(`❌ VALIDATION FAILED: ${validationResults.totalQuestions - validationResults.validQuestions} questions are invalid:\n${invalidQuestions}`);
       }
 
-      console.log(`✅ Validation passed. Saving ${validationResults.validQuestions} valid questions...`);
+      console.log(`✅ VALIDATION PASSED: All ${validationResults.validQuestions} questions are valid and safe to save`);
 
+      // Save to database (database triggers will provide additional validation)
       const { error } = await supabase
         .from('questions')
         .upsert(questions, { onConflict: 'id' });
 
       if (error) {
-        console.error('Error saving questions:', error);
-        throw error;
+        console.error('❌ Database save failed:', error);
+        throw new Error(`Database save failed: ${error.message}`);
       }
 
-      console.log(`✅ Successfully saved ${questions.length} questions to Supabase`);
+      console.log(`✅ SUCCESS: Saved ${questions.length} validated questions to Supabase`);
     } catch (error) {
-      console.error('Failed to save questions:', error);
+      console.error('❌ MANDATORY VALIDATION FAILED:', error);
       throw error;
     }
   }
 
   /**
-   * Validate a single question before saving
+   * Validate a single question before saving - MANDATORY CHECK
    */
   static async validateQuestion(question: QuestionToValidate): Promise<boolean> {
     try {
       const result = await QuestionValidationService.preValidateQuestion(question);
-      return result.isValid && result.severity !== 'critical';
+      
+      // STRICT: Question must be valid AND not have critical issues
+      const isValid = result.isValid && result.severity !== 'critical';
+      
+      if (!isValid) {
+        console.warn(`⚠️ Question validation failed:`, result.issues);
+      }
+      
+      return isValid;
     } catch (error) {
-      console.error('Question validation failed:', error);
+      console.error('❌ Question validation failed:', error);
       return false;
     }
   }

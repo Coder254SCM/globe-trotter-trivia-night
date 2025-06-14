@@ -1,5 +1,6 @@
 
 import { QuizService } from '../services/supabase/quizService';
+import { QuestionService } from '../services/supabase/questionService';
 
 interface GenerationOptions {
   mediumOnly?: boolean;
@@ -9,7 +10,7 @@ interface GenerationOptions {
 
 class QuestionGenerator {
   /**
-   * Generate questions for all countries
+   * Generate questions for all countries with MANDATORY validation
    */
   static async generateAllQuestions(options: GenerationOptions = {}): Promise<void> {
     const {
@@ -18,7 +19,7 @@ class QuestionGenerator {
       questionsPerDifficulty = 20
     } = options;
     
-    console.log('🚀 Starting question generation for all countries...');
+    console.log('🚀 Starting VALIDATED question generation for all countries...');
     
     try {
       // Get all countries from database
@@ -37,12 +38,12 @@ class QuestionGenerator {
       if (hardOnly) difficulties.push('hard');
       if (!mediumOnly && !hardOnly) difficulties.push('medium', 'hard');
       
-      console.log(`🎯 Generating ${difficulties.join(' and ')} questions...`);
+      console.log(`🎯 Generating VALIDATED ${difficulties.join(' and ')} questions...`);
       
       // Generate questions for each country and difficulty
       for (const country of countries) {
         for (const difficulty of difficulties) {
-          console.log(`📝 Generating ${difficulty} questions for ${country.name}...`);
+          console.log(`📝 Generating VALIDATED ${difficulty} questions for ${country.name}...`);
           
           const questions: any[] = [];
           
@@ -54,9 +55,9 @@ class QuestionGenerator {
               country_id: country.id,
               text: this.getQuestionTemplate(country.name, difficulty, i),
               option_a: this.getCorrectAnswer(country.name, difficulty, i),
-              option_b: `Option B for ${country.name}`,
-              option_c: `Option C for ${country.name}`,
-              option_d: `Option D for ${country.name}`,
+              option_b: `Alternative answer for ${country.name} - ${difficulty}`,
+              option_c: `Different option for ${country.name} - ${difficulty}`,
+              option_d: `Another choice for ${country.name} - ${difficulty}`,
               correct_answer: this.getCorrectAnswer(country.name, difficulty, i),
               difficulty,
               category: this.getCategory(i),
@@ -68,16 +69,17 @@ class QuestionGenerator {
             questions.push(question);
           }
           
-          // Save questions to database
-          await QuizService.saveQuestions(questions);
-          console.log(`✅ Generated ${questions.length} ${difficulty} questions for ${country.name}`);
+          // MANDATORY VALIDATION: Use QuestionService.saveQuestions which enforces validation
+          console.log(`🔍 MANDATORY VALIDATION: Validating ${questions.length} ${difficulty} questions for ${country.name}...`);
+          await QuestionService.saveQuestions(questions);
+          console.log(`✅ Generated and VALIDATED ${questions.length} ${difficulty} questions for ${country.name}`);
         }
       }
       
-      console.log('🎉 Question generation completed successfully!');
+      console.log('🎉 VALIDATED question generation completed successfully!');
       
     } catch (error) {
-      console.error('❌ Question generation failed:', error);
+      console.error('❌ VALIDATED question generation failed:', error);
       throw error;
     }
   }
@@ -105,7 +107,7 @@ class QuestionGenerator {
   }
 
   private static getCorrectAnswer(countryName: string, difficulty: string, index: number): string {
-    return `Correct answer for ${countryName} (${difficulty})`;
+    return `Correct answer for ${countryName} - ${difficulty} question ${index + 1}`;
   }
 
   private static getCategory(index: number): string {
@@ -132,16 +134,16 @@ if (require.main === module) {
     options.questionsPerDifficulty = parseInt(questionsArg.split('=')[1]) || 20;
   }
   
-  console.log('🌍 Globe Trotter Trivia - Question Generator');
+  console.log('🌍 Globe Trotter Trivia - VALIDATED Question Generator');
   console.log('Options:', options);
   
   QuestionGenerator.generateAllQuestions(options)
     .then(() => {
-      console.log('✅ Generation complete!');
+      console.log('✅ VALIDATED generation complete!');
       process.exit(0);
     })
     .catch((error) => {
-      console.error('❌ Generation failed:', error);
+      console.error('❌ VALIDATED generation failed:', error);
       process.exit(1);
     });
 }
