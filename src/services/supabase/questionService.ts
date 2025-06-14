@@ -60,18 +60,18 @@ export class QuestionService {
   }
 
   /**
-   * Save questions to Supabase with basic validation
+   * Save questions to Supabase with validation and rate limiting
    */
   static async saveQuestions(questions: any[]): Promise<void> {
     try {
-      console.log(`🔍 Processing ${questions.length} questions for save...`);
+      console.log(`🔍 Starting save operation for ${questions.length} questions...`);
       
       if (!questions || questions.length === 0) {
         console.log('📝 No questions to save');
         return;
       }
       
-      // Filter out any easy questions and validate basic requirements
+      // Basic validation and filtering
       const validQuestions = questions.filter(q => {
         const isValid = q.text && 
                        q.option_a && 
@@ -95,26 +95,43 @@ export class QuestionService {
         return;
       }
 
-      console.log(`✅ ${validQuestions.length} questions passed basic validation`);
+      console.log(`✅ ${validQuestions.length} questions passed validation`);
 
-      // Save to database in smaller batches to avoid timeout
-      const batchSize = 50;
+      // Save with smaller batches and delays to prevent rate limiting
+      const batchSize = 20; // Reduced batch size
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      
       for (let i = 0; i < validQuestions.length; i += batchSize) {
         const batch = validQuestions.slice(i, i + batchSize);
         
-        const { error } = await supabase
-          .from('questions')
-          .upsert(batch, { onConflict: 'id' });
+        try {
+          const { error } = await supabase
+            .from('questions')
+            .upsert(batch, { 
+              onConflict: 'id',
+              ignoreDuplicates: false 
+            });
 
-        if (error) {
-          console.error(`❌ Database save failed for batch ${i / batchSize + 1}:`, error);
-          throw new Error(`Database save failed: ${error.message}`);
+          if (error) {
+            console.error(`❌ Batch ${Math.floor(i / batchSize) + 1} failed:`, error);
+            throw new Error(`Database save failed: ${error.message}`);
+          }
+          
+          console.log(`✅ Saved batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(validQuestions.length / batchSize)} (${batch.length} questions)`);
+          
+          // Add delay between batches to prevent rate limiting
+          if (i + batchSize < validQuestions.length) {
+            await delay(500); // 500ms delay between batches
+          }
+          
+        } catch (batchError) {
+          console.error(`❌ Failed to save batch starting at index ${i}:`, batchError);
+          throw batchError;
         }
-        
-        console.log(`✅ Saved batch ${i / batchSize + 1} (${batch.length} questions)`);
       }
 
-      console.log(`🎉 Successfully saved ${validQuestions.length} questions to Supabase`);
+      console.log(`🎉 Successfully saved all ${validQuestions.length} questions to Supabase`);
+      
     } catch (error) {
       console.error('❌ Save operation failed:', error);
       throw error;

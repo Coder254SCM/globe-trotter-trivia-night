@@ -16,6 +16,11 @@ interface UseQuizActionsProps {
   setQuestionCount: (count: number) => void;
 }
 
+// Cache for questions to prevent repeated requests
+const questionCache = new Map<string, any[]>();
+const cacheTimeout = 5 * 60 * 1000; // 5 minutes
+const cacheTimestamps = new Map<string, number>();
+
 export const useQuizActions = ({
   selectedCountry,
   questionCount,
@@ -58,6 +63,19 @@ export const useQuizActions = ({
         // Ensure we never request easy questions - default to medium if easy is requested
         const validDifficulty = targetCountry.difficulty === 'easy' ? 'medium' : (targetCountry.difficulty || 'medium');
         
+        // Check cache first
+        const cacheKey = `${targetCountry.id}-${validDifficulty}-${targetCount}`;
+        const cachedQuestions = questionCache.get(cacheKey);
+        const cacheTime = cacheTimestamps.get(cacheKey) || 0;
+        
+        if (cachedQuestions && (Date.now() - cacheTime) < cacheTimeout) {
+          console.log(`✅ Using cached questions for ${targetCountry.name}`);
+          setQuizQuestions(cachedQuestions);
+          setShowQuiz(true);
+          setQuizResult(null);
+          return;
+        }
+        
         // Use rotation service to get current month questions (no easy questions)
         const questions = await RotationService.getCurrentMonthQuestions(
           targetCountry.id, 
@@ -76,6 +94,10 @@ export const useQuizActions = ({
         
         // Transform to frontend format
         const transformedQuestions = questions.map(q => QuestionService.transformToFrontendQuestion(q));
+        
+        // Cache the questions
+        questionCache.set(cacheKey, transformedQuestions);
+        cacheTimestamps.set(cacheKey, Date.now());
         
         setQuizQuestions(transformedQuestions);
         setShowQuiz(true);

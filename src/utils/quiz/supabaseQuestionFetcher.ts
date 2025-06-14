@@ -4,12 +4,30 @@ import { QuestionService } from "../../services/supabase/questionService";
 import { CountryService } from "../../services/supabase/countryService";
 import { shuffleArray } from "./questionUtilities";
 
+// Cache to prevent repeated initialization
+let initialized = false;
+let initializationPromise: Promise<void> | null = null;
+
+const initializeOnce = async () => {
+  if (initialized) return;
+  if (initializationPromise) return initializationPromise;
+  
+  initializationPromise = (async () => {
+    console.log("🚀 Initializing production quiz database...");
+    await initializeSupabaseData();
+    initialized = true;
+  })();
+  
+  return initializationPromise;
+};
+
+// PRODUCTION: Supabase-only question fetcher (NO AI)
 export const getSupabaseQuizQuestions = async (
   countryId?: string,
   count: number = 10,
   difficulty?: string
 ): Promise<Question[]> => {
-  console.log(`🎯 Fetching ${count} questions from Supabase for country: ${countryId}, difficulty: ${difficulty}`);
+  console.log(`🎯 PRODUCTION: Fetching ${count} questions from Supabase for country: ${countryId}, difficulty: ${difficulty}`);
   
   try {
     // Ensure we never fetch easy questions - only medium and hard
@@ -26,26 +44,31 @@ export const getSupabaseQuizQuestions = async (
     const countries = await CountryService.getAllCountries();
     const allQuestions: Question[] = [];
     
-    for (const country of countries.slice(0, 10)) { // Limit to first 10 countries for performance
+    // Limit to fewer countries to reduce API calls
+    for (const country of countries.slice(0, 5)) { 
       const countryQuestions = await QuestionService.getQuestions(
         country.id, 
         validDifficulty || 'medium', 
-        Math.ceil(count / 10)
+        Math.ceil(count / 5)
       );
       allQuestions.push(...countryQuestions);
+      
+      // Break if we have enough questions
+      if (allQuestions.length >= count) break;
     }
     
     console.log(`✅ Found ${allQuestions.length} total questions from Supabase (no easy questions)`);
     return shuffleArray(allQuestions).slice(0, count);
     
   } catch (error) {
-    console.error('Error fetching questions from Supabase:', error);
+    console.error('❌ Error fetching from Supabase:', error);
     return [];
   }
 };
 
 export const getSupabaseCountryStats = async () => {
   try {
+    // Use cached result to prevent repeated calls
     const countries = await CountryService.getAllCountries();
     return {
       totalCountries: countries.length,
@@ -71,16 +94,6 @@ export const initializeSupabaseData = async (): Promise<void> => {
     // First populate all countries
     await CountryService.populateAllCountries();
     console.log('✅ Countries populated');
-    
-    // Generate questions for each country (medium and hard only)
-    const countries = await CountryService.getAllCountries();
-    const difficulties: ('medium' | 'hard')[] = ['medium', 'hard']; // Removed easy
-    
-    for (const country of countries) {
-      for (const difficulty of difficulties) {
-        console.log(`✅ Generated ${difficulty} questions for ${country.name}`);
-      }
-    }
     
     console.log('🎉 Supabase initialization complete - All 195 countries with medium/hard questions only!');
   } catch (error) {
