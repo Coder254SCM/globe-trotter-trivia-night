@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import HardQuestions from "./pages/HardQuestions";
+import MediumQuestions from "./pages/MediumQuestions";
 import ManualHardQuestions from "./pages/ManualHardQuestions";
 import QuestionAudit from "./pages/QuestionAudit";
 import Moderation from "./pages/Moderation";
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/admin/hard-questions" element={<HardQuestions />} />
+            <Route path="/admin/medium-questions" element={<MediumQuestions />} />
             <Route path="/admin/manual-hard-questions" element={<ManualHardQuestions />} />
             <Route path="/admin/question-audit" element={<QuestionAudit />} />
             <Route path="/admin/moderation" element={<Moderation />} />
