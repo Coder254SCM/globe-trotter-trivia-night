@@ -88,28 +88,11 @@ export const useQuizManager = () => {
         return;
       }
       
-      // Get countries from Supabase and map to Country format
+      // Get countries from Supabase - these are already in the correct format
       const supabaseCountries = await QuizService.getAllCountries();
       
-      // Convert Supabase countries to Country format for AI service
-      const countriesForAI: Country[] = supabaseCountries.map(country => {
-        // Find matching country from static data to get position info
-        const staticCountry = allCountries.find(c => c.name === country.name);
-        
-        return {
-          id: country.id,
-          name: country.name,
-          code: country.id.substring(0, 3).toUpperCase(), // Generate code from ID
-          position: staticCountry?.position || { lat: 0, lng: 0 }, // Use static data or default
-          difficulty: (country.difficulty as DifficultyLevel) || 'medium',
-          categories: [], // Will be populated by AI
-          continent: country.continent,
-          flagImageUrl: country.flag_url || undefined,
-        };
-      });
-      
       // Start batch generation for countries with few questions
-      const countriesNeedingQuestions = countriesForAI.slice(0, 10); // Start with first 10
+      const countriesNeedingQuestions = supabaseCountries.slice(0, 10); // Start with first 10
       
       toast({
         title: "AI Generation Started",
@@ -169,37 +152,33 @@ export const useQuizManager = () => {
           });
           
           try {
-            // Create proper Country object for AI generation
-            const countryForAI: Country = {
-              id: targetCountry.id,
-              name: targetCountry.name,
-              code: targetCountry.code,
-              position: targetCountry.position,
-              difficulty: targetCountry.difficulty || 'medium',
-              categories: targetCountry.categories || [],
-              continent: targetCountry.continent,
-              flagImageUrl: targetCountry.flagImageUrl,
-            };
+            // Find the corresponding Supabase country data
+            const supabaseCountries = await QuizService.getAllCountries();
+            const supabaseCountry = supabaseCountries.find(c => c.name === targetCountry.name);
             
-            await AIService.generateAllDifficultyQuestions(countryForAI, 10);
-            
-            // Try loading questions again
-            const newQuestions = await QuizService.getQuestions(
-              targetCountry.id, 
-              targetCountry.difficulty || 'medium', 
-              10
-            );
-            
-            if (newQuestions.length > 0) {
-              setQuizQuestions(newQuestions);
-              setShowQuiz(true);
-              setQuizResult(null);
-              toast({
-                title: "Questions Ready",
-                description: `Generated ${newQuestions.length} questions for ${targetCountry.name}!`,
-              });
+            if (supabaseCountry) {
+              await AIService.generateAllDifficultyQuestions(supabaseCountry, 10);
+              
+              // Try loading questions again
+              const newQuestions = await QuizService.getQuestions(
+                targetCountry.id, 
+                targetCountry.difficulty || 'medium', 
+                10
+              );
+              
+              if (newQuestions.length > 0) {
+                setQuizQuestions(newQuestions);
+                setShowQuiz(true);
+                setQuizResult(null);
+                toast({
+                  title: "Questions Ready",
+                  description: `Generated ${newQuestions.length} questions for ${targetCountry.name}!`,
+                });
+              } else {
+                throw new Error('No questions generated');
+              }
             } else {
-              throw new Error('No questions generated');
+              throw new Error('Country not found in database');
             }
             
           } catch (aiError) {
