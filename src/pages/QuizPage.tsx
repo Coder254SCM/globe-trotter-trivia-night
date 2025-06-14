@@ -4,8 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Country, Question } from "@/types/quiz";
 import Quiz from "@/components/Quiz";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
-import { RotationService } from "@/services/supabase/rotationService";
-import { QuestionService } from "@/services/supabase/questionService";
+import { getCleanQuizQuestions } from "@/utils/quiz/cleanQuestionFetcher";
 import { useToast } from "@/hooks/use-toast";
 
 export default function QuizPage() {
@@ -17,14 +16,13 @@ export default function QuizPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Force immediate scroll to top with multiple methods for maximum compatibility
+    // Force immediate scroll to top
     const scrollToTop = () => {
       try {
         window.scrollTo(0, 0);
         document.documentElement.scrollTop = 0;
         document.body.scrollTop = 0;
         
-        // Additional method for some browsers
         if (document.scrollingElement) {
           document.scrollingElement.scrollTop = 0;
         }
@@ -33,16 +31,12 @@ export default function QuizPage() {
       }
     };
     
-    // Execute immediately
     scrollToTop();
-    
-    // Execute after any potential layout changes
     setTimeout(scrollToTop, 0);
     setTimeout(scrollToTop, 50);
 
     const loadQuizData = async () => {
       try {
-        // Get stored data
         const storedCountry = sessionStorage.getItem('selectedCountry');
         const storedQuestionCount = sessionStorage.getItem('questionCount');
         
@@ -57,12 +51,12 @@ export default function QuizPage() {
         setSelectedCountry(country);
         setQuestionCount(count);
 
-        console.log(`🎯 Loading ${count} questions for ${country.name} with difficulty ${country.difficulty}`);
+        console.log(`🎯 Loading ${count} clean questions for ${country.name}`);
         
-        // Force medium/hard difficulties only - no easy questions allowed
+        // Force medium/hard difficulties only - NO EASY QUESTIONS
         let validDifficulty = country.difficulty;
         if (validDifficulty === 'easy') {
-          console.warn('❌ Easy difficulty requested but not available - using medium instead');
+          console.warn('❌ Easy difficulty blocked - using medium instead');
           validDifficulty = 'medium';
         }
         
@@ -71,8 +65,8 @@ export default function QuizPage() {
           validDifficulty = 'medium';
         }
 
-        // Use rotation service to get current month questions (medium/hard only)
-        const questions = await RotationService.getCurrentMonthQuestions(
+        // Use clean question fetcher
+        const questions = await getCleanQuizQuestions(
           country.id, 
           validDifficulty, 
           count
@@ -80,25 +74,23 @@ export default function QuizPage() {
         
         if (questions.length === 0) {
           toast({
-            title: "No Questions Available",
-            description: `No ${validDifficulty} questions found for ${country.name}. Easy questions have been removed from the system.`,
+            title: "No Clean Questions Available",
+            description: `No validated ${validDifficulty} questions found for ${country.name}. Please try another country or check back later.`,
             variant: "destructive",
           });
           navigate('/');
           return;
         }
         
-        // Transform to frontend format
-        const transformedQuestions = questions.map(q => QuestionService.transformToFrontendQuestion(q));
-        setQuizQuestions(transformedQuestions);
+        setQuizQuestions(questions);
         
-        console.log(`✅ Loaded ${questions.length} ${validDifficulty} questions for ${country.name}`);
+        console.log(`✅ Loaded ${questions.length} clean ${validDifficulty} questions for ${country.name}`);
         
       } catch (error) {
-        console.error('Failed to load quiz questions:', error);
+        console.error('Failed to load clean quiz questions:', error);
         toast({
-          title: "Database Error",
-          description: "Failed to load questions. Please try again.",
+          title: "Quiz Loading Error",
+          description: "Failed to load clean questions. Please try again.",
           variant: "destructive",
         });
         navigate('/');
@@ -111,13 +103,11 @@ export default function QuizPage() {
   }, [navigate, toast]);
 
   const handleQuizComplete = (result: any) => {
-    // Store result and navigate to results page
     sessionStorage.setItem('quizResult', JSON.stringify(result));
     navigate('/quiz-results');
   };
 
   const handleBack = () => {
-    // Clear all stored data and go back to home
     sessionStorage.removeItem('selectedCountry');
     sessionStorage.removeItem('questionCount');
     navigate('/');
@@ -128,9 +118,12 @@ export default function QuizPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold mb-2">Loading Quiz...</h2>
+          <h2 className="text-xl font-semibold mb-2">Loading Clean Quiz...</h2>
           <p className="text-muted-foreground">
-            Preparing {questionCount} questions for {selectedCountry?.name}
+            Preparing {questionCount} validated questions for {selectedCountry?.name}
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Only high-quality questions are included
           </p>
         </div>
       </div>
@@ -141,9 +134,9 @@ export default function QuizPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Quiz Not Available</h2>
+          <h2 className="text-xl font-semibold mb-2">Clean Quiz Not Available</h2>
           <p className="text-muted-foreground mb-4">
-            Unable to load quiz questions. Please try again.
+            No validated questions available for this selection.
           </p>
           <button onClick={handleBack} className="bg-primary text-primary-foreground px-4 py-2 rounded">
             Back to Countries

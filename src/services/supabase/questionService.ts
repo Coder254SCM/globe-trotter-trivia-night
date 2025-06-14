@@ -9,7 +9,7 @@ import { QuestionStatsService } from "./question/questionStats";
 export type { Question } from "./question/questionTypes";
 
 export class QuestionService {
-  // Question fetching operations
+  // Enhanced question fetching operations
   static getQuestions = QuestionFetcher.getQuestions;
   static getFilteredQuestions = QuestionFetcher.getFilteredQuestions;
   static transformToFrontendQuestion = QuestionFetcher.transformToFrontendQuestion;
