@@ -7,41 +7,59 @@ import { QuizManagerActions } from "./types";
 
 interface UseQuizActionsProps {
   selectedCountry: Country | null;
+  questionCount: number;
   setSelectedCountry: (country: Country | null) => void;
   setShowQuiz: (show: boolean) => void;
+  setShowSettings: (show: boolean) => void;
   setQuizResult: (result: any) => void;
   setQuizQuestions: (questions: any[]) => void;
+  setQuestionCount: (count: number) => void;
 }
 
 export const useQuizActions = ({
   selectedCountry,
+  questionCount,
   setSelectedCountry,
   setShowQuiz,
+  setShowSettings,
   setQuizResult,
-  setQuizQuestions
+  setQuizQuestions,
+  setQuestionCount
 }: UseQuizActionsProps): QuizManagerActions => {
   const { toast } = useToast();
 
   const handleCountryClick = (country: Country) => {
     setSelectedCountry(country);
     setShowQuiz(false);
+    setShowSettings(true);
     setQuizResult(null);
-    
-    // Auto-start quiz for better UX
-    handleStartQuiz(country);
   };
 
-  const handleStartQuiz = async (country?: Country) => {
+  const handleShowSettings = () => {
+    setShowSettings(true);
+    setShowQuiz(false);
+    setQuizResult(null);
+  };
+
+  const handleStartQuizWithCount = (count: number) => {
+    setQuestionCount(count);
+    setShowSettings(false);
+    handleStartQuiz(undefined, count);
+  };
+
+  const handleStartQuiz = async (country?: Country, count?: number) => {
     const targetCountry = country || selectedCountry;
+    const targetCount = count || questionCount;
+    
     if (targetCountry) {
       try {
-        console.log(`🎯 Loading questions for ${targetCountry.name} from Supabase only`);
+        console.log(`🎯 Loading ${targetCount} questions for ${targetCountry.name} from Supabase only`);
         
         // Load questions for the selected country from Supabase ONLY
         const questions = await QuestionService.getQuestions(
           targetCountry.id, 
           targetCountry.difficulty || 'medium', 
-          10
+          targetCount
         );
         
         if (questions.length === 0) {
@@ -53,7 +71,7 @@ export const useQuizActions = ({
             foundQuestions = await QuestionService.getQuestions(
               targetCountry.id, 
               difficulty, 
-              10
+              targetCount
             );
             if (foundQuestions.length > 0) {
               console.log(`✅ Found ${foundQuestions.length} ${difficulty} questions for ${targetCountry.name}`);
@@ -100,12 +118,13 @@ export const useQuizActions = ({
   const handleBackToGlobe = () => {
     setSelectedCountry(null);
     setShowQuiz(false);
+    setShowSettings(false);
     setQuizResult(null);
   };
 
   const handleRetryQuiz = () => {
     setQuizResult(null);
-    setShowQuiz(true);
+    setShowSettings(true);
   };
 
   return {
@@ -113,6 +132,8 @@ export const useQuizActions = ({
     handleStartQuiz,
     handleQuizComplete,
     handleBackToGlobe,
-    handleRetryQuiz
+    handleRetryQuiz,
+    handleShowSettings,
+    handleStartQuizWithCount
   };
 };

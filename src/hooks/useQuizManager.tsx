@@ -15,14 +15,18 @@ export const useQuizManager = () => {
   const {
     selectedCountry,
     showQuiz,
+    showSettings,
     quizResult,
     quizQuestions,
     isGeneratingQuestions,
+    questionCount,
     setSelectedCountry,
     setShowQuiz,
+    setShowSettings,
     setQuizResult,
     setQuizQuestions,
-    setIsGeneratingQuestions
+    setIsGeneratingQuestions,
+    setQuestionCount
   } = useQuizState();
 
   // Quiz actions
@@ -31,26 +35,35 @@ export const useQuizManager = () => {
     handleStartQuiz,
     handleQuizComplete,
     handleBackToGlobe,
-    handleRetryQuiz
+    handleRetryQuiz,
+    handleShowSettings,
+    handleStartQuizWithCount
   } = useQuizActions({
     selectedCountry,
+    questionCount,
     setSelectedCountry,
     setShowQuiz,
+    setShowSettings,
     setQuizResult,
-    setQuizQuestions
+    setQuizQuestions,
+    setQuestionCount
   });
 
   return {
     allCountries,
     selectedCountry,
     showQuiz,
+    showSettings,
     quizResult,
     quizQuestions,
     isGeneratingQuestions,
+    questionCount,
     handleCountryClick,
     handleStartQuiz,
     handleQuizComplete,
     handleBackToGlobe,
-    handleRetryQuiz
+    handleRetryQuiz,
+    handleShowSettings,
+    handleStartQuizWithCount
   };
 };

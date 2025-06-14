@@ -2,6 +2,7 @@
 import Globe from "@/components/Globe";
 import Quiz from "@/components/Quiz";
 import QuizResult from "@/components/QuizResult";
+import { QuizSettings } from "@/components/quiz/QuizSettings";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { useQuizManager } from "@/hooks/useQuizManager";
@@ -11,14 +12,26 @@ export default function Index() {
     allCountries,
     selectedCountry,
     showQuiz,
+    showSettings,
     quizResult,
     quizQuestions,
     isGeneratingQuestions,
     handleCountryClick,
     handleQuizComplete,
     handleBackToGlobe,
-    handleRetryQuiz
+    handleRetryQuiz,
+    handleStartQuizWithCount
   } = useQuizManager();
+
+  if (showSettings && selectedCountry) {
+    return (
+      <QuizSettings
+        countryName={selectedCountry.name}
+        onStartQuiz={handleStartQuizWithCount}
+        onBack={handleBackToGlobe}
+      />
+    );
+  }
 
   if (showQuiz && selectedCountry && quizQuestions.length > 0) {
     return (
