@@ -47,12 +47,16 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
     });
   }
 
-  const handleStartQuiz = useCallback((difficulty: string) => {
+  const handleStartQuiz = useCallback((difficulty: DifficultyLevel) => {
     if (selectedCountry) {
+      console.log('🎯 Starting quiz for:', selectedCountry.name, 'with difficulty:', difficulty);
+      
       const countryWithDifficulty = {
         ...selectedCountry,
-        difficulty: difficulty as DifficultyLevel
+        difficulty: difficulty
       };
+      
+      // Pass the country with the selected difficulty to the parent
       onCountrySelect(countryWithDifficulty);
     }
   }, [selectedCountry, onCountrySelect]);

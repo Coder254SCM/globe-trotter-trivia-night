@@ -34,6 +34,7 @@ export const useQuizActions = ({
   const { toast } = useToast();
 
   const handleCountryClick = (country: Country) => {
+    console.log('🎯 Country clicked:', country.name, 'difficulty:', country.difficulty);
     setSelectedCountry(country);
     setShowQuiz(false);
     setShowSettings(true);
@@ -47,6 +48,7 @@ export const useQuizActions = ({
   };
 
   const handleStartQuizWithCount = (count: number) => {
+    console.log('🎯 Starting quiz with count:', count, 'for country:', selectedCountry?.name);
     setQuestionCount(count);
     setShowSettings(false);
     handleStartQuiz(undefined, count);
@@ -55,6 +57,12 @@ export const useQuizActions = ({
   const handleStartQuiz = async (country?: Country, count?: number) => {
     const targetCountry = country || selectedCountry;
     const targetCount = count || questionCount;
+    
+    console.log('🎯 handleStartQuiz called with:', {
+      country: targetCountry?.name,
+      difficulty: targetCountry?.difficulty,
+      count: targetCount
+    });
     
     if (targetCountry) {
       try {
