@@ -1,8 +1,8 @@
-
 import { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { Button } from '@/components/ui/button';
 import { RotateCcw, Zap, Globe2 } from 'lucide-react';
+import countries from "@/data/countries"; // Import canonical countries list
 
 interface Modern3DGlobeProps {
   onCountryClick?: (countryId: string) => void;
@@ -96,38 +96,62 @@ export const Modern3DGlobe = ({ onCountryClick }: Modern3DGlobeProps) => {
     pointLight.position.set(0, 0, 10);
     scene.add(pointLight);
 
-    // Add 195 country markers (simplified for demo)
-    const markerGeometry = new THREE.SphereGeometry(0.02, 8, 8);
-    const markerMaterial = new THREE.MeshBasicMaterial({ 
-      color: 0x00ff88
-    });
+    // Remove the hardcoded countryPositions, generate from canonical data:
+    // Sample before:
+    // const countryPositions = [{ lat: 40, lng: -74, name: 'USA' }, ...];
 
-    // Sample country positions (would be all 195 in production)
-    const countryPositions = [
-      { lat: 40, lng: -74, name: 'USA' },
-      { lat: 35, lng: 104, name: 'China' },
-      { lat: 46, lng: 2, name: 'France' },
-      { lat: 51, lng: 10, name: 'Germany' },
-      { lat: -14, lng: -51, name: 'Brazil' },
-      { lat: -25, lng: 133, name: 'Australia' },
-      { lat: 28, lng: 1, name: 'Algeria' }, // Fixed Algeria
-      { lat: 56, lng: -106, name: 'Canada' },
-      { lat: 9, lng: 8, name: 'Nigeria' },
-      { lat: 20, lng: 77, name: 'India' }
-    ];
+    countries.forEach(country => {
+      // Defensive: ensure position is valid
+      if (
+        !country.position ||
+        typeof country.position.lat !== "number" ||
+        typeof country.position.lng !== "number"
+      ) {
+        return;
+      }
 
-    countryPositions.forEach(country => {
-      const phi = (90 - country.lat) * (Math.PI / 180);
-      const theta = (country.lng + 180) * (Math.PI / 180);
-      
+      const { lat, lng } = country.position;
+      const phi = (90 - lat) * (Math.PI / 180);
+      const theta = (lng + 180) * (Math.PI / 180);
+
       const x = -2.05 * Math.sin(phi) * Math.cos(theta);
       const y = 2.05 * Math.cos(phi);
       const z = 2.05 * Math.sin(phi) * Math.sin(theta);
-      
+
+      const markerGeometry = new THREE.SphereGeometry(0.02, 8, 8);
+      const markerMaterial = new THREE.MeshBasicMaterial({
+        color: 0x00ff88
+      });
       const marker = new THREE.Mesh(markerGeometry, markerMaterial);
       marker.position.set(x, y, z);
-      marker.userData = { country: country.name };
+      marker.userData = { country: country.name, countryId: country.id };
+
+      // Optionally, add a basic label using Sprite
+      // Only add for large globes (~200 labels creates clutter, so keep minimal)
+      // To show all: uncomment the following if desired
+      // let labelSprite: THREE.Sprite | null = null;
+      // const fontSize = 40;
+      // const canvas = document.createElement('canvas');
+      // canvas.width = 256;
+      // canvas.height = 64;
+      // const ctx = canvas.getContext('2d');
+      // if (ctx) {
+      //   ctx.font = `bold ${fontSize}px sans-serif`;
+      //   ctx.fillStyle = 'white';
+      //   ctx.textAlign = 'center';
+      //   ctx.textBaseline = 'middle';
+      //   ctx.fillText(country.name, 128, 32);
+      //   const texture = new THREE.CanvasTexture(canvas);
+      //   const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
+      //   labelSprite = new THREE.Sprite(spriteMaterial);
+      //   labelSprite.position.set(x, y + 0.08, z);
+      //   labelSprite.scale.set(0.24, 0.06, 1);
+      // }
+
       globe.add(marker);
+      // if (labelSprite) {
+      //   globe.add(labelSprite);
+      // }
     });
 
     // Professional mouse controls
