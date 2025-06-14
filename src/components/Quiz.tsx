@@ -101,7 +101,7 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
         if (prev <= 1) {
           clearInterval(timer);
           if (!isAnswered) {
-            handleAnswer(null);
+            handleTimeUp();
           }
           return 0;
         }
@@ -112,21 +112,28 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
     return () => clearInterval(timer);
   }, [currentQuestionIndex, currentQuestion?.difficulty, isMobile, isAnswered]);
 
-  const handleAnswer = useCallback((choiceId: string | null) => {
+  const handleTimeUp = useCallback(() => {
+    console.log('⏰ Time up! Auto-selecting wrong answer');
+    setIsAnswered(true);
+    setSelectedChoice(null);
+    // Record as failed question
+    setFailedQuestionIds((prev) => [...prev, currentQuestion.id]);
+  }, [currentQuestion]);
+
+  const handleChoiceClick = useCallback((choiceId: string) => {
     if (isAnswered) {
       console.log('⚠️ Answer already given for this question');
       return;
     }
     
-    console.log('🎯 Answer selected:', choiceId);
+    console.log('🎯 Choice clicked:', choiceId);
     setSelectedChoice(choiceId);
     setIsAnswered(true);
     
-    const correct = currentQuestion.choices.find(
-      (choice) => choice.id === choiceId && choice.isCorrect
-    );
+    // Find the selected choice
+    const selectedChoiceObj = currentQuestion.choices.find(choice => choice.id === choiceId);
     
-    if (correct) {
+    if (selectedChoiceObj?.isCorrect) {
       console.log('✅ Correct answer!');
       setCorrectAnswers((prev) => prev + 1);
       setCorrectQuestions((prev) => [...prev, currentQuestionIndex]);
@@ -171,10 +178,10 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
         failedQuestionIds
       });
     }
-  }, [currentQuestionIndex, questions.length, startTime, correctAnswers, gameSession, user, failedQuestionIds, onFinish]);
+  }, [currentQuestionIndex, questions.length, startTime, correctAnswers, gameSession, user, failedQuestionIds, onFinish, correctQuestions]);
 
   const getChoiceClassName = useCallback((choice: Choice) => {
-    const baseClasses = "p-4 rounded-md border-2 transition-all text-left flex items-center";
+    const baseClasses = "p-4 rounded-md border-2 transition-all text-left flex items-center hover:bg-muted/50";
     
     if (!isAnswered) {
       return selectedChoice === choice.id
@@ -324,7 +331,7 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
           {currentQuestion.choices.map((choice) => (
             <button
               key={choice.id}
-              onClick={() => !isAnswered && handleAnswer(choice.id)}
+              onClick={() => handleChoiceClick(choice.id)}
               disabled={isAnswered}
               className={getChoiceClassName(choice)}
             >
