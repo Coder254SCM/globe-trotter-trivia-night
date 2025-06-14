@@ -11,7 +11,6 @@ import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import HardQuestions from "./pages/HardQuestions";
 import MediumQuestions from "./pages/MediumQuestions";
-import EasyQuestions from "./pages/EasyQuestions";
 import ManualHardQuestions from "./pages/ManualHardQuestions";
 import QuestionAudit from "./pages/QuestionAudit";
 import ComprehensiveAudit from "./pages/ComprehensiveAudit";
@@ -34,7 +33,6 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/admin" element={<Admin />} />
-              <Route path="/admin/easy-questions" element={<EasyQuestions />} />
               <Route path="/admin/medium-questions" element={<MediumQuestions />} />
               <Route path="/admin/hard-questions" element={<HardQuestions />} />
               <Route path="/admin/manual-hard-questions" element={<ManualHardQuestions />} />
