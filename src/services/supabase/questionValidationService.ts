@@ -25,7 +25,6 @@ export class QuestionValidationService {
    */
   static async preValidateQuestion(question: QuestionToValidate): Promise<ValidationResult> {
     try {
-      // Use client-side validation for now
       return this.quickValidate(question);
     } catch (error) {
       console.error('Failed to validate question:', error);
@@ -33,7 +32,7 @@ export class QuestionValidationService {
         isValid: false,
         issues: ['Validation service error'],
         severity: 'critical',
-        questionText: question.text.substring(0, 60) + '...'
+        questionText: question.text ? question.text.substring(0, 60) + '...' : 'No text'
       };
     }
   }

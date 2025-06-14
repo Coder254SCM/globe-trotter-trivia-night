@@ -12,7 +12,7 @@ export interface Question {
   option_c: string;
   option_d: string;
   correct_answer: string;
-  difficulty: 'medium' | 'hard'; // Removed easy from valid difficulties
+  difficulty: 'medium' | 'hard';
   category: string;
   explanation?: string;
   month_rotation?: number;
@@ -34,13 +34,12 @@ export class QuestionService {
         .from('questions')
         .select('*')
         .eq('country_id', countryId)
-        .neq('difficulty', 'easy'); // Explicitly exclude easy questions
+        .neq('difficulty', 'easy');
 
       // Only allow medium and hard difficulties
       if (difficulty && (difficulty === 'medium' || difficulty === 'hard')) {
         query = query.eq('difficulty', difficulty);
       } else {
-        // Default to medium if no valid difficulty specified
         query = query.eq('difficulty', 'medium');
       }
 
@@ -53,7 +52,6 @@ export class QuestionService {
         throw error;
       }
 
-      // Transform Supabase questions to frontend format
       return (data || []).map(q => this.transformToFrontendQuestion(q));
     } catch (error) {
       console.error('Failed to fetch questions:', error);
@@ -62,53 +60,61 @@ export class QuestionService {
   }
 
   /**
-   * Save questions to Supabase with validation
+   * Save questions to Supabase with basic validation
    */
   static async saveQuestions(questions: any[]): Promise<void> {
     try {
-      console.log(`🔍 Validating ${questions.length} questions before save...`);
+      console.log(`🔍 Processing ${questions.length} questions for save...`);
       
-      // Ensure no easy questions are being saved
-      const filteredQuestions = questions.filter(q => q.difficulty !== 'easy');
-      if (filteredQuestions.length !== questions.length) {
-        console.warn(`⚠️ Filtered out ${questions.length - filteredQuestions.length} easy questions`);
-      }
-      
-      if (filteredQuestions.length === 0) {
-        console.log('📝 No valid questions to save after filtering');
+      if (!questions || questions.length === 0) {
+        console.log('📝 No questions to save');
         return;
       }
       
-      // Basic validation before save
-      const validQuestions = filteredQuestions.filter(q => {
-        return q.text && 
-               q.option_a && 
-               q.option_b && 
-               q.option_c && 
-               q.option_d && 
-               q.correct_answer &&
-               q.country_id &&
-               q.category &&
-               (q.difficulty === 'medium' || q.difficulty === 'hard');
+      // Filter out any easy questions and validate basic requirements
+      const validQuestions = questions.filter(q => {
+        const isValid = q.text && 
+                       q.option_a && 
+                       q.option_b && 
+                       q.option_c && 
+                       q.option_d && 
+                       q.correct_answer &&
+                       q.country_id &&
+                       q.category &&
+                       (q.difficulty === 'medium' || q.difficulty === 'hard');
+        
+        if (!isValid) {
+          console.warn('⚠️ Skipping invalid question:', q.text?.substring(0, 50) + '...');
+        }
+        
+        return isValid;
       });
 
       if (validQuestions.length === 0) {
-        throw new Error('No valid questions found after basic validation');
+        console.warn('⚠️ No valid questions found after filtering');
+        return;
       }
 
       console.log(`✅ ${validQuestions.length} questions passed basic validation`);
 
-      // Save to database
-      const { error } = await supabase
-        .from('questions')
-        .upsert(validQuestions, { onConflict: 'id' });
+      // Save to database in smaller batches to avoid timeout
+      const batchSize = 50;
+      for (let i = 0; i < validQuestions.length; i += batchSize) {
+        const batch = validQuestions.slice(i, i + batchSize);
+        
+        const { error } = await supabase
+          .from('questions')
+          .upsert(batch, { onConflict: 'id' });
 
-      if (error) {
-        console.error('❌ Database save failed:', error);
-        throw new Error(`Database save failed: ${error.message}`);
+        if (error) {
+          console.error(`❌ Database save failed for batch ${i / batchSize + 1}:`, error);
+          throw new Error(`Database save failed: ${error.message}`);
+        }
+        
+        console.log(`✅ Saved batch ${i / batchSize + 1} (${batch.length} questions)`);
       }
 
-      console.log(`✅ Successfully saved ${validQuestions.length} questions to Supabase`);
+      console.log(`🎉 Successfully saved ${validQuestions.length} questions to Supabase`);
     } catch (error) {
       console.error('❌ Save operation failed:', error);
       throw error;
