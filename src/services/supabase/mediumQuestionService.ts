@@ -1,10 +1,7 @@
-import { Country } from "./countryService";
+import { Country } from "./country/countryTypes";
 import { QuestionService } from "./questionService";
 
 export class MediumQuestionService {
-  /**
-   * Generate medium-level questions for a country
-   */
   static async generateMediumQuestionsForCountry(
     country: Country, 
     questionsPerCategory: number = 15
@@ -43,9 +40,6 @@ export class MediumQuestionService {
     console.log(`✅ Generated ${questions.length} medium questions for ${country.name} across all categories`);
   }
 
-  /**
-   * Generate medium questions for all countries
-   */
   static async generateMediumQuestionsForAllCountries(questionsPerCategory: number = 15): Promise<void> {
     const { CountryService } = await import('./countryService');
     const countries = await CountryService.getAllCountries();

@@ -2,23 +2,19 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { CountryService } from "@/services/supabase/countryService";
 import { MediumQuestionService } from "@/services/supabase/mediumQuestionService";
-import { Loader2, BookOpen, Globe, Zap } from "lucide-react";
+import { BookOpen, Zap } from "lucide-react";
+import { GenerationSettings } from "./mediumQuestions/GenerationSettings";
+import { GenerationProgress } from "./mediumQuestions/GenerationProgress";
+import { CategoryInfo } from "./mediumQuestions/CategoryInfo";
+import { CountryConverter } from "./mediumQuestions/CountryConverter";
 
-// Use a simple country interface to avoid type conflicts
 interface SimpleCountry {
   id: string;
   name: string;
-  capital?: string;
   continent: string;
-  population?: number;
-  area_km2?: number;
 }
 
 export const MediumQuestionGenerator = () => {
@@ -35,14 +31,10 @@ export const MediumQuestionGenerator = () => {
     const loadCountries = async () => {
       try {
         const allCountries = await CountryService.getAllCountries();
-        // Convert to simple country format to avoid type conflicts
         const simpleCountries: SimpleCountry[] = allCountries.map(country => ({
           id: country.id,
           name: country.name,
-          capital: country.capital,
-          continent: country.continent,
-          population: country.population,
-          area_km2: country.area_km2
+          continent: country.continent
         }));
         setCountries(simpleCountries);
       } catch (error) {
@@ -81,7 +73,6 @@ export const MediumQuestionGenerator = () => {
             questionsPerCategory
           );
 
-          // Small delay to prevent overwhelming the system
           await new Promise(resolve => setTimeout(resolve, 100));
         }
 
@@ -91,27 +82,23 @@ export const MediumQuestionGenerator = () => {
           description: `Generated medium questions for all ${totalCountries} countries!`,
         });
       } else {
-        const simpleCountry = countries.find(c => c.id === selectedCountry);
-        if (simpleCountry) {
-          // Get full country data for generation
-          const fullCountries = await CountryService.getAllCountries();
-          const country = fullCountries.find(c => c.id === selectedCountry);
-          
-          if (country) {
-            setCurrentCountry(country.name);
-            setProgress(50);
+        const fullCountries = await CountryService.getAllCountries();
+        const country = fullCountries.find(c => c.id === selectedCountry);
+        
+        if (country) {
+          setCurrentCountry(country.name);
+          setProgress(50);
 
-            await MediumQuestionService.generateMediumQuestionsForCountry(
-              country, 
-              questionsPerCategory
-            );
+          await MediumQuestionService.generateMediumQuestionsForCountry(
+            country, 
+            questionsPerCategory
+          );
 
-            setProgress(100);
-            toast({
-              title: "Success!",
-              description: `Generated ${questionsPerCategory * 5} medium questions for ${country.name}!`,
-            });
-          }
+          setProgress(100);
+          toast({
+            title: "Success!",
+            description: `Generated ${questionsPerCategory * 5} medium questions for ${country.name}!`,
+          });
         }
       }
     } catch (error) {
@@ -142,120 +129,34 @@ export const MediumQuestionGenerator = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="generation-mode">Generation Mode</Label>
-              <Select value={generationMode} onValueChange={(value: "single" | "all") => setGenerationMode(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select generation mode" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="single">Single Country</SelectItem>
-                  <SelectItem value="all">All Countries</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <GenerationSettings
+            generationMode={generationMode}
+            onGenerationModeChange={setGenerationMode}
+            selectedCountry={selectedCountry}
+            onSelectedCountryChange={setSelectedCountry}
+            questionsPerCategory={questionsPerCategory}
+            onQuestionsPerCategoryChange={setQuestionsPerCategory}
+            countries={countries}
+          />
 
-            {generationMode === "single" && (
-              <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
-                <Select value={selectedCountry} onValueChange={setSelectedCountry}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map((country) => (
-                      <SelectItem key={country.id} value={country.id}>
-                        {country.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="questions-per-category">Questions per Category</Label>
-              <Input
-                id="questions-per-category"
-                type="number"
-                min="5"
-                max="30"
-                value={questionsPerCategory}
-                onChange={(e) => setQuestionsPerCategory(parseInt(e.target.value) || 15)}
-              />
-              <p className="text-sm text-muted-foreground">
-                Total questions: {questionsPerCategory * 5} (5 categories)
-              </p>
-            </div>
-          </div>
-
-          {isGenerating && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">
-                  {currentCountry ? `Generating for ${currentCountry}...` : "Starting generation..."}
-                </span>
-              </div>
-              <Progress value={progress} className="w-full" />
-            </div>
-          )}
+          <GenerationProgress
+            isGenerating={isGenerating}
+            progress={progress}
+            currentCountry={currentCountry}
+          />
 
           <Button 
             onClick={generateMediumQuestions}
             disabled={isGenerating}
             className="w-full"
           >
-            {isGenerating ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Zap className="mr-2 h-4 w-4" />
-            )}
+            <Zap className="mr-2 h-4 w-4" />
             Generate Medium Questions
           </Button>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Medium Question Categories</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <h4 className="font-semibold">Geography</h4>
-              <p className="text-sm text-muted-foreground">
-                Land area, population density, borders, climate zones, natural resources
-              </p>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-semibold">History</h4>
-              <p className="text-sm text-muted-foreground">
-                Independence dates, colonial history, major wars, constitutions, treaties
-              </p>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-semibold">Culture</h4>
-              <p className="text-sm text-muted-foreground">
-                Traditional dress, languages, festivals, art forms, customs
-              </p>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-semibold">Economy</h4>
-              <p className="text-sm text-muted-foreground">
-                GDP, main industries, exports, trade agreements, economic indicators
-              </p>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-semibold">Politics</h4>
-              <p className="text-sm text-muted-foreground">
-                Government systems, political parties, international relations, rights
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <CategoryInfo />
     </div>
   );
 };
