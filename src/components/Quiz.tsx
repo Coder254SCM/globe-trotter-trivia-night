@@ -2,12 +2,15 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
-import { Progress } from "./ui/progress";
 import { Choice, Country, Question, QuizResult } from "../types/quiz";
-import { ArrowLeft, Clock, Globe, Trophy, Flag } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { GameSessionService } from "@/services/supabase/gameSessionService";
 import { useAuth } from "@/hooks/useAuth";
+import { QuizHeader } from "./quiz/QuizHeader";
+import { QuizProgress } from "./quiz/QuizProgress";
+import { QuestionCard } from "./quiz/QuestionCard";
+import { ChoiceButton } from "./quiz/ChoiceButton";
+import { QuizTimer } from "./quiz/QuizTimer";
 
 interface QuizProps {
   country: Country | null;
@@ -28,13 +31,10 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [gameSession, setGameSession] = useState<any>(null);
   const [startTime] = useState(Date.now());
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
   const isMobile = useIsMobile();
   const { user } = useAuth();
 
   const currentQuestion = useMemo(() => questions[currentQuestionIndex], [questions, currentQuestionIndex]);
-  const progress = useMemo(() => ((currentQuestionIndex + 1) / questions.length) * 100, [currentQuestionIndex, questions.length]);
 
   // Force scroll to top immediately when quiz component mounts
   useEffect(() => {
@@ -133,44 +133,7 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
     // Reset state for each question
     setSelectedChoice(null);
     setIsAnswered(false);
-    setImageLoaded(false);
-    setImageError(false);
-    
-    // Set timer based on difficulty - shorter on mobile
-    let timeLimit = 0;
-    const mobileReduction = isMobile ? 5 : 0;
-    switch (currentQuestion?.difficulty) {
-      case 'easy':
-        timeLimit = 20 - mobileReduction;
-        break;
-      case 'medium':
-        timeLimit = 30 - mobileReduction;
-        break;
-      case 'hard':
-        timeLimit = 40 - mobileReduction;
-        break;
-      default:
-        timeLimit = 30 - mobileReduction;
-    }
-    
-    setTimeRemaining(timeLimit);
-    
-    // Start countdown
-    const timer = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          if (!isAnswered) {
-            handleTimeUp();
-          }
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, [currentQuestionIndex, currentQuestion?.difficulty, isMobile, isAnswered]);
+  }, [currentQuestionIndex]);
 
   const handleTimeUp = useCallback(() => {
     console.log('⏰ Time up! Auto-selecting wrong answer');
@@ -239,54 +202,6 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
       });
     }
   }, [currentQuestionIndex, questions.length, startTime, correctAnswers, gameSession, user, failedQuestionIds, onFinish, correctQuestions]);
-
-  const getChoiceClassName = useCallback((choice: Choice) => {
-    const baseClasses = "p-4 rounded-md border-2 transition-all text-left flex items-start hover:bg-muted/50";
-    
-    if (!isAnswered) {
-      return selectedChoice === choice.id
-        ? `${baseClasses} border-primary bg-primary/10 cursor-pointer`
-        : `${baseClasses} border-border hover:border-primary/50 cursor-pointer`;
-    }
-    
-    if (choice.isCorrect) {
-      return `${baseClasses} border-green-500 bg-green-500/10`;
-    }
-    
-    if (selectedChoice === choice.id && !choice.isCorrect) {
-      return `${baseClasses} border-red-500 bg-red-500/10`;
-    }
-    
-    return `${baseClasses} border-border opacity-50`;
-  }, [isAnswered, selectedChoice]);
-
-  const handleImageLoad = useCallback(() => {
-    setImageLoaded(true);
-  }, []);
-
-  const handleImageError = useCallback(() => {
-    setImageError(true);
-  }, []);
-
-  const getHeaderIcon = useMemo(() => {
-    if (isWeeklyChallenge) {
-      return <Trophy size={isMobile ? 16 : 20} className="text-amber-500" />;
-    }
-    
-    if (country) {
-      return <Flag size={isMobile ? 16 : 20} className="text-primary" />;
-    }
-    
-    return <Globe size={isMobile ? 16 : 20} className="text-primary" />;
-  }, [isWeeklyChallenge, country, isMobile]);
-
-  const getHeaderTitle = useMemo(() => {
-    if (isWeeklyChallenge) {
-      return "Weekly Challenge";
-    }
-    
-    return country ? `${country.name} Quiz` : "Global Quiz";
-  }, [isWeeklyChallenge, country]);
 
   // Enhanced validation for current question
   if (!currentQuestion) {
@@ -357,91 +272,45 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
 
   return (
     <div className="min-h-screen w-full bg-background" style={{ paddingTop: 0, marginTop: 0 }}>
-      {/* Fixed header that stays at the very top */}
-      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className={`${isMobile ? 'p-2' : 'p-4'} flex items-center justify-between max-w-4xl mx-auto`}>
-          <Button 
-            variant="ghost" 
-            size={isMobile ? "sm" : "sm"}
-            className="flex items-center gap-2"
-            onClick={onBack}
-          >
-            <ArrowLeft size={isMobile ? 14 : 16} />
-            <Globe size={isMobile ? 14 : 16} />
-            {!isMobile && "Back to Globe"}
-          </Button>
-          
-          <div className="flex items-center gap-2">
-            {getHeaderIcon}
-            <span className={`font-medium ${isMobile ? 'text-sm' : ''}`}>{getHeaderTitle}</span>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Clock size={isMobile ? 14 : 16} className={timeRemaining < 5 ? "text-red-500" : ""} />
-            <span className={`${timeRemaining < 5 ? "text-red-500 font-medium" : ""} ${isMobile ? 'text-sm' : ''}`}>
-              {timeRemaining}s
-            </span>
-          </div>
-        </div>
-      </div>
+      <QuizTimer
+        timeRemaining={timeRemaining}
+        setTimeRemaining={setTimeRemaining}
+        difficulty={currentQuestion?.difficulty || 'medium'}
+        isMobile={isMobile}
+        isAnswered={isAnswered}
+        onTimeUp={handleTimeUp}
+      />
+
+      <QuizHeader
+        onBack={onBack}
+        isWeeklyChallenge={isWeeklyChallenge}
+        countryName={country?.name}
+        timeRemaining={timeRemaining}
+        isMobile={isMobile}
+      />
 
       {/* Main content with proper spacing from top */}
       <div className={`${isMobile ? 'p-2 pt-4' : 'p-4 pt-6'} flex flex-col ${isMobile ? 'gap-4' : 'gap-6'} max-w-4xl mx-auto`}>
-        <div className="flex flex-col gap-2">
-          <div className={`flex justify-between ${isMobile ? 'text-xs' : 'text-sm'}`}>
-            <span>Question {currentQuestionIndex + 1}/{questions.length}</span>
-            <span>Category: {currentQuestion?.category}</span>
-          </div>
-          <Progress value={progress} className="h-2" />
-        </div>
+        <QuizProgress
+          currentQuestionIndex={currentQuestionIndex}
+          totalQuestions={questions.length}
+          category={currentQuestion?.category || 'General'}
+          isMobile={isMobile}
+        />
         
         <Card className={`${isMobile ? 'p-4' : 'p-6'} border-primary/20 shadow-lg shadow-primary/20`}>
-          <div className={isMobile ? "mb-6" : "mb-8"}>
-            <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-medium mb-2`}>
-              {currentQuestion.text}
-            </h2>
-            
-            {currentQuestion.imageUrl && (
-              <div className={`${isMobile ? 'mt-3 mb-4' : 'mt-4 mb-6'} flex justify-center`}>
-                {!imageLoaded && !imageError && (
-                  <div className={`w-full ${isMobile ? 'max-h-40' : 'max-h-60'} flex items-center justify-center bg-muted rounded-md`}>
-                    <div className="animate-pulse text-muted-foreground">Loading image...</div>
-                  </div>
-                )}
-                
-                {imageError && (
-                  <div className={`w-full ${isMobile ? 'h-32' : 'h-40'} flex items-center justify-center bg-muted rounded-md`}>
-                    <div className="text-muted-foreground text-center">
-                      <p className={isMobile ? 'text-sm' : ''}>Image could not be loaded</p>
-                      {!isMobile && <p className="text-sm">{currentQuestion.imageUrl}</p>}
-                    </div>
-                  </div>
-                )}
-                
-                <img 
-                  src={currentQuestion.imageUrl}
-                  alt="Question visual"
-                  className={`max-w-full rounded-md shadow-md ${isMobile ? 'max-h-40' : 'max-h-60'} object-contain ${!imageLoaded ? 'hidden' : ''}`}
-                  onLoad={handleImageLoad}
-                  onError={handleImageError}
-                />
-              </div>
-            )}
-          </div>
+          <QuestionCard question={currentQuestion} isMobile={isMobile} />
           
           <div className={`grid ${isMobile ? 'gap-2' : 'gap-3'}`}>
             {currentQuestion.choices.map((choice) => (
-              <button
+              <ChoiceButton
                 key={choice.id}
-                onClick={() => handleChoiceClick(choice.id)}
-                disabled={isAnswered}
-                className={getChoiceClassName(choice)}
-              >
-                <span className={`${isMobile ? 'w-6 h-6 mr-3 mt-1' : 'w-8 h-8 mr-4 mt-1'} flex-shrink-0 rounded-full bg-muted flex items-center justify-center ${isMobile ? 'text-sm' : ''} font-medium`}>
-                  {choice.id.toUpperCase()}
-                </span>
-                <span className={`${isMobile ? 'text-sm' : ''} text-left flex-1`}>{choice.text}</span>
-              </button>
+                choice={choice}
+                isAnswered={isAnswered}
+                selectedChoice={selectedChoice}
+                onClick={handleChoiceClick}
+                isMobile={isMobile}
+              />
             ))}
           </div>
           
