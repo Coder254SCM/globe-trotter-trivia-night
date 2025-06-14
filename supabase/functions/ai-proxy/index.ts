@@ -23,25 +23,28 @@ serve(async (req) => {
       });
     }
 
-    // Get API key from Supabase secrets (OPENROUTER_API_KEY or OPENAI_API_KEY, adjust as needed)
-    const apiKey = Deno.env.get("OPENROUTER_API_KEY"); // Or "OPENAI_API_KEY" if using OpenAI
+    // Use the correct secret name from your Supabase secrets
+    const apiKey = Deno.env.get("OPEN_ROUTER_MISTRAL_API");
     if (!apiKey) {
-      return new Response(JSON.stringify({ error: "API key missing in Supabase secrets" }), {
+      console.error("API key not found. Available env vars:", Object.keys(Deno.env.toObject()));
+      return new Response(JSON.stringify({ error: "API key missing in Supabase secrets (OPEN_ROUTER_MISTRAL_API)" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Prepare the AI API endpoint (adjust URL and headers for your model/provider)
+    // Prepare the AI API endpoint
     const endpoint = "https://openrouter.ai/api/v1/chat/completions";
     const apiModel = model || "meta-llama/llama-3.1-8b-instruct:free";
+
+    console.log(`Making request to OpenRouter with model: ${apiModel}`);
 
     const aiResponse = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://your-app-url.com", // Optional, adjust if needed
+        "HTTP-Referer": "https://734fb568-7804-4af1-baf4-655958168ad3.lovableproject.com",
         "X-Title": "Global Quiz Game",
       },
       body: JSON.stringify({
@@ -56,15 +59,17 @@ serve(async (req) => {
     });
 
     if (!aiResponse.ok) {
-      const err = await aiResponse.json();
-      return new Response(JSON.stringify({ error: err?.error?.message || "Error from AI API" }), {
+      const err = await aiResponse.text();
+      console.error("OpenRouter API error:", err);
+      return new Response(JSON.stringify({ error: `OpenRouter API error: ${err}` }), {
         status: aiResponse.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const respJson = await aiResponse.json();
-    // Optionally, post-process, filter, or validate respJson here.
+    console.log("OpenRouter response received successfully");
+    
     return new Response(JSON.stringify(respJson), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
