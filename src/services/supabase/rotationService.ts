@@ -148,7 +148,7 @@ export class RotationService {
         .order('votes_up', { ascending: false })
         .limit(limit - (questions?.length || 0));
 
-      // Transform community questions to standard format
+      // Transform community questions to standard format with all required fields
       const transformedCommunity = communityQuestions?.map(q => ({
         id: q.id,
         country_id: q.country_id,
@@ -162,7 +162,10 @@ export class RotationService {
         category: q.category,
         explanation: q.explanation,
         month_rotation: currentMonth,
-        ai_generated: false
+        ai_generated: false,
+        created_at: q.created_at || new Date().toISOString(),
+        updated_at: q.updated_at || new Date().toISOString(),
+        image_url: null
       })) || [];
 
       questions = [...(questions || []), ...transformedCommunity];

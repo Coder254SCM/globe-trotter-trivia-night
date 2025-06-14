@@ -66,7 +66,11 @@ export class CommunityService {
       throw error;
     }
 
-    return data || [];
+    return (data || []).map(q => ({
+      ...q,
+      difficulty: q.difficulty as 'easy' | 'medium' | 'hard',
+      status: q.status as 'pending' | 'approved' | 'rejected'
+    }));
   }
 
   /**
@@ -110,7 +114,11 @@ export class CommunityService {
       throw error;
     }
 
-    return data || [];
+    return (data || []).map(q => ({
+      ...q,
+      difficulty: q.difficulty as 'easy' | 'medium' | 'hard',
+      status: q.status as 'pending' | 'approved' | 'rejected'
+    }));
   }
 
   /**
@@ -192,6 +200,10 @@ export class CommunityService {
       throw error;
     }
 
-    return data || [];
+    return (data || []).map(q => ({
+      ...q,
+      difficulty: q.difficulty as 'easy' | 'medium' | 'hard',
+      status: q.status as 'pending' | 'approved' | 'rejected'
+    }));
   }
 }
