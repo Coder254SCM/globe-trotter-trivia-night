@@ -56,9 +56,10 @@ export const convertToSupabaseCountry = (country: Country): SupabaseCountry => {
 // Convert raw Supabase data to SupabaseCountry format with proper typing
 export const convertRawToSupabaseCountry = (countryData: any): SupabaseCountry => {
   // Filter categories to valid QuestionCategory values, then convert to string[]
-  const validCategories = (countryData.categories || [])
-    .filter((cat: any) => typeof cat === 'string' && VALID_CATEGORIES.includes(cat as QuestionCategory))
-    .map((cat: any) => String(cat));
+  const validCategories: QuestionCategory[] = (countryData.categories || [])
+    .filter((cat: any): cat is QuestionCategory => 
+      typeof cat === 'string' && VALID_CATEGORIES.includes(cat as QuestionCategory)
+    );
 
   return {
     id: countryData.id,
@@ -70,7 +71,7 @@ export const convertRawToSupabaseCountry = (countryData: any): SupabaseCountry =
     latitude: countryData.latitude || 0,
     longitude: countryData.longitude || 0,
     flag_url: countryData.flag_url,
-    categories: validCategories, // This is now correctly typed as string[]
+    categories: validCategories.map(cat => String(cat)), // Convert to string[] properly
     difficulty: countryData.difficulty
   };
 };
