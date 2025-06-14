@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { QuizService } from "@/services/supabase/quizService";
+import { AIService } from "@/services/aiService";
 import { Country, DifficultyLevel } from "@/types/quiz";
 import countries from "@/data/countries";
 
@@ -10,12 +11,13 @@ export const useQuizManager = () => {
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizResult, setQuizResult] = useState<any>(null);
   const [quizQuestions, setQuizQuestions] = useState<any[]>([]);
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const { toast } = useToast();
 
   // Use the static countries data directly - all 195 countries
   const allCountries = countries;
 
-  // Load countries into Supabase if not already there
+  // Load countries into Supabase and initialize AI question generation
   useEffect(() => {
     const initializeDatabase = async () => {
       try {
@@ -30,8 +32,32 @@ export const useQuizManager = () => {
             title: "Database Updated",
             description: `Successfully populated all 195 countries!`,
           });
+          
+          // Check if we need to generate questions
+          const stats = await QuizService.getDatabaseStats();
+          if (stats.totalQuestions < 1000) {
+            toast({
+              title: "AI Question Generation",
+              description: "Starting AI question generation for all countries...",
+            });
+            
+            // Start AI question generation in background
+            initializeAIQuestions();
+          }
         } else {
           console.log(`✅ Database already has ${supabaseCountries.length} countries`);
+          
+          // Check if we need more questions
+          const stats = await QuizService.getDatabaseStats();
+          console.log('📊 Database stats:', stats);
+          
+          if (stats.totalQuestions < 500) {
+            toast({
+              title: "Generating Questions",
+              description: "AI is generating questions for countries with low question counts...",
+            });
+            initializeAIQuestions();
+          }
         }
         
       } catch (error) {
@@ -47,28 +73,134 @@ export const useQuizManager = () => {
     initializeDatabase();
   }, [toast]);
 
+  const initializeAIQuestions = async () => {
+    try {
+      setIsGeneratingQuestions(true);
+      
+      // Check if OpenRouter is available
+      const isAvailable = await AIService.isOpenRouterAvailable();
+      if (!isAvailable) {
+        toast({
+          title: "AI Service Unavailable",
+          description: "OpenRouter API is not accessible. Please check your API key.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Get countries from Supabase
+      const supabaseCountries = await QuizService.getAllCountries();
+      
+      // Convert to Country format for AI service
+      const countriesForAI = supabaseCountries.map(country => ({
+        id: country.id,
+        name: country.name,
+        capital: country.name, // Placeholder until we have real capital data
+        continent: country.continent || 'Unknown',
+        population: 1000000, // Placeholder
+        area_km2: 100000, // Placeholder
+      }));
+      
+      // Start batch generation for countries with few questions
+      const countriesNeedingQuestions = countriesForAI.slice(0, 10); // Start with first 10
+      
+      toast({
+        title: "AI Generation Started",
+        description: `Generating questions for ${countriesNeedingQuestions.length} countries using OpenRouter AI...`,
+      });
+      
+      // Generate questions in background
+      AIService.batchGenerateQuestions(countriesNeedingQuestions, 15)
+        .then(() => {
+          toast({
+            title: "AI Generation Complete",
+            description: `Successfully generated questions for ${countriesNeedingQuestions.length} countries!`,
+          });
+          setIsGeneratingQuestions(false);
+        })
+        .catch((error) => {
+          console.error('AI generation failed:', error);
+          toast({
+            title: "AI Generation Failed",
+            description: "Failed to generate questions. Using fallback questions.",
+            variant: "destructive",
+          });
+          setIsGeneratingQuestions(false);
+        });
+        
+    } catch (error) {
+      console.error('Failed to initialize AI questions:', error);
+      setIsGeneratingQuestions(false);
+    }
+  };
+
   const handleCountryClick = (country: Country) => {
     setSelectedCountry(country);
     setShowQuiz(false);
     setQuizResult(null);
+    
+    // Auto-start quiz for better UX
+    handleStartQuiz(country);
   };
 
-  const handleStartQuiz = async () => {
-    if (selectedCountry) {
+  const handleStartQuiz = async (country?: Country) => {
+    const targetCountry = country || selectedCountry;
+    if (targetCountry) {
       try {
         // Load questions for the selected country
         const questions = await QuizService.getQuestions(
-          selectedCountry.id, 
-          selectedCountry.difficulty || 'medium', 
+          targetCountry.id, 
+          targetCountry.difficulty || 'medium', 
           10
         );
         
         if (questions.length === 0) {
+          // Try to generate questions on-demand
           toast({
-            title: "No Questions Available",
-            description: `No questions found for ${selectedCountry.name}. Please generate questions first.`,
-            variant: "destructive",
+            title: "Generating Questions",
+            description: `AI is creating questions for ${targetCountry.name}...`,
           });
+          
+          try {
+            const countryForAI = {
+              id: targetCountry.id,
+              name: targetCountry.name,
+              capital: targetCountry.name,
+              continent: targetCountry.continent || 'Unknown',
+              population: 1000000,
+              area_km2: 100000,
+            };
+            
+            await AIService.generateAllDifficultyQuestions(countryForAI, 10);
+            
+            // Try loading questions again
+            const newQuestions = await QuizService.getQuestions(
+              targetCountry.id, 
+              targetCountry.difficulty || 'medium', 
+              10
+            );
+            
+            if (newQuestions.length > 0) {
+              setQuizQuestions(newQuestions);
+              setShowQuiz(true);
+              setQuizResult(null);
+              toast({
+                title: "Questions Ready",
+                description: `Generated ${newQuestions.length} questions for ${targetCountry.name}!`,
+              });
+            } else {
+              throw new Error('No questions generated');
+            }
+            
+          } catch (aiError) {
+            console.error('AI generation failed:', aiError);
+            toast({
+              title: "No Questions Available",
+              description: `Unable to generate questions for ${targetCountry.name}. Please try another country.`,
+              variant: "destructive",
+            });
+          }
+          
           return;
         }
         
@@ -108,6 +240,7 @@ export const useQuizManager = () => {
     showQuiz,
     quizResult,
     quizQuestions,
+    isGeneratingQuestions,
     handleCountryClick,
     handleStartQuiz,
     handleQuizComplete,

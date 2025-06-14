@@ -13,6 +13,7 @@ export default function Index() {
     showQuiz,
     quizResult,
     quizQuestions,
+    isGeneratingQuestions,
     handleCountryClick,
     handleQuizComplete,
     handleBackToGlobe,
@@ -43,7 +44,10 @@ export default function Index() {
 
   return (
     <MainLayout>
-      <AppHeader countriesCount={allCountries.length} />
+      <AppHeader 
+        countriesCount={allCountries.length} 
+        isGeneratingQuestions={isGeneratingQuestions}
+      />
       
       <Globe
         onCountrySelect={handleCountryClick}
