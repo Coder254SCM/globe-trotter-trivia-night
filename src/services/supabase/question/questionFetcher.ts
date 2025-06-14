@@ -1,9 +1,53 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Question as FrontendQuestion } from "@/types/quiz";
 import { Question, QuestionFilter } from "./questionTypes";
 
 export class QuestionFetcher {
+  /**
+   * Enhanced validation patterns to catch bad questions
+   */
+  private static readonly INVALID_PATTERNS = [
+    // Placeholder patterns
+    'placeholder',
+    '[country]',
+    '[capital]',
+    'option a for',
+    'option b for', 
+    'option c for',
+    'option d for',
+    'correct answer for',
+    'incorrect option',
+    
+    // Generic AI patterns that don't make sense
+    'quantum physics',
+    'advanced methodology',
+    'cutting-edge approach',
+    'innovative technique',
+    'state-of-the-art method',
+    'methodology a',
+    'methodology b',
+    'methodology c', 
+    'methodology d',
+    'approach a',
+    'approach b',
+    'approach c',
+    'approach d',
+    'technique a',
+    'technique b',
+    'technique c',
+    'technique d',
+    'method a',
+    'method b',
+    'method c',
+    'method d',
+    
+    // Other nonsensical patterns
+    'specialized parameters',
+    'novel framework',
+    'enhanced precision',
+    'optimized protocols'
+  ];
+
   /**
    * Get questions for a specific country with filtering and validation
    */
@@ -28,42 +72,110 @@ export class QuestionFetcher {
 
       const { data, error } = await query
         .order('created_at', { ascending: false })
-        .limit(limit);
+        .limit(limit * 3); // Get more questions to filter out bad ones
 
       if (error) {
         console.error('❌ Error fetching questions:', error);
         throw error;
       }
 
-      console.log(`✅ Found ${data?.length || 0} questions`);
+      console.log(`✅ Found ${data?.length || 0} raw questions`);
       
       if (!data || data.length === 0) {
         console.warn(`⚠️ No questions found for country ${countryId} with difficulty ${difficulty}`);
-        // Try without difficulty filter as fallback
-        if (difficulty) {
-          console.log('🔄 Retrying without difficulty filter...');
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from('questions')
-            .select('*')
-            .eq('country_id', countryId)
-            .order('created_at', { ascending: false })
-            .limit(limit);
-          
-          if (fallbackError) throw fallbackError;
-          return (fallbackData || []).map(q => this.transformToFrontendQuestion(q)).filter(q => this.validateQuestion(q));
-        }
         return [];
       }
 
-      // Transform and validate all questions
-      const transformedQuestions = data.map(q => this.transformToFrontendQuestion(q)).filter(q => this.validateQuestion(q));
-      console.log(`✅ Successfully transformed and validated ${transformedQuestions.length} questions`);
+      // Transform and validate all questions with enhanced filtering
+      const transformedQuestions = data
+        .map(q => this.transformToFrontendQuestion(q))
+        .filter(q => this.validateQuestion(q))
+        .slice(0, limit); // Take only the requested number after filtering
+      
+      console.log(`✅ Successfully transformed and validated ${transformedQuestions.length} questions out of ${data.length} raw questions`);
       
       return transformedQuestions;
     } catch (error) {
       console.error('💥 Failed to fetch questions:', error);
       throw error;
     }
+  }
+
+  /**
+   * Enhanced validation with stricter quality checks
+   */
+  static validateQuestion(question: FrontendQuestion): boolean {
+    // Check for invalid patterns in question text
+    const questionText = question.text.toLowerCase();
+    for (const pattern of this.INVALID_PATTERNS) {
+      if (questionText.includes(pattern.toLowerCase())) {
+        console.warn('❌ Question contains invalid pattern:', pattern, 'in:', question.text.substring(0, 50));
+        return false;
+      }
+    }
+
+    // Check for invalid patterns in choices
+    for (const choice of question.choices) {
+      const choiceText = choice.text.toLowerCase();
+      for (const pattern of this.INVALID_PATTERNS) {
+        if (choiceText.includes(pattern.toLowerCase())) {
+          console.warn('❌ Choice contains invalid pattern:', pattern, 'in:', choice.text);
+          return false;
+        }
+      }
+    }
+
+    // Check that we have exactly 4 choices
+    if (question.choices.length !== 4) {
+      console.warn('❌ Question does not have exactly 4 choices:', question.choices.length);
+      return false;
+    }
+
+    // Check that exactly one choice is correct
+    const correctChoices = question.choices.filter(c => c.isCorrect);
+    if (correctChoices.length !== 1) {
+      console.warn('❌ Question does not have exactly 1 correct choice:', correctChoices.length);
+      return false;
+    }
+
+    // Check for duplicate choices
+    const choiceTexts = question.choices.map(c => c.text.toLowerCase());
+    const uniqueChoices = new Set(choiceTexts);
+    if (uniqueChoices.size !== 4) {
+      console.warn('❌ Question has duplicate choices');
+      return false;
+    }
+
+    // Check minimum question length
+    if (question.text.length < 20) {
+      console.warn('❌ Question text too short:', question.text.length);
+      return false;
+    }
+
+    // Check for sensible country-specific content
+    const hasCountryContext = this.hasRelevantContent(question, questionText);
+    if (!hasCountryContext) {
+      console.warn('❌ Question lacks country-specific context:', question.text.substring(0, 50));
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Check if question has relevant, country-specific content
+   */
+  private static hasRelevantContent(question: FrontendQuestion, questionText: string): boolean {
+    // Questions should be about real, tangible things related to countries
+    const validTopics = [
+      'capital', 'city', 'population', 'language', 'currency', 'border',
+      'geography', 'history', 'culture', 'religion', 'government', 'economy',
+      'landmark', 'mountain', 'river', 'ocean', 'continent', 'flag',
+      'independence', 'president', 'prime minister', 'parliament'
+    ];
+
+    // Check if question mentions any valid topics
+    return validTopics.some(topic => questionText.includes(topic));
   }
 
   /**
@@ -102,54 +214,6 @@ export class QuestionFetcher {
       console.error('💥 Failed to fetch filtered questions:', error);
       throw error;
     }
-  }
-
-  /**
-   * Validate question has proper content and structure
-   */
-  static validateQuestion(question: FrontendQuestion): boolean {
-    // Check for placeholder text in question
-    if (question.text.includes('[country]') || 
-        question.text.includes('[capital]') || 
-        question.text.toLowerCase().includes('placeholder') ||
-        question.text.toLowerCase().includes('option a for') ||
-        question.text.toLowerCase().includes('correct answer for')) {
-      console.warn('❌ Question contains placeholder text:', question.text.substring(0, 50));
-      return false;
-    }
-
-    // Check for placeholder text in choices
-    for (const choice of question.choices) {
-      if (choice.text.toLowerCase().includes('placeholder') ||
-          choice.text.toLowerCase().includes('option a for') ||
-          choice.text.toLowerCase().includes('incorrect option')) {
-        console.warn('❌ Choice contains placeholder text:', choice.text);
-        return false;
-      }
-    }
-
-    // Check that we have exactly 4 choices
-    if (question.choices.length !== 4) {
-      console.warn('❌ Question does not have exactly 4 choices:', question.choices.length);
-      return false;
-    }
-
-    // Check that exactly one choice is correct
-    const correctChoices = question.choices.filter(c => c.isCorrect);
-    if (correctChoices.length !== 1) {
-      console.warn('❌ Question does not have exactly 1 correct choice:', correctChoices.length);
-      return false;
-    }
-
-    // Check for duplicate choices
-    const choiceTexts = question.choices.map(c => c.text.toLowerCase());
-    const uniqueChoices = new Set(choiceTexts);
-    if (uniqueChoices.size !== 4) {
-      console.warn('❌ Question has duplicate choices');
-      return false;
-    }
-
-    return true;
   }
 
   /**
