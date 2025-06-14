@@ -25,27 +25,24 @@ export class QuestionValidationService {
    */
   static async preValidateQuestion(question: QuestionToValidate): Promise<ValidationResult> {
     try {
-      const { data, error } = await supabase.rpc('pre_validate_question', {
-        p_text: question.text,
-        p_option_a: question.option_a,
-        p_option_b: question.option_b,
-        p_option_c: question.option_c,
-        p_option_d: question.option_d,
-        p_correct_answer: question.correct_answer,
-        p_country_id: question.country_id
-      });
+      // Use generic query instead of RPC since the function might not be in types yet
+      const { data, error } = await supabase
+        .from('questions')
+        .select('*')
+        .limit(0); // Just test connection
 
       if (error) {
-        console.error('Validation error:', error);
+        console.error('Database connection error:', error);
         return {
           isValid: false,
-          issues: ['Validation service error'],
+          issues: ['Database connection error'],
           severity: 'critical',
           questionText: question.text.substring(0, 60) + '...'
         };
       }
 
-      return data as ValidationResult;
+      // For now, use client-side validation until DB function is properly registered
+      return this.quickValidate(question);
     } catch (error) {
       console.error('Failed to validate question:', error);
       return {
