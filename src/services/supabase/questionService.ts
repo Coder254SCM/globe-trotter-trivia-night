@@ -12,7 +12,7 @@ export interface Question {
   option_c: string;
   option_d: string;
   correct_answer: string;
-  difficulty: 'hard'; // Only hard difficulty is now supported
+  difficulty: 'easy' | 'medium' | 'hard'; // Now supports all three difficulty levels
   category: string;
   explanation?: string;
   month_rotation?: number;
@@ -22,7 +22,7 @@ export interface Question {
 
 export class QuestionService {
   /**
-   * Get questions for a specific country (hard difficulty only)
+   * Get questions for a specific country (supports all difficulty levels)
    */
   static async getQuestions(
     countryId: string, 
@@ -35,12 +35,9 @@ export class QuestionService {
         .select('*')
         .eq('country_id', countryId);
 
-      // Only allow hard difficulty - medium has been removed
-      if (difficulty === 'hard') {
-        query = query.eq('difficulty', 'hard');
-      } else {
-        // Default to hard since it's the only valid difficulty
-        query = query.eq('difficulty', 'hard');
+      // Support all difficulty levels
+      if (difficulty && ['easy', 'medium', 'hard'].includes(difficulty)) {
+        query = query.eq('difficulty', difficulty);
       }
 
       const { data, error } = await query
@@ -60,7 +57,7 @@ export class QuestionService {
   }
 
   /**
-   * Enhanced save with strict validation - only accepts hard difficulty
+   * Enhanced save with strict validation - accepts all difficulty levels
    */
   static async saveQuestions(questions: any[]): Promise<void> {
     try {
@@ -71,7 +68,7 @@ export class QuestionService {
         return;
       }
       
-      // Enhanced filtering with strict validation - only hard questions allowed
+      // Enhanced filtering with strict validation - supports all difficulties
       const validQuestions = [];
       
       for (const q of questions) {
@@ -84,16 +81,10 @@ export class QuestionService {
                                  q.correct_answer &&
                                  q.country_id &&
                                  q.category &&
-                                 q.difficulty === 'hard'; // Only hard difficulty allowed
+                                 ['easy', 'medium', 'hard'].includes(q.difficulty);
         
         if (!hasRequiredFields) {
           console.warn('⚠️ Skipping question with missing fields or invalid difficulty:', q.text?.substring(0, 50) + '...');
-          continue;
-        }
-        
-        // Reject non-hard questions
-        if (q.difficulty !== 'hard') {
-          console.warn('❌ Rejecting non-hard question - only hard questions allowed:', q.text?.substring(0, 50) + '...');
           continue;
         }
         
@@ -109,14 +100,14 @@ export class QuestionService {
       }
 
       if (validQuestions.length === 0) {
-        console.warn('⚠️ No valid hard questions found after enhanced filtering');
+        console.warn('⚠️ No valid questions found after enhanced filtering');
         return;
       }
 
-      console.log(`✅ ${validQuestions.length} hard questions passed enhanced validation (rejected ${questions.length - validQuestions.length} for quality issues)`);
+      console.log(`✅ ${validQuestions.length} questions passed enhanced validation (rejected ${questions.length - validQuestions.length} for quality issues)`);
 
       // Save with smaller batches to prevent rate limiting
-      const batchSize = 15; // Reduced batch size for better reliability
+      const batchSize = 15;
       const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
       
       for (let i = 0; i < validQuestions.length; i += batchSize) {
@@ -139,7 +130,7 @@ export class QuestionService {
           
           // Add delay between batches
           if (i + batchSize < validQuestions.length) {
-            await delay(750); // Increased delay for better stability
+            await delay(750);
           }
           
         } catch (batchError) {
@@ -148,7 +139,7 @@ export class QuestionService {
         }
       }
 
-      console.log(`🎉 Successfully saved all ${validQuestions.length} high-quality hard questions to Supabase`);
+      console.log(`🎉 Successfully saved all ${validQuestions.length} high-quality questions to Supabase`);
       
     } catch (error) {
       console.error('❌ Enhanced save operation failed:', error);
@@ -157,13 +148,13 @@ export class QuestionService {
   }
 
   /**
-   * Validate a single question before saving - only accepts hard difficulty
+   * Validate a single question before saving - accepts all difficulty levels
    */
   static async validateQuestion(question: QuestionToValidate): Promise<boolean> {
     try {
-      // Only accept hard questions
-      if (question.difficulty !== 'hard') {
-        console.warn('❌ Only hard questions are allowed - medium and easy questions are not supported');
+      // Validate difficulty level
+      if (!['easy', 'medium', 'hard'].includes(question.difficulty)) {
+        console.warn('❌ Invalid difficulty level - must be easy, medium, or hard');
         return false;
       }
       
@@ -198,7 +189,7 @@ export class QuestionService {
       ],
       category: supabaseQuestion.category,
       explanation: supabaseQuestion.explanation || '',
-      difficulty: 'hard' // Only hard difficulty is supported
+      difficulty: supabaseQuestion.difficulty as 'easy' | 'medium' | 'hard'
     };
   }
 }

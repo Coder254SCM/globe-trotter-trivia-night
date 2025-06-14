@@ -15,7 +15,7 @@ export interface QuestionToValidate {
   option_c: string;
   option_d: string;
   correct_answer: string;
-  difficulty?: string;
+  difficulty: 'easy' | 'medium' | 'hard';
   country_id?: string;
   category: string;
 }
@@ -63,15 +63,15 @@ export class QuestionValidationService {
   }
 
   /**
-   * Enhanced validation with improved placeholder detection - only hard questions allowed
+   * Enhanced validation with improved placeholder detection - supports all difficulties
    */
   static quickValidate(question: QuestionToValidate): ValidationResult {
     const issues: string[] = [];
     let severity: 'low' | 'medium' | 'high' | 'critical' = 'low';
 
     // Basic validation checks
-    if (!question.text || question.text.trim().length < 10) {
-      issues.push('Question text is too short (minimum 10 characters)');
+    if (!question.text || question.text.trim().length < 20) {
+      issues.push('Question text is too short (minimum 20 characters)');
       severity = 'high';
     }
 
@@ -92,9 +92,9 @@ export class QuestionValidationService {
       severity = 'critical';
     }
 
-    // Reject non-hard questions - only hard difficulty is allowed
-    if (question.difficulty && question.difficulty !== 'hard') {
-      issues.push('Only hard questions are allowed - medium and easy questions have been disabled');
+    // Validate difficulty level - now supports all three
+    if (!['easy', 'medium', 'hard'].includes(question.difficulty)) {
+      issues.push('Invalid difficulty level - must be easy, medium, or hard');
       severity = 'critical';
     }
 

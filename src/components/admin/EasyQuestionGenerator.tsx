@@ -6,21 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, CheckCircle, Clock, Globe, Target, Trophy } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, Globe, Zap, Star } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { QuestionService } from "@/services/supabase/questionService";
 import { QuestionValidationService } from "@/services/supabase/questionValidationService";
 import countries from "@/data/countries";
-
-interface GenerationStats {
-  questionsGenerated: number;
-  questionsValidated: number;
-  questionsSaved: number;
-  validationErrors: number;
-  currentCountry: string;
-  timeElapsed: number;
-}
 
 interface QuestionTemplate {
   text: string;
@@ -30,15 +21,15 @@ interface QuestionTemplate {
   option_d: string;
   correct_answer: string;
   category: string;
-  difficulty: 'medium';
+  difficulty: 'easy';
   country_id: string;
 }
 
-export const MediumQuestionGenerator = () => {
+export const EasyQuestionGenerator = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<string>('');
   const [generationMode, setGenerationMode] = useState<'single' | 'all'>('single');
-  const [stats, setStats] = useState<GenerationStats>({
+  const [stats, setStats] = useState({
     questionsGenerated: 0,
     questionsValidated: 0,
     questionsSaved: 0,
@@ -47,18 +38,15 @@ export const MediumQuestionGenerator = () => {
     timeElapsed: 0
   });
 
-  // Predefined medium difficulty question templates
-  const mediumQuestionTemplates = {
+  // Predefined easy difficulty question templates
+  const easyQuestionTemplates = {
     Geography: [
       {
-        template: "What is the approximate population of {country}?",
+        template: "What is the capital city of {country}?",
         getOptions: (country: any) => ({
-          correct: `${Math.round(country.population / 1000000)} million`,
-          incorrect: [
-            `${Math.round(country.population / 1000000 * 0.5)} million`,
-            `${Math.round(country.population / 1000000 * 1.5)} million`,
-            `${Math.round(country.population / 1000000 * 2)} million`
-          ]
+          correct: country.capital || 'Unknown',
+          incorrect: ['Paris', 'London', 'Tokyo', 'New York', 'Berlin', 'Rome']
+            .filter(c => c !== country.capital).slice(0, 3)
         })
       },
       {
@@ -72,46 +60,40 @@ export const MediumQuestionGenerator = () => {
     ],
     Culture: [
       {
-        template: "What is a traditional cultural aspect commonly associated with {country}?",
+        template: "What language is commonly spoken in {country}?",
         getOptions: (country: any) => {
-          const culturalAspects = {
-            'Japan': { correct: 'Tea ceremony', incorrect: ['Wine making', 'Bullfighting', 'Oktoberfest'] },
-            'India': { correct: 'Yoga and meditation', incorrect: ['Flamenco dancing', 'Alpine skiing', 'Surfing'] },
-            'Brazil': { correct: 'Carnival celebrations', incorrect: ['Ice hockey', 'Desert festivals', 'Northern lights viewing'] },
-            'France': { correct: 'Fine cuisine and wine', incorrect: ['Sumo wrestling', 'Cricket', 'Rodeo'] }
+          const languages = {
+            'France': { correct: 'French', incorrect: ['German', 'Spanish', 'Italian'] },
+            'Germany': { correct: 'German', incorrect: ['French', 'Spanish', 'Dutch'] },
+            'Spain': { correct: 'Spanish', incorrect: ['French', 'Portuguese', 'Italian'] },
+            'Japan': { correct: 'Japanese', incorrect: ['Chinese', 'Korean', 'Thai'] },
+            'Brazil': { correct: 'Portuguese', incorrect: ['Spanish', 'French', 'Italian'] }
           };
-          return culturalAspects[country.name] || { 
-            correct: 'Rich cultural heritage', 
-            incorrect: ['Space exploration', 'Desert nomadism', 'Arctic survival'] 
+          return languages[country.name] || { 
+            correct: 'Local language', 
+            incorrect: ['English', 'French', 'Spanish'] 
           };
         }
       }
     ],
-    Economy: [
+    Basic: [
       {
-        template: "What is a major economic sector in {country}?",
-        getOptions: (country: any) => {
-          const economicSectors = {
-            'Saudi Arabia': { correct: 'Oil and petroleum', incorrect: ['Tourism', 'Technology', 'Agriculture'] },
-            'Switzerland': { correct: 'Banking and finance', incorrect: ['Mining', 'Fishing', 'Forestry'] },
-            'Thailand': { correct: 'Tourism and agriculture', incorrect: ['Heavy industry', 'Mining', 'Oil production'] },
-            'Germany': { correct: 'Manufacturing and engineering', incorrect: ['Agriculture only', 'Tourism only', 'Fishing only'] }
-          };
-          return economicSectors[country.name] || { 
-            correct: 'Diverse economy', 
-            incorrect: ['Single-sector economy', 'Barter system only', 'No formal economy'] 
-          };
-        }
+        template: "{country} is a country located in which region?",
+        getOptions: (country: any) => ({
+          correct: country.continent,
+          incorrect: ['Europe', 'Asia', 'Africa', 'Americas', 'Oceania']
+            .filter(c => c !== country.continent).slice(0, 3)
+        })
       }
     ]
   };
 
-  const generateMediumQuestions = async (country: any): Promise<QuestionTemplate[]> => {
+  const generateEasyQuestions = async (country: any): Promise<QuestionTemplate[]> => {
     const questions: QuestionTemplate[] = [];
-    const categories = Object.keys(mediumQuestionTemplates);
+    const categories = Object.keys(easyQuestionTemplates);
 
     for (const category of categories) {
-      const templates = mediumQuestionTemplates[category as keyof typeof mediumQuestionTemplates];
+      const templates = easyQuestionTemplates[category as keyof typeof easyQuestionTemplates];
       
       for (const template of templates) {
         try {
@@ -129,7 +111,7 @@ export const MediumQuestionGenerator = () => {
             option_d: shuffledOptions[3],
             correct_answer: options.correct,
             category,
-            difficulty: 'medium',
+            difficulty: 'easy',
             country_id: country.id
           };
 
@@ -137,8 +119,6 @@ export const MediumQuestionGenerator = () => {
           const validation = await QuestionValidationService.preValidateQuestion(question);
           if (validation.isValid) {
             questions.push(question);
-          } else {
-            console.warn(`Skipping invalid question for ${country.name}:`, validation.issues);
           }
         } catch (error) {
           console.error(`Error generating question for ${country.name}:`, error);
@@ -172,21 +152,18 @@ export const MediumQuestionGenerator = () => {
         setStats(prev => ({ ...prev, currentCountry: country.name }));
 
         try {
-          // Generate questions for this country
-          const questions = await generateMediumQuestions(country);
+          const questions = await generateEasyQuestions(country);
           totalGenerated += questions.length;
 
-          // Validate all questions
           const validationResult = await QuestionValidationService.batchValidateQuestions(questions);
           totalValidated += validationResult.validQuestions;
           totalErrors += validationResult.criticalIssues;
 
-          // Save valid questions
           const validQuestions = validationResult.results
             .filter(r => r.isValid)
             .map((r, index) => ({
               ...questions[r.questionIndex],
-              id: `${country.id}_medium_${index}_${Date.now()}`
+              id: `${country.id}_easy_${index}_${Date.now()}`
             }));
 
           if (validQuestions.length > 0) {
@@ -194,7 +171,6 @@ export const MediumQuestionGenerator = () => {
             totalSaved += validQuestions.length;
           }
 
-          // Update stats
           setStats(prev => ({
             ...prev,
             questionsGenerated: totalGenerated,
@@ -210,7 +186,7 @@ export const MediumQuestionGenerator = () => {
         }
       }
 
-      toast.success(`Generated ${totalSaved} medium questions successfully!`);
+      toast.success(`Generated ${totalSaved} easy questions successfully!`);
       
     } catch (error) {
       console.error('Generation failed:', error);
@@ -220,18 +196,18 @@ export const MediumQuestionGenerator = () => {
     }
   };
 
-  const progress = generationMode === 'all' ? (stats.questionsGenerated / (countries.length * 6)) * 100 : 0;
+  const progress = generationMode === 'all' ? (stats.questionsGenerated / (countries.length * 5)) * 100 : 0;
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-orange-500" />
-            Medium Question Generator
+            <Star className="h-5 w-5 text-green-500" />
+            Easy Question Generator
           </CardTitle>
           <CardDescription>
-            Generate high-quality medium difficulty questions with comprehensive validation
+            Generate beginner-friendly questions with foolproof validation
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -260,8 +236,7 @@ export const MediumQuestionGenerator = () => {
               <Alert>
                 <Globe className="h-4 w-4" />
                 <AlertDescription>
-                  This will generate medium questions for all {countries.length} countries. 
-                  This process may take several minutes.
+                  Generate easy questions for all {countries.length} countries.
                 </AlertDescription>
               </Alert>
             </TabsContent>
@@ -280,8 +255,8 @@ export const MediumQuestionGenerator = () => {
               </>
             ) : (
               <>
-                <Trophy className="mr-2 h-4 w-4" />
-                Generate Medium Questions
+                <Zap className="mr-2 h-4 w-4" />
+                Generate Easy Questions
               </>
             )}
           </Button>
@@ -329,37 +304,6 @@ export const MediumQuestionGenerator = () => {
           </CardContent>
         </Card>
       )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-500" />
-            Quality Assurance Features
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <h4 className="font-semibold text-green-600">✅ Validation Checks</h4>
-              <ul className="text-sm space-y-1 text-muted-foreground">
-                <li>• No placeholder text detection</li>
-                <li>• Correct answer validation</li>
-                <li>• Duplicate option prevention</li>
-                <li>• Minimum quality standards</li>
-              </ul>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-semibold text-blue-600">🔧 Template System</h4>
-              <ul className="text-sm space-y-1 text-muted-foreground">
-                <li>• Predefined question templates</li>
-                <li>• Country-specific data integration</li>
-                <li>• Category-based organization</li>
-                <li>• Factual accuracy guarantee</li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

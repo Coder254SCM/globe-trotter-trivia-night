@@ -622,6 +622,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      pre_validate_question: {
+        Args: {
+          p_text: string
+          p_option_a: string
+          p_option_b: string
+          p_option_c: string
+          p_option_d: string
+          p_correct_answer: string
+          p_difficulty?: string
+          p_country_id?: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
