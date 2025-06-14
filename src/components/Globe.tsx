@@ -56,7 +56,7 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
         difficulty: difficulty
       };
       
-      // Close the country card and pass to parent
+      // Close the country card and pass to parent for routing
       setSelectedCountry(null);
       onCountrySelect(countryWithDifficulty);
     }

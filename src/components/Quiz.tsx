@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
@@ -173,21 +174,23 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
   }, [currentQuestionIndex, questions.length, startTime, correctAnswers, gameSession, user, failedQuestionIds, onFinish]);
 
   const getChoiceClassName = useCallback((choice: Choice) => {
+    const baseClasses = "p-4 rounded-md border-2 transition-all text-left flex items-center";
+    
     if (!isAnswered) {
       return selectedChoice === choice.id
-        ? "border-primary bg-primary/10 cursor-pointer"
-        : "border-border hover:border-primary/50 cursor-pointer";
+        ? `${baseClasses} border-primary bg-primary/10 cursor-pointer`
+        : `${baseClasses} border-border hover:border-primary/50 cursor-pointer`;
     }
     
     if (choice.isCorrect) {
-      return "border-green-500 bg-green-500/10";
+      return `${baseClasses} border-green-500 bg-green-500/10`;
     }
     
     if (selectedChoice === choice.id && !choice.isCorrect) {
-      return "border-red-500 bg-red-500/10";
+      return `${baseClasses} border-red-500 bg-red-500/10`;
     }
     
-    return "border-border opacity-50";
+    return `${baseClasses} border-border opacity-50`;
   }, [isAnswered, selectedChoice]);
 
   const handleImageLoad = useCallback(() => {
@@ -321,13 +324,9 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
           {currentQuestion.choices.map((choice) => (
             <button
               key={choice.id}
-              onClick={() => handleAnswer(choice.id)}
+              onClick={() => !isAnswered && handleAnswer(choice.id)}
               disabled={isAnswered}
-              className={`
-                ${isMobile ? 'p-3' : 'p-4'} rounded-md border-2 transition-all text-left flex items-center
-                ${getChoiceClassName(choice)}
-                ${!isAnswered ? 'hover:shadow-md' : ''}
-              `}
+              className={getChoiceClassName(choice)}
             >
               <span className={`${isMobile ? 'w-6 h-6 mr-2' : 'w-8 h-8 mr-3'} rounded-full bg-muted flex items-center justify-center ${isMobile ? 'text-sm' : ''} font-medium`}>
                 {choice.id.toUpperCase()}

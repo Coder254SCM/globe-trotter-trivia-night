@@ -19,6 +19,9 @@ const MediumQuestions = lazy(() => import("./pages/MediumQuestions"));
 const HardQuestions = lazy(() => import("./pages/HardQuestions"));
 const ManualHardQuestions = lazy(() => import("./pages/ManualHardQuestions"));
 const Moderation = lazy(() => import("./pages/Moderation"));
+const QuizSettings = lazy(() => import("./pages/QuizSettings"));
+const QuizPage = lazy(() => import("./pages/QuizPage"));
+const QuizResults = lazy(() => import("./pages/QuizResults"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -36,6 +39,9 @@ function App() {
             }>
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/quiz-settings" element={<QuizSettings />} />
+                <Route path="/quiz" element={<QuizPage />} />
+                <Route path="/quiz-results" element={<QuizResults />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/ultimate-quiz" element={<UltimateQuiz />} />
