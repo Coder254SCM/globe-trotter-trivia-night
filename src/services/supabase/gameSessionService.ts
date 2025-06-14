@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface GameSession {
@@ -55,7 +54,7 @@ export class GameSessionService {
       throw error;
     }
 
-    return data;
+    return data as GameSession;
   }
 
   /**

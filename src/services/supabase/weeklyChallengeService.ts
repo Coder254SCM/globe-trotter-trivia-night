@@ -131,10 +131,17 @@ export class WeeklyChallengeService {
 
       if (error) throw error;
 
-      // Update participant count
-      await supabase.rpc('increment_challenge_participants', {
-        challenge_id: challengeId
-      });
+      // Update participant count manually
+      const { error: updateError } = await supabase
+        .from('weekly_challenges')
+        .update({ 
+          participants: supabase.raw('participants + 1')
+        })
+        .eq('id', challengeId);
+
+      if (updateError) {
+        console.error('Error updating participant count:', updateError);
+      }
 
       console.log(`✅ Recorded challenge attempt: ${questionsCorrect}/${totalQuestions} correct`);
     } catch (error) {

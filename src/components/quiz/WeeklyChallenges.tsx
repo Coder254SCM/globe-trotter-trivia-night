@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Calendar, Trophy, Users, Clock, Play } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { WeeklyChallengeService, WeeklyChallenge } from '@/services/supabase/weeklyChallengeService';
 import { QuestionService } from '@/services/supabase/questionService';
 
