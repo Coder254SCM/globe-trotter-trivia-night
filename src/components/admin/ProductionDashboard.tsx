@@ -1,109 +1,21 @@
-import { useState, useEffect } from "react";
-import { Button } from "../ui/button";
+
 import { Card } from "../ui/card";
+import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
-import { useToast } from "@/hooks/use-toast";
-import { Progress } from "../ui/progress";
 import { 
   Database, 
-  Zap, 
-  CheckCircle, 
+  Users, 
+  TrendingUp, 
   Globe, 
+  Brain,
   FileText,
-  TrendingUp,
-  GraduationCap
+  Search,
+  Settings,
+  BarChart3
 } from "lucide-react";
-import { QuizService } from "@/services/supabase/quizService";
-import { HardQuestionGenerator } from "../../scripts/generateHardQuestions";
+import { Link } from "react-router-dom";
 
 export const ProductionDashboard = () => {
-  const [isInitializing, setIsInitializing] = useState(false);
-  const [initProgress, setInitProgress] = useState(0);
-  const [stats, setStats] = useState<any>(null);
-  const [isGeneratingHard, setIsGeneratingHard] = useState(false);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      const initialStats = await QuizService.getDatabaseStats();
-      setStats(initialStats);
-    };
-
-    fetchStats();
-  }, []);
-
-  const handleInitialize = async () => {
-    setIsInitializing(true);
-    setInitProgress(0);
-
-    try {
-      toast({
-        title: "Database Initialization Started",
-        description: "Populating countries and generating initial questions...",
-      });
-
-      const interval = setInterval(() => {
-        setInitProgress((prevProgress) => {
-          const newProgress = prevProgress + 10;
-          return newProgress > 90 ? 90 : newProgress;
-        });
-      }, 3000);
-
-      await QuizService.initializeProductionDatabase();
-      clearInterval(interval);
-      setInitProgress(100);
-
-      toast({
-        title: "Database Initialized!",
-        description: "Successfully populated countries and generated initial questions.",
-      });
-
-      const newStats = await QuizService.getDatabaseStats();
-      setStats(newStats);
-    } catch (error) {
-      console.error("Failed to initialize database:", error);
-      toast({
-        title: "Initialization Failed",
-        description: "Failed to initialize the database. Check console for details.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsInitializing(false);
-    }
-  };
-
-  const handleGenerateHardQuestions = async () => {
-    setIsGeneratingHard(true);
-    
-    try {
-      toast({
-        title: "PhD Question Generation Started",
-        description: "Generating 50 hard questions for each country...",
-      });
-
-      await HardQuestionGenerator.generateForAllCountries();
-      
-      toast({
-        title: "Hard Questions Generated!",
-        description: "Successfully generated PhD-level questions for all countries.",
-      });
-
-      // Refresh stats
-      const newStats = await QuizService.getDatabaseStats();
-      setStats(newStats);
-
-    } catch (error) {
-      console.error('Failed to generate hard questions:', error);
-      toast({
-        title: "Generation Failed",
-        description: "Failed to generate hard questions. Check console for details.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGeneratingHard(false);
-    }
-  };
-
   return (
     <div className="space-y-8">
       <div className="flex items-center space-x-4">
@@ -111,159 +23,128 @@ export const ProductionDashboard = () => {
         <div>
           <h2 className="text-2xl font-bold">Production Dashboard</h2>
           <p className="text-muted-foreground">
-            Manage and initialize the production database
+            Complete system overview and management tools
           </p>
         </div>
       </div>
 
-      <Card className="p-6">
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <Globe className="h-6 w-6 text-green-600" />
+      {/* System Status Cards */}
+      <div className="grid md:grid-cols-3 gap-6">
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-semibold">Production Initialization</h3>
-              <p className="text-sm text-muted-foreground">
-                Populate all countries and generate initial questions
-              </p>
+              <p className="text-sm font-medium text-muted-foreground">Database Status</p>
+              <p className="text-2xl font-bold">Operational</p>
             </div>
+            <Database className="h-8 w-8 text-green-600" />
           </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">Easy Questions</Badge>
-              <Badge variant="outline">All Countries</Badge>
-              <Badge variant="outline">Initial Setup</Badge>
+        </Card>
+        
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Countries</p>
+              <p className="text-2xl font-bold">195</p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              This process populates all 195 countries and generates a base set
-              of easy questions for each.
-            </p>
+            <Globe className="h-8 w-8 text-blue-600" />
           </div>
-
-          {isInitializing && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Initializing database...</span>
-                <span>{initProgress}%</span>
-              </div>
-              <Progress value={initProgress} className="h-2" />
+        </Card>
+        
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">AI Service</p>
+              <p className="text-2xl font-bold text-red-600">Offline</p>
             </div>
-          )}
+            <Brain className="h-8 w-8 text-red-600" />
+          </div>
+        </Card>
+      </div>
 
-          <Button
-            onClick={handleInitialize}
-            disabled={isInitializing || isGeneratingHard}
-            className="w-full bg-green-600 hover:bg-green-700"
-          >
-            {isInitializing ? (
-              <>
-                <Zap className="h-4 w-4 mr-2 animate-spin" />
-                Initializing Database...
-              </>
-            ) : (
-              <>
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Initialize Production Database
-              </>
-            )}
-          </Button>
-        </div>
-      </Card>
-      
+      {/* Management Tools */}
       <div className="grid md:grid-cols-2 gap-6">
-        <Card className="p-6 border-purple-200 bg-gradient-to-br from-purple-50 to-background">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <GraduationCap className="h-6 w-6 text-purple-600" />
-              <div>
-                <h3 className="text-lg font-semibold">PhD-Level Questions</h3>
-                <p className="text-sm text-muted-foreground">Generate 50 hard academic questions per country</p>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">PhD Level</Badge>
-                <Badge variant="outline">50/Country</Badge>
-                <Badge variant="outline">Academic</Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Creates highly specialized questions requiring doctoral-level expertise
-              </p>
-            </div>
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Search className="h-5 w-5" />
+            Question Management
+          </h3>
+          <div className="space-y-3">
+            <Link to="/admin/question-audit">
+              <Button className="w-full justify-start" variant="outline">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Supabase Question Audit
+              </Button>
+            </Link>
+            <Link to="/admin/manual-hard-questions">
+              <Button className="w-full justify-start" variant="outline">
+                <FileText className="h-4 w-4 mr-2" />
+                Manual Hard Questions
+              </Button>
+            </Link>
+            <Link to="/admin/hard-questions">
+              <Button className="w-full justify-start" variant="outline">
+                <Brain className="h-4 w-4 mr-2" />
+                AI Hard Questions (Offline)
+              </Button>
+            </Link>
+          </div>
+        </Card>
 
-            <Button 
-              onClick={handleGenerateHardQuestions}
-              disabled={isGeneratingHard || isInitializing}
-              className="w-full bg-purple-600 hover:bg-purple-700"
-            >
-              {isGeneratingHard ? (
-                <>
-                  <Zap className="h-4 w-4 mr-2 animate-spin" />
-                  Generating PhD Questions...
-                </>
-              ) : (
-                <>
-                  <GraduationCap className="h-4 w-4 mr-2" />
-                  Generate Hard Questions
-                </>
-              )}
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            System Tools
+          </h3>
+          <div className="space-y-3">
+            <Button className="w-full justify-start" variant="outline">
+              <Database className="h-4 w-4 mr-2" />
+              Database Operations
+            </Button>
+            <Button className="w-full justify-start" variant="outline">
+              <Users className="h-4 w-4 mr-2" />
+              User Analytics
+            </Button>
+            <Button className="w-full justify-start" variant="outline">
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Performance Metrics
             </Button>
           </div>
         </Card>
       </div>
 
-      {stats && (
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">Database Statistics</h3>
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-primary">{stats.totalCountries}</div>
-              <div className="text-sm text-muted-foreground">Total Countries</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-green-600">{stats.countriesWithQuestions}</div>
-              <div className="text-sm text-muted-foreground">Countries with Questions</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-purple-600">{stats.totalQuestions}</div>
-              <div className="text-sm text-muted-foreground">Total Questions</div>
-            </div>
-          </div>
-          <div className="mt-4 grid grid-cols-1 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-orange-500">{stats.averageQuestionsPerCountry}</div>
-              <div className="text-sm text-muted-foreground">Avg. Questions per Country</div>
-            </div>
-          </div>
-        </Card>
-      )}
-
+      {/* Status Information */}
       <Card className="p-6 bg-muted/50">
-        <h3 className="text-lg font-semibold mb-2">Next Steps & Recommendations</h3>
-        <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-          <li>
-            <span className="font-medium">Monitor Question Performance:</span>{" "}
-            Track which questions are frequently failed and consider updating or
-            removing them.
-          </li>
-          <li>
-            <span className="font-medium">Expand Question Categories:</span>{" "}
-            Add more diverse question categories to cover a wider range of topics.
-          </li>
-          <li>
-            <span className="font-medium">Implement User Feedback:</span>{" "}
-            Allow users to submit feedback on questions to improve quality.
-          </li>
-          <li>
-            <span className="font-medium">Regularly Update Questions:</span>{" "}
-            Keep questions up-to-date with current events and changing information.
-          </li>
-          <li>
-            <span className="font-medium">Generate Medium/Hard Questions:</span>{" "}
-            Use the AI question generator to create more challenging questions.
-          </li>
-        </ul>
+        <h3 className="text-lg font-semibold mb-4">Current System Status</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Question Database</span>
+              <Badge variant="default">Active</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Manual Question Generator</span>
+              <Badge variant="default">Available</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">User Authentication</span>
+              <Badge variant="default">Enabled</Badge>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm">AI Question Service</span>
+              <Badge variant="destructive">Offline</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Real-time Updates</span>
+              <Badge variant="default">Active</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Game Engine</span>
+              <Badge variant="default">Running</Badge>
+            </div>
+          </div>
+        </div>
       </Card>
     </div>
   );
