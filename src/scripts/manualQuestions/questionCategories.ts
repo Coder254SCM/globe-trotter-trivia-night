@@ -1,0 +1,35 @@
+
+export const MANUAL_QUESTION_CATEGORIES = [
+  'Constitutional Law',
+  'Economic Policy', 
+  'Diplomatic History',
+  'Archaeological Research',
+  'Linguistic Studies',
+  'Environmental Science',
+  'Anthropological Studies',
+  'Neuropsychology',
+  'Quantum Physics',
+  'Molecular Biology',
+  'Astrophysics',
+  'Computational Mathematics',
+  'Materials Science',
+  'Cognitive Science',
+  'Biochemistry',
+  'Geophysics',
+  'Epidemiology',
+  'Behavioral Economics',
+  'Information Theory',
+  'Robotics Engineering',
+  'Pharmacology',
+  'Crystallography',
+  'Fluid Dynamics',
+  'Social Network Analysis',
+  'Proteomics',
+  'Game Theory',
+  'Synthetic Biology',
+  'Metamaterials',
+  'Complexity Science',
+  'Space Technology'
+] as const;
+
+export type ManualQuestionCategory = typeof MANUAL_QUESTION_CATEGORIES[number];
