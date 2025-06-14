@@ -17,10 +17,11 @@ export const convertToCountryType = (supabaseCountries: any[]): Country[] => {
     // Find matching country in static data for position and code
     const staticCountry = countries.find(c => c.name === country.name);
     
-    // Filter and cast categories to valid QuestionCategory values
-    const validCategories = (country.categories || [])
-      .filter((cat: string) => VALID_CATEGORIES.includes(cat as QuestionCategory))
-      .map((cat: string) => cat as QuestionCategory);
+    // Filter and cast categories to valid QuestionCategory values with proper type assertion
+    const validCategories: QuestionCategory[] = (country.categories || [])
+      .filter((cat: any): cat is QuestionCategory => 
+        typeof cat === 'string' && VALID_CATEGORIES.includes(cat as QuestionCategory)
+      );
     
     return {
       id: country.id,
