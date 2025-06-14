@@ -8,7 +8,7 @@ import { TemplateService } from "./templateService";
 
 // Re-export types for backward compatibility
 export type { Country } from "./countryService";
-export type { Question } from "./questionService";
+export type { Question } from "./question/questionTypes";
 export type { AuditResult } from "./auditService";
 
 export class QuizService {
