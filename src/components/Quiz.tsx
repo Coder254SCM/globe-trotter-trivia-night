@@ -110,7 +110,7 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
     }, 1000);
     
     return () => clearInterval(timer);
-  }, [currentQuestionIndex, currentQuestion?.difficulty, isMobile, isAnswered]);
+  }, [currentQuestionIndex, currentQuestion?.difficulty, isMobile]);
 
   const handleTimeUp = useCallback(() => {
     console.log('⏰ Time up! Auto-selecting wrong answer');
@@ -121,17 +121,21 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
   }, [currentQuestion]);
 
   const handleChoiceClick = useCallback((choiceId: string) => {
+    // Prevent multiple selections
     if (isAnswered) {
-      console.log('⚠️ Answer already given for this question');
+      console.log('⚠️ Answer already given for this question - ignoring click');
       return;
     }
     
-    console.log('🎯 Choice clicked:', choiceId);
-    setSelectedChoice(choiceId);
+    console.log('🎯 Choice clicked:', choiceId, 'Current isAnswered:', isAnswered);
+    
+    // Immediately set as answered to prevent additional clicks
     setIsAnswered(true);
+    setSelectedChoice(choiceId);
     
     // Find the selected choice
     const selectedChoiceObj = currentQuestion.choices.find(choice => choice.id === choiceId);
+    console.log('🔍 Selected choice object:', selectedChoiceObj);
     
     if (selectedChoiceObj?.isCorrect) {
       console.log('✅ Correct answer!');
