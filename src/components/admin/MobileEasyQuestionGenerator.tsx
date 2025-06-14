@@ -1,5 +1,4 @@
-import { useIsMobile } from "@/hooks/use-mobile";
-import { MobileEasyQuestionGenerator } from "./MobileEasyQuestionGenerator";
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,11 +9,9 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { CountryService } from "@/services/supabase/countryService";
 import { QuestionService } from "@/services/supabase/questionService";
-import { Loader2, BookOpen, Lightbulb } from "lucide-react";
+import { Loader2, Lightbulb } from "lucide-react";
 
-export const EasyQuestionGenerator = () => {
-  const isMobile = useIsMobile();
-  
+export const MobileEasyQuestionGenerator = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [selectedCountry, setSelectedCountry] = useState<string>("");
@@ -60,13 +57,13 @@ export const EasyQuestionGenerator = () => {
           setProgress((i / totalCountries) * 100);
 
           await generateEasyQuestionsForCountry(country, questionsPerCategory);
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 50)); // Reduced delay for mobile
         }
 
         setProgress(100);
         toast({
           title: "Success!",
-          description: `Generated easy questions for all ${totalCountries} countries!`,
+          description: `Generated questions for all ${totalCountries} countries!`,
         });
       } else {
         const country = countries.find(c => c.id === selectedCountry);
@@ -77,7 +74,7 @@ export const EasyQuestionGenerator = () => {
           setProgress(100);
           toast({
             title: "Success!",
-            description: `Generated ${questionsPerCategory * 3} easy questions for ${country.name}!`,
+            description: `Generated ${questionsPerCategory * 3} questions for ${country.name}!`,
           });
         }
       }
@@ -182,30 +179,25 @@ export const EasyQuestionGenerator = () => {
     return `Correct answer for ${country.name} - ${category}`;
   };
 
-  // On mobile, use the mobile-optimized component
-  if (isMobile) {
-    return <MobileEasyQuestionGenerator />;
-  }
-
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lightbulb className="h-5 w-5" />
-            Easy Question Generator
+    <div className="space-y-4 p-2">
+      <Card className="border-primary/20">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Lightbulb className="h-4 w-4" />
+            Easy Questions
           </CardTitle>
-          <CardDescription>
-            Generate basic, entry-level questions about countries. Perfect for beginners and quick learning.
+          <CardDescription className="text-sm">
+            Generate basic questions about countries. Perfect for beginners.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="space-y-4">
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="generation-mode">Generation Mode</Label>
+              <Label htmlFor="generation-mode" className="text-sm">Mode</Label>
               <Select value={generationMode} onValueChange={(value: "single" | "all") => setGenerationMode(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select generation mode" />
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Select mode" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="single">Single Country</SelectItem>
@@ -216,12 +208,12 @@ export const EasyQuestionGenerator = () => {
 
             {generationMode === "single" && (
               <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
+                <Label htmlFor="country" className="text-sm">Country</Label>
                 <Select value={selectedCountry} onValueChange={setSelectedCountry}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-10">
                     <SelectValue placeholder="Select a country" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-60">
                     {countries.map((country) => (
                       <SelectItem key={country.id} value={country.id}>
                         {country.name}
@@ -233,7 +225,7 @@ export const EasyQuestionGenerator = () => {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="questions-per-category">Questions per Category</Label>
+              <Label htmlFor="questions-per-category" className="text-sm">Questions per Category</Label>
               <Input
                 id="questions-per-category"
                 type="number"
@@ -241,9 +233,10 @@ export const EasyQuestionGenerator = () => {
                 max="20"
                 value={questionsPerCategory}
                 onChange={(e) => setQuestionsPerCategory(parseInt(e.target.value) || 10)}
+                className="h-10"
               />
-              <p className="text-sm text-muted-foreground">
-                Total questions: {questionsPerCategory * 3} (3 categories)
+              <p className="text-xs text-muted-foreground">
+                Total: {questionsPerCategory * 3} questions
               </p>
             </div>
           </div>
@@ -253,50 +246,51 @@ export const EasyQuestionGenerator = () => {
               <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span className="text-sm">
-                  {currentCountry ? `Generating for ${currentCountry}...` : "Starting generation..."}
+                  {currentCountry ? `Generating for ${currentCountry}...` : "Starting..."}
                 </span>
               </div>
-              <Progress value={progress} className="w-full" />
+              <Progress value={progress} className="w-full h-2" />
             </div>
           )}
 
           <Button 
             onClick={generateEasyQuestions}
             disabled={isGenerating}
-            className="w-full"
+            className="w-full h-11"
+            size="lg"
           >
             {isGenerating ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <Lightbulb className="mr-2 h-4 w-4" />
             )}
-            Generate Easy Questions
+            Generate Questions
           </Button>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Easy Question Categories</CardTitle>
+      <Card className="border-primary/20">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg">Categories</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <h4 className="font-semibold">Geography</h4>
-              <p className="text-sm text-muted-foreground">
-                Capital cities, continents, basic location facts, currencies
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <h4 className="font-medium text-sm">Geography</h4>
+              <p className="text-xs text-muted-foreground">
+                Capitals, continents, basic facts
               </p>
             </div>
-            <div className="space-y-2">
-              <h4 className="font-semibold">History</h4>
-              <p className="text-sm text-muted-foreground">
-                Independence dates, famous leaders, major historical events
+            <div className="space-y-1">
+              <h4 className="font-medium text-sm">History</h4>
+              <p className="text-xs text-muted-foreground">
+                Independence, leaders, events
               </p>
             </div>
-            <div className="space-y-2">
-              <h4 className="font-semibold">Culture</h4>
-              <p className="text-sm text-muted-foreground">
-                Traditional foods, national symbols, famous landmarks
+            <div className="space-y-1">
+              <h4 className="font-medium text-sm">Culture</h4>
+              <p className="text-xs text-muted-foreground">
+                Food, symbols, landmarks
               </p>
             </div>
           </div>

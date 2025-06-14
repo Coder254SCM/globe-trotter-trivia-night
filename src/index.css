@@ -44,6 +44,33 @@
 
   body {
     @apply bg-background text-foreground;
+    /* Performance optimizations */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    body {
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    
+    /* Reduce animations on mobile for performance */
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Improve touch targets on mobile */
+  @media (max-width: 768px) {
+    button, [role="button"], input, select, textarea {
+      min-height: 44px;
+      min-width: 44px;
+    }
   }
 }
 
@@ -54,6 +81,34 @@
   
   .glow-accent {
     filter: drop-shadow(0 0 8px theme('colors.accent.DEFAULT'));
+  }
+
+  /* Mobile-specific utilities */
+  .touch-action-none {
+    touch-action: none;
+  }
+  
+  .touch-action-pan-y {
+    touch-action: pan-y;
+  }
+  
+  .touch-action-manipulation {
+    touch-action: manipulation;
+  }
+
+  /* Performance optimizations */
+  .will-change-transform {
+    will-change: transform;
+  }
+  
+  .will-change-opacity {
+    will-change: opacity;
+  }
+  
+  .gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
   }
 }
 
@@ -77,6 +132,9 @@
   width: 100%;
   position: relative;
   overflow: hidden;
+  /* Performance optimizations */
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .star {
@@ -85,4 +143,17 @@
   height: 2px;
   background-color: white;
   border-radius: 50%;
+}
+
+/* Mobile-specific globe optimizations */
+@media (max-width: 768px) {
+  .globe-container {
+    /* Reduce complexity on mobile */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  
+  .star {
+    display: none; /* Hide stars on mobile for performance */
+  }
 }
