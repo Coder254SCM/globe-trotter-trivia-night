@@ -11,7 +11,8 @@ import {
   FileText,
   Search,
   Settings,
-  BarChart3
+  BarChart3,
+  UserCheck
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -53,10 +54,10 @@ export const ProductionDashboard = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">AI Service</p>
-              <p className="text-2xl font-bold text-red-600">Offline</p>
+              <p className="text-sm font-medium text-muted-foreground">Community System</p>
+              <p className="text-2xl font-bold text-green-600">Active</p>
             </div>
-            <Brain className="h-8 w-8 text-red-600" />
+            <Users className="h-8 w-8 text-green-600" />
           </div>
         </Card>
       </div>
@@ -81,10 +82,10 @@ export const ProductionDashboard = () => {
                 Manual Hard Questions
               </Button>
             </Link>
-            <Link to="/admin/hard-questions">
+            <Link to="/admin/moderation">
               <Button className="w-full justify-start" variant="outline">
-                <Brain className="h-4 w-4 mr-2" />
-                AI Hard Questions (Offline)
+                <UserCheck className="h-4 w-4 mr-2" />
+                Community Moderation
               </Button>
             </Link>
           </div>
@@ -98,7 +99,7 @@ export const ProductionDashboard = () => {
           <div className="space-y-3">
             <Button className="w-full justify-start" variant="outline">
               <Database className="h-4 w-4 mr-2" />
-              Database Operations
+              Rotation Management
             </Button>
             <Button className="w-full justify-start" variant="outline">
               <Users className="h-4 w-4 mr-2" />
@@ -122,22 +123,22 @@ export const ProductionDashboard = () => {
               <Badge variant="default">Active</Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm">Manual Question Generator</span>
+              <span className="text-sm">Community Questions</span>
               <Badge variant="default">Available</Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm">User Authentication</span>
+              <span className="text-sm">Monthly Rotation</span>
               <Badge variant="default">Enabled</Badge>
             </div>
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm">AI Question Service</span>
-              <Badge variant="destructive">Offline</Badge>
+              <span className="text-sm">Question Moderation</span>
+              <Badge variant="default">Active</Badge>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm">Real-time Updates</span>
-              <Badge variant="default">Active</Badge>
+              <span className="text-sm">User Submissions</span>
+              <Badge variant="default">Open</Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">Game Engine</span>

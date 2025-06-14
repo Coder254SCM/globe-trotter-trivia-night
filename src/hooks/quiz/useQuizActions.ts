@@ -1,7 +1,7 @@
 
 import { useToast } from "@/hooks/use-toast";
 import { QuestionService } from "@/services/supabase/questionService";
-import { supabase } from "@/integrations/supabase/client";
+import { RotationService } from "@/services/supabase/rotationService";
 import { Country } from "@/types/quiz";
 import { QuizManagerActions } from "./types";
 
@@ -53,57 +53,37 @@ export const useQuizActions = ({
     
     if (targetCountry) {
       try {
-        console.log(`🎯 Loading ${targetCount} questions for ${targetCountry.name} from Supabase only`);
+        console.log(`🎯 Loading ${targetCount} questions for ${targetCountry.name} with rotation system`);
         
-        // Load questions for the selected country from Supabase ONLY
-        const questions = await QuestionService.getQuestions(
+        // Use new rotation service to get current month questions (includes community questions)
+        const questions = await RotationService.getCurrentMonthQuestions(
           targetCountry.id, 
           targetCountry.difficulty || 'medium', 
           targetCount
         );
         
         if (questions.length === 0) {
-          // Try different difficulties if no questions found
-          const difficulties = ['easy', 'medium', 'hard'];
-          let foundQuestions = [];
-          
-          for (const difficulty of difficulties) {
-            foundQuestions = await QuestionService.getQuestions(
-              targetCountry.id, 
-              difficulty, 
-              targetCount
-            );
-            if (foundQuestions.length > 0) {
-              console.log(`✅ Found ${foundQuestions.length} ${difficulty} questions for ${targetCountry.name}`);
-              break;
-            }
-          }
-          
-          if (foundQuestions.length === 0) {
-            toast({
-              title: "No Questions Available",
-              description: `No questions found for ${targetCountry.name} in the database. Please use the admin panel to generate questions first.`,
-              variant: "destructive",
-            });
-            return;
-          }
-          
-          setQuizQuestions(foundQuestions);
-          setShowQuiz(true);
-          setQuizResult(null);
+          toast({
+            title: "No Questions Available",
+            description: `No questions found for ${targetCountry.name}. Please check back later or try the manual question generator.`,
+            variant: "destructive",
+          });
           return;
         }
         
-        setQuizQuestions(questions);
+        // Transform to frontend format
+        const transformedQuestions = questions.map(q => QuestionService.transformToFrontendQuestion(q));
+        
+        setQuizQuestions(transformedQuestions);
         setShowQuiz(true);
         setQuizResult(null);
-        console.log(`✅ Loaded ${questions.length} questions for ${targetCountry.name} from Supabase`);
+        console.log(`✅ Loaded ${questions.length} questions for ${targetCountry.name} (including community questions)`);
         
       } catch (error) {
-        console.error('Failed to load quiz questions from Supabase:', error);
+        console.error('Failed to load quiz questions:', error);
         toast({
           title: "Database Error",
-          description: "Failed to load questions from the database. Please try again.",
+          description: "Failed to load questions. Please try again.",
           variant: "destructive",
         });
       }

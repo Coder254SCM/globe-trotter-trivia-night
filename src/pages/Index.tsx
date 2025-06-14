@@ -27,6 +27,7 @@ export default function Index() {
     return (
       <QuizSettings
         countryName={selectedCountry.name}
+        countryId={selectedCountry.id}
         onStartQuiz={handleStartQuizWithCount}
         onBack={handleBackToGlobe}
       />

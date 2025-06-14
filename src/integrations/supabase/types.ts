@@ -9,6 +9,83 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      community_questions: {
+        Row: {
+          category: string
+          correct_answer: string
+          country_id: string
+          created_at: string | null
+          difficulty: string
+          explanation: string | null
+          id: string
+          moderated_at: string | null
+          moderated_by: string | null
+          moderation_notes: string | null
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          status: string | null
+          submitted_by: string | null
+          text: string
+          updated_at: string | null
+          votes_down: number | null
+          votes_up: number | null
+        }
+        Insert: {
+          category: string
+          correct_answer: string
+          country_id: string
+          created_at?: string | null
+          difficulty?: string
+          explanation?: string | null
+          id?: string
+          moderated_at?: string | null
+          moderated_by?: string | null
+          moderation_notes?: string | null
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          status?: string | null
+          submitted_by?: string | null
+          text: string
+          updated_at?: string | null
+          votes_down?: number | null
+          votes_up?: number | null
+        }
+        Update: {
+          category?: string
+          correct_answer?: string
+          country_id?: string
+          created_at?: string | null
+          difficulty?: string
+          explanation?: string | null
+          id?: string
+          moderated_at?: string | null
+          moderated_by?: string | null
+          moderation_notes?: string | null
+          option_a?: string
+          option_b?: string
+          option_c?: string
+          option_d?: string
+          status?: string | null
+          submitted_by?: string | null
+          text?: string
+          updated_at?: string | null
+          votes_down?: number | null
+          votes_up?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_questions_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       countries: {
         Row: {
           area_km2: number | null
@@ -204,6 +281,73 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      question_rotations: {
+        Row: {
+          country_id: string
+          created_at: string | null
+          id: string
+          questions_generated: number | null
+          rotation_completed: boolean | null
+          rotation_month: string
+        }
+        Insert: {
+          country_id: string
+          created_at?: string | null
+          id?: string
+          questions_generated?: number | null
+          rotation_completed?: boolean | null
+          rotation_month: string
+        }
+        Update: {
+          country_id?: string
+          created_at?: string | null
+          id?: string
+          questions_generated?: number | null
+          rotation_completed?: boolean | null
+          rotation_month?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_rotations_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      question_votes: {
+        Row: {
+          created_at: string | null
+          id: string
+          question_id: string | null
+          user_id: string | null
+          vote_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          question_id?: string | null
+          user_id?: string | null
+          vote_type: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          question_id?: string | null
+          user_id?: string | null
+          vote_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_votes_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "community_questions"
             referencedColumns: ["id"]
           },
         ]

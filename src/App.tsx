@@ -10,6 +10,7 @@ import Admin from "./pages/Admin";
 import HardQuestions from "./pages/HardQuestions";
 import ManualHardQuestions from "./pages/ManualHardQuestions";
 import QuestionAudit from "./pages/QuestionAudit";
+import Moderation from "./pages/Moderation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/admin/hard-questions" element={<HardQuestions />} />
             <Route path="/admin/manual-hard-questions" element={<ManualHardQuestions />} />
             <Route path="/admin/question-audit" element={<QuestionAudit />} />
+            <Route path="/admin/moderation" element={<Moderation />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
