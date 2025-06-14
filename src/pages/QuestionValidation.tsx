@@ -1,5 +1,5 @@
 
-import { QuestionValidationDashboard } from "@/components/admin/QuestionValidationDashboard";
+import QuestionValidationDashboard from "@/components/admin/QuestionValidationDashboard";
 
 export default function QuestionValidation() {
   return (
