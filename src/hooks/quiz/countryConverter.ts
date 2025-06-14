@@ -1,4 +1,3 @@
-
 import { Country, QuestionCategory } from "@/types/quiz";
 import { Country as SupabaseCountry } from "@/services/supabase/quizService";
 import countries from "@/data/countries";
@@ -18,11 +17,11 @@ export const convertToCountryType = (supabaseCountries: any[]): Country[] => {
     const staticCountry = countries.find(c => c.name === country.name);
     
     // Filter and cast categories to valid QuestionCategory values with proper type assertion
-    const validCategories: QuestionCategory[] = (country.categories || [])
+    const validCategories = ((country.categories || [])
       .filter((cat: any): cat is string => typeof cat === 'string')
       .filter((cat: string): cat is QuestionCategory => 
         VALID_CATEGORIES.includes(cat as QuestionCategory)
-      );
+      )) as QuestionCategory[];
     
     return {
       id: country.id,
@@ -57,9 +56,10 @@ export const convertToSupabaseCountry = (country: Country): SupabaseCountry => {
 // Convert raw Supabase data to SupabaseCountry format with proper typing
 export const convertRawToSupabaseCountry = (countryData: any): SupabaseCountry => {
   // Filter categories to valid QuestionCategory values, then convert to string[]
-  const validCategoriesAsStrings: string[] = (countryData.categories || [])
+  const validCategories = ((countryData.categories || [])
     .filter((cat: any): cat is string => typeof cat === 'string')
-    .filter((cat: string) => VALID_CATEGORIES.includes(cat as QuestionCategory));
+    .filter((cat: string): cat is QuestionCategory => VALID_CATEGORIES.includes(cat as QuestionCategory))
+  ) as QuestionCategory[];
 
   return {
     id: countryData.id,
@@ -71,7 +71,7 @@ export const convertRawToSupabaseCountry = (countryData: any): SupabaseCountry =
     latitude: countryData.latitude || 0,
     longitude: countryData.longitude || 0,
     flag_url: countryData.flag_url,
-    categories: validCategoriesAsStrings, // This is correctly typed as string[]
+    categories: validCategories,
     difficulty: countryData.difficulty
   };
 };
