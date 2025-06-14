@@ -474,6 +474,44 @@ export type Database = {
           },
         ]
       }
+      user_challenge_attempts: {
+        Row: {
+          challenge_id: string
+          completed_at: string | null
+          id: string
+          questions_correct: number | null
+          score: number
+          total_questions: number | null
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          completed_at?: string | null
+          id?: string
+          questions_correct?: number | null
+          score?: number
+          total_questions?: number | null
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          completed_at?: string | null
+          id?: string
+          questions_correct?: number | null
+          score?: number
+          total_questions?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_challenge_attempts_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_profiles: {
         Row: {
           avatar_url: string | null
@@ -524,15 +562,69 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      weekly_challenges: {
+        Row: {
+          created_at: string | null
+          id: string
+          participants: number | null
+          question_ids: string[]
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          participants?: number | null
+          question_ids: string[]
+          week_end: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          participants?: number | null
+          question_ids?: string[]
+          week_end?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -647,6 +739,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const

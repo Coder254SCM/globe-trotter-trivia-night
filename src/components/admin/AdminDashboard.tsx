@@ -13,7 +13,8 @@ import {
   GraduationCap,
   Brain,
   UserCheck,
-  AlertTriangle
+  AlertTriangle,
+  Lightbulb
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -29,9 +30,9 @@ export const AdminDashboard = () => {
     },
     {
       title: "Easy Questions",
-      description: "Generate basic template questions for all countries",
-      icon: BookOpen,
-      href: "/admin/hard-questions",
+      description: "Generate basic template questions for beginners",
+      icon: Lightbulb,
+      href: "/admin/easy-questions",
       variant: "secondary" as const,
       status: "Ready"
     },
@@ -131,7 +132,7 @@ export const AdminDashboard = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <div className="text-2xl font-bold text-green-600">195</div>
               <div className="text-sm text-green-700">Countries</div>
@@ -141,8 +142,12 @@ export const AdminDashboard = () => {
               <div className="text-sm text-blue-700">Easy/Medium/Hard</div>
             </div>
             <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <div className="text-2xl font-bold text-purple-600">Active</div>
-              <div className="text-sm text-purple-700">Community System</div>
+              <div className="text-2xl font-bold text-purple-600">Weekly</div>
+              <div className="text-sm text-purple-700">Challenges</div>
+            </div>
+            <div className="text-center p-4 bg-orange-50 rounded-lg">
+              <div className="text-2xl font-bold text-orange-600">Ultimate</div>
+              <div className="text-sm text-orange-700">Quiz System</div>
             </div>
           </div>
         </CardContent>
