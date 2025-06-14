@@ -18,12 +18,18 @@ export class AIService {
       const { data, error } = await supabase.functions.invoke('ai-proxy', {
         body: { 
           prompt: "Test connection",
-          model: "meta-llama/llama-3.1-8b-instruct:free"
+          model: "mistralai/devstral-small-2505:free"
         }
       });
       
       if (error) {
         console.warn('❌ AI Proxy not available:', error.message);
+        return false;
+      }
+      
+      // Check for rate limit errors in the response
+      if (data && data.error && data.error.includes('Rate limit exceeded')) {
+        console.warn('❌ AI service rate limited');
         return false;
       }
       
@@ -49,8 +55,8 @@ export class AIService {
       // Check if AI service is available first
       const isAvailable = await this.isOpenRouterAvailable();
       if (!isAvailable) {
-        console.log('🔄 AI service unavailable, using fallback questions...');
-        return this.generateFallbackQuestions(country, difficulty, count);
+        console.log('🔄 AI service unavailable (likely rate limited), using enhanced fallback questions...');
+        return this.generateEnhancedFallbackQuestions(country, difficulty, count);
       }
 
       const prompt = this.buildPrompt(country, difficulty, count);
@@ -58,18 +64,24 @@ export class AIService {
       const { data, error } = await supabase.functions.invoke('ai-proxy', {
         body: { 
           prompt,
-          model: "meta-llama/llama-3.1-8b-instruct:free"
+          model: "mistralai/devstral-small-2505:free"
         }
       });
 
       if (error) {
         console.error(`❌ AI Proxy error for ${country.name}:`, error.message);
-        return this.generateFallbackQuestions(country, difficulty, count);
+        return this.generateEnhancedFallbackQuestions(country, difficulty, count);
+      }
+
+      // Check for rate limit in response data
+      if (data && data.error && data.error.includes('Rate limit exceeded')) {
+        console.warn(`⏰ Rate limit hit for ${country.name}, using enhanced fallback`);
+        return this.generateEnhancedFallbackQuestions(country, difficulty, count);
       }
 
       if (!data || !data.choices || !data.choices[0]) {
         console.error(`❌ Invalid AI response for ${country.name}`);
-        return this.generateFallbackQuestions(country, difficulty, count);
+        return this.generateEnhancedFallbackQuestions(country, difficulty, count);
       }
 
       const questions = this.parseQuestionsFromResponse(
@@ -86,7 +98,7 @@ export class AIService {
       return questions;
     } catch (error) {
       console.error(`❌ AI generation failed for ${country.name}:`, error);
-      const fallbackQuestions = this.generateFallbackQuestions(country, difficulty, count);
+      const fallbackQuestions = this.generateEnhancedFallbackQuestions(country, difficulty, count);
       
       // Save fallback questions to Supabase as well
       await this.saveQuestionsToSupabase(fallbackQuestions, country, difficulty);
@@ -191,19 +203,19 @@ Return only a JSON array of questions. Ensure questions match the specified diff
       }));
     } catch (error) {
       console.error('Failed to parse AI response:', error);
-      return this.generateFallbackQuestions(country, difficulty, 5);
+      return this.generateEnhancedFallbackQuestions(country, difficulty, 5);
     }
   }
 
   /**
-   * Generate enhanced fallback questions when AI fails
+   * Generate enhanced fallback questions with better variety and quality
    */
-  private static generateFallbackQuestions(
+  private static generateEnhancedFallbackQuestions(
     country: Country,
     difficulty: string,
     count: number
   ): Question[] {
-    console.log(`🔧 Generating ${count} fallback questions for ${country.name} (${difficulty})`);
+    console.log(`🔧 Generating ${count} enhanced fallback questions for ${country.name} (${difficulty})`);
     
     const templates = {
       easy: [
@@ -229,6 +241,28 @@ Return only a JSON array of questions. Ensure questions match the specified diff
             `About ${Math.round(country.population / 1000000) / 2} million`,
             `About ${Math.round(country.population / 1000000) * 1.5} million`
           ]
+        },
+        {
+          question: `${country.name} is known for which of these characteristics?`,
+          correct: `Located in ${country.continent}`,
+          category: 'Geography',
+          options: [
+            `Located in ${country.continent}`,
+            'Being landlocked',
+            'Having no government',
+            'Being uninhabited'
+          ]
+        },
+        {
+          question: `What is a basic fact about ${country.name}?`,
+          correct: `Its capital is ${country.capital}`,
+          category: 'Geography',
+          options: [
+            `Its capital is ${country.capital}`,
+            'It has no borders',
+            'It floats on water',
+            'It changes location yearly'
+          ]
         }
       ],
       medium: [
@@ -252,6 +286,17 @@ Return only a JSON array of questions. Ensure questions match the specified diff
             `${Math.round(country.population / country.area_km2 * 1.5)} people per km²`,
             `${Math.round(country.population / country.area_km2 * 0.6)} people per km²`,
             `${Math.round(country.population / country.area_km2 * 2.1)} people per km²`
+          ]
+        },
+        {
+          question: `Based on its location in ${country.continent}, what can be inferred about ${country.name}?`,
+          correct: `It shares regional characteristics with other ${country.continent} countries`,
+          category: 'Geography',
+          options: [
+            `It shares regional characteristics with other ${country.continent} countries`,
+            'It has identical laws to all neighbors',
+            'It controls all other countries in the region',
+            'It has no cultural connections to the region'
           ]
         }
       ],
@@ -277,6 +322,17 @@ Return only a JSON array of questions. Ensure questions match the specified diff
             `${Math.round(country.area_km2 * 0.95).toLocaleString()} km²`,
             `${Math.round(country.area_km2 * 1.15).toLocaleString()} km²`
           ]
+        },
+        {
+          question: `What is the population-to-area ratio coefficient for ${country.name}?`,
+          correct: `${(country.population / country.area_km2).toFixed(3)} people/km²`,
+          category: 'Demographics',
+          options: [
+            `${(country.population / country.area_km2).toFixed(3)} people/km²`,
+            `${(country.population / country.area_km2 * 1.1).toFixed(3)} people/km²`,
+            `${(country.population / country.area_km2 * 0.9).toFixed(3)} people/km²`,
+            `${(country.population / country.area_km2 * 1.2).toFixed(3)} people/km²`
+          ]
         }
       ]
     };
@@ -285,7 +341,7 @@ Return only a JSON array of questions. Ensure questions match the specified diff
     const questionsToGenerate = Math.min(count, selectedTemplates.length);
     
     return selectedTemplates.slice(0, questionsToGenerate).map((template, index) => ({
-      id: `fallback-${country.id}-${difficulty}-${Date.now()}-${index}`,
+      id: `enhanced-fallback-${country.id}-${difficulty}-${Date.now()}-${index}`,
       type: 'multiple-choice' as const,
       text: template.question,
       choices: template.options.map((option, i) => ({
@@ -294,7 +350,7 @@ Return only a JSON array of questions. Ensure questions match the specified diff
         isCorrect: option === template.correct
       })),
       category: template.category as any,
-      explanation: `This is a ${difficulty} level question about ${country.name}. ${template.correct} is the correct answer based on official country data.`,
+      explanation: `This is a ${difficulty} level question about ${country.name}. ${template.correct} is the correct answer based on official country data. (Generated as fallback due to AI service rate limits)`,
       difficulty: difficulty as any,
       imageUrl: undefined
     }));
@@ -403,21 +459,23 @@ Return only a JSON array of questions. Ensure questions match the specified diff
     return `
 🚀 **AI Service Setup Instructions**
 
-The AI service uses Supabase Edge Functions for secure API access.
+**Current Status**: Rate limited on OpenRouter's free tier
 
-**Current Status**: The ai-proxy Edge Function needs to be deployed and configured.
+**Solutions**:
+1. **Add Credits** (Recommended): Add $10 to your OpenRouter account for 1000 requests/day
+2. **Wait for Reset**: Free limit resets daily
+3. **Use Fallback**: Enhanced fallback questions are generated automatically
 
-**Setup Steps**:
-1. Deploy the ai-proxy Edge Function to your Supabase project
-2. Set OPENROUTER_API_KEY in Supabase Edge Function secrets
-3. Get your API key from https://openrouter.ai
+**OpenRouter Account**: https://openrouter.ai/credits
 
 **Fallback Mode**: 
-- When AI is unavailable, the system automatically generates fallback questions
-- All countries remain playable with basic questions
-- Questions are still saved to the database for consistency
+- When AI is rate limited, the system generates enhanced fallback questions
+- All countries remain playable with quality questions
+- Questions are saved to the database for consistency
 
-**Edge Function Code**: Check supabase/functions/ai-proxy/index.ts
+**Rate Limits**: 
+- Free tier: 50 requests per day across all models
+- Paid tier: 1000+ requests per day with $10 credits
     `;
   }
 }
