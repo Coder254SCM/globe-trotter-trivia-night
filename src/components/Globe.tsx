@@ -49,14 +49,15 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
 
   const handleStartQuiz = useCallback((difficulty: DifficultyLevel) => {
     if (selectedCountry) {
-      console.log('🎯 Starting quiz for:', selectedCountry.name, 'with difficulty:', difficulty);
+      console.log('🎯 Globe: Starting quiz for:', selectedCountry.name, 'with difficulty:', difficulty);
       
       const countryWithDifficulty = {
         ...selectedCountry,
         difficulty: difficulty
       };
       
-      // Pass the country with the selected difficulty to the parent
+      // Close the country card and pass to parent
+      setSelectedCountry(null);
       onCountrySelect(countryWithDifficulty);
     }
   }, [selectedCountry, onCountrySelect]);

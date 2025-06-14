@@ -40,6 +40,11 @@ export const CountryCard = ({ country, onClose, onStartQuiz }: CountryCardProps)
     }
   };
 
+  const handleStartQuiz = () => {
+    console.log('🎯 CountryCard: Starting quiz with difficulty:', selectedDifficulty);
+    onStartQuiz(selectedDifficulty);
+  };
+
   return (
     <div className="absolute inset-0 flex items-center justify-center z-10 animate-fade-in">
       <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" onClick={onClose}></div>
@@ -112,10 +117,10 @@ export const CountryCard = ({ country, onClose, onStartQuiz }: CountryCardProps)
         </div>
         
         <Button 
-          onClick={() => onStartQuiz(selectedDifficulty)} 
+          onClick={handleStartQuiz}
           className={`w-full ${getDifficultyColor(selectedDifficulty)} hover:opacity-90 transition-opacity`}
         >
-          Start {country.name} Quiz ({selectedDifficulty})
+          Continue to Quiz Settings
         </Button>
         
         <Button 
