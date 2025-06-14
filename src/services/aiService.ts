@@ -1,4 +1,3 @@
-
 import { Question } from "@/types/quiz";
 import { Country } from "./supabase/quizService";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +12,8 @@ export class AIService {
    */
   static async isOpenRouterAvailable(): Promise<boolean> {
     try {
+      console.log('🔍 Testing AI Proxy availability...');
+      
       // Test the edge function instead of direct API access
       const { data, error } = await supabase.functions.invoke('ai-proxy', {
         body: { 
@@ -22,28 +23,38 @@ export class AIService {
       });
       
       if (error) {
-        console.warn('AI Proxy not available:', error);
+        console.warn('❌ AI Proxy not available:', error.message);
         return false;
       }
       
+      console.log('✅ AI Proxy is available');
       return true;
     } catch (error) {
-      console.warn('AI service not available:', error);
+      console.warn('❌ AI service connection failed:', error);
       return false;
     }
   }
 
   /**
-   * Generate questions using Supabase Edge Function
+   * Generate questions using Supabase Edge Function with better error handling
    */
   static async generateQuestions(
     country: Country,
     difficulty: 'easy' | 'medium' | 'hard',
     count: number = 10
   ): Promise<Question[]> {
-    const prompt = this.buildPrompt(country, difficulty, count);
+    console.log(`🤖 Generating ${count} ${difficulty} questions for ${country.name}...`);
     
     try {
+      // Check if AI service is available first
+      const isAvailable = await this.isOpenRouterAvailable();
+      if (!isAvailable) {
+        console.log('🔄 AI service unavailable, using fallback questions...');
+        return this.generateFallbackQuestions(country, difficulty, count);
+      }
+
+      const prompt = this.buildPrompt(country, difficulty, count);
+      
       const { data, error } = await supabase.functions.invoke('ai-proxy', {
         body: { 
           prompt,
@@ -52,11 +63,13 @@ export class AIService {
       });
 
       if (error) {
-        throw new Error(`AI Proxy error: ${error.message}`);
+        console.error(`❌ AI Proxy error for ${country.name}:`, error.message);
+        return this.generateFallbackQuestions(country, difficulty, count);
       }
 
       if (!data || !data.choices || !data.choices[0]) {
-        throw new Error('Invalid response from AI service');
+        console.error(`❌ Invalid AI response for ${country.name}`);
+        return this.generateFallbackQuestions(country, difficulty, count);
       }
 
       const questions = this.parseQuestionsFromResponse(
@@ -65,12 +78,14 @@ export class AIService {
         difficulty
       );
       
+      console.log(`✅ Generated ${questions.length} AI questions for ${country.name}`);
+      
       // Save generated questions to Supabase
       await this.saveQuestionsToSupabase(questions, country, difficulty);
       
       return questions;
     } catch (error) {
-      console.error('AI generation failed:', error);
+      console.error(`❌ AI generation failed for ${country.name}:`, error);
       const fallbackQuestions = this.generateFallbackQuestions(country, difficulty, count);
       
       // Save fallback questions to Supabase as well
@@ -181,13 +196,15 @@ Return only a JSON array of questions. Ensure questions match the specified diff
   }
 
   /**
-   * Generate fallback questions when AI fails
+   * Generate enhanced fallback questions when AI fails
    */
   private static generateFallbackQuestions(
     country: Country,
     difficulty: string,
     count: number
   ): Question[] {
+    console.log(`🔧 Generating ${count} fallback questions for ${country.name} (${difficulty})`);
+    
     const templates = {
       easy: [
         {
@@ -201,9 +218,7 @@ Return only a JSON array of questions. Ensure questions match the specified diff
           correct: country.continent,
           category: 'Geography',
           options: [country.continent, 'Asia', 'Europe', 'Africa']
-        }
-      ],
-      medium: [
+        },
         {
           question: `What is the approximate population of ${country.name}?`,
           correct: `About ${Math.round(country.population / 1000000)} million`,
@@ -216,24 +231,60 @@ Return only a JSON array of questions. Ensure questions match the specified diff
           ]
         }
       ],
-      hard: [
+      medium: [
         {
-          question: `What is the exact population density of ${country.name} per square kilometer?`,
-          correct: `${Math.round(country.population / country.area_km2)} people/km²`,
+          question: `What is the total area of ${country.name} in square kilometers?`,
+          correct: `${country.area_km2.toLocaleString()} km²`,
+          category: 'Geography',
+          options: [
+            `${country.area_km2.toLocaleString()} km²`,
+            `${Math.round(country.area_km2 * 1.3).toLocaleString()} km²`,
+            `${Math.round(country.area_km2 * 0.7).toLocaleString()} km²`,
+            `${Math.round(country.area_km2 * 1.8).toLocaleString()} km²`
+          ]
+        },
+        {
+          question: `What is the population density of ${country.name}?`,
+          correct: `${Math.round(country.population / country.area_km2)} people per km²`,
           category: 'Demographics',
           options: [
-            `${Math.round(country.population / country.area_km2)} people/km²`,
-            `${Math.round(country.population / country.area_km2 * 1.3)} people/km²`,
-            `${Math.round(country.population / country.area_km2 * 0.8)} people/km²`,
-            `${Math.round(country.population / country.area_km2 * 1.7)} people/km²`
+            `${Math.round(country.population / country.area_km2)} people per km²`,
+            `${Math.round(country.population / country.area_km2 * 1.5)} people per km²`,
+            `${Math.round(country.population / country.area_km2 * 0.6)} people per km²`,
+            `${Math.round(country.population / country.area_km2 * 2.1)} people per km²`
+          ]
+        }
+      ],
+      hard: [
+        {
+          question: `What is the exact population of ${country.name} according to recent data?`,
+          correct: country.population.toLocaleString(),
+          category: 'Demographics',
+          options: [
+            country.population.toLocaleString(),
+            Math.round(country.population * 1.1).toLocaleString(),
+            Math.round(country.population * 0.9).toLocaleString(),
+            Math.round(country.population * 1.2).toLocaleString()
+          ]
+        },
+        {
+          question: `What is the precise area of ${country.name} in square kilometers?`,
+          correct: `${country.area_km2.toLocaleString()} km²`,
+          category: 'Geography',
+          options: [
+            `${country.area_km2.toLocaleString()} km²`,
+            `${Math.round(country.area_km2 * 1.05).toLocaleString()} km²`,
+            `${Math.round(country.area_km2 * 0.95).toLocaleString()} km²`,
+            `${Math.round(country.area_km2 * 1.15).toLocaleString()} km²`
           ]
         }
       ]
     };
 
     const selectedTemplates = templates[difficulty as keyof typeof templates] || templates.easy;
+    const questionsToGenerate = Math.min(count, selectedTemplates.length);
     
-    return selectedTemplates.slice(0, count).map((template, index) => ({
+    return selectedTemplates.slice(0, questionsToGenerate).map((template, index) => ({
       id: `fallback-${country.id}-${difficulty}-${Date.now()}-${index}`,
       type: 'multiple-choice' as const,
       text: template.question,
@@ -243,7 +294,7 @@ Return only a JSON array of questions. Ensure questions match the specified diff
         isCorrect: option === template.correct
       })),
       category: template.category as any,
-      explanation: `This is a ${difficulty} level question about ${country.name}. The correct answer demonstrates ${difficulty === 'easy' ? 'basic knowledge' : difficulty === 'medium' ? 'college-level understanding' : 'expert-level expertise'} of the country.`,
+      explanation: `This is a ${difficulty} level question about ${country.name}. ${template.correct} is the correct answer based on official country data.`,
       difficulty: difficulty as any,
       imageUrl: undefined
     }));
@@ -352,19 +403,21 @@ Return only a JSON array of questions. Ensure questions match the specified diff
     return `
 🚀 **AI Service Setup Instructions**
 
-The AI service now uses Supabase Edge Functions for secure API access.
+The AI service uses Supabase Edge Functions for secure API access.
 
-1. **Edge Function**: The ai-proxy function handles all AI requests
-2. **API Key**: Set OPENROUTER_API_KEY in Supabase Edge Function secrets
-3. **Models**: Uses meta-llama/llama-3.1-8b-instruct:free by default
+**Current Status**: The ai-proxy Edge Function needs to be deployed and configured.
 
-To set up the API key:
-1. Go to your Supabase project
-2. Navigate to Edge Functions → Settings
-3. Add OPENROUTER_API_KEY secret
-4. Get your key from https://openrouter.ai
+**Setup Steps**:
+1. Deploy the ai-proxy Edge Function to your Supabase project
+2. Set OPENROUTER_API_KEY in Supabase Edge Function secrets
+3. Get your API key from https://openrouter.ai
 
-This provides secure AI generation without exposing keys in the browser!
+**Fallback Mode**: 
+- When AI is unavailable, the system automatically generates fallback questions
+- All countries remain playable with basic questions
+- Questions are still saved to the database for consistency
+
+**Edge Function Code**: Check supabase/functions/ai-proxy/index.ts
     `;
   }
 }
