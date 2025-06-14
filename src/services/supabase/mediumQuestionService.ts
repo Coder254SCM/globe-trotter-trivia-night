@@ -1,17 +1,15 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { QuestionService } from "./questionService";
-import { ServiceCountry } from "./medium/types";
 import { QuestionGenerator } from "./medium/questionGenerator";
 
-export { ServiceCountry };
+export type { ServiceCountry } from "./medium/types";
 
 export class MediumQuestionService {
   /**
    * Generate medium questions for a country with REAL factual content
    */
   static async generateMediumQuestionsForCountry(
-    country: ServiceCountry, 
+    country: import("./medium/types").ServiceCountry, 
     questionsPerCategory: number = 15
   ): Promise<void> {
     console.log(`🎯 Generating ${questionsPerCategory * 5} REAL medium questions for ${country.name}...`);
