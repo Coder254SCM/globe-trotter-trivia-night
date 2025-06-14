@@ -50,51 +50,60 @@ export const Modern3DGlobe = ({ onCountryClick }: Modern3DGlobeProps) => {
     // Create HIGH-QUALITY Earth sphere
     const globeGeometry = new THREE.SphereGeometry(2, 128, 128); // Ultra high resolution
     
-    // Load professional Earth texture
+    // Load professional Earth texture (high-res, for realism)
     const textureLoader = new THREE.TextureLoader();
     const earthTexture = textureLoader.load(
-      '/lovable-uploads/ea2e8c03-0ad4-4868-9ddc-ba9172d51587.png',
+      '/lovable-uploads/ea2e8c03-0ad4-4868-9ddc-ba9172d51587.png', // Replace with latest highest-res you have!
       (texture) => {
-        console.log('✅ Earth texture loaded successfully');
         texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
         texture.minFilter = THREE.LinearMipmapLinearFilter;
         texture.magFilter = THREE.LinearFilter;
         texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-      },
-      undefined,
-      (error) => console.error('❌ Failed to load earth texture:', error)
+      }
     );
 
-    // Professional material with realistic properties
+    // Earth material with increased realism (shininess, specular, less gloss)
     const globeMaterial = new THREE.MeshPhongMaterial({
       map: earthTexture,
-      shininess: 0.2,
-      specular: new THREE.Color(0x111111),
-      transparent: false,
-      side: THREE.FrontSide
+      shininess: 0.1,
+      specular: new THREE.Color(0x222222),
+      transparent: false
     });
 
     const globe = new THREE.Mesh(globeGeometry, globeMaterial);
-    globe.rotation.y = Math.PI; // Proper Earth orientation
+    globe.rotation.y = Math.PI;
     globeRef.current = globe;
     scene.add(globe);
 
-    // Professional lighting setup for all continents visibility
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    // Improved lighting configuration
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); // higher intensity for natural glow
     scene.add(ambientLight);
 
-    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.2);
-    directionalLight1.position.set(10, 10, 5);
+    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1.5);
+    directionalLight1.position.set(10, 20, 10);
     directionalLight1.castShadow = true;
     scene.add(directionalLight1);
 
-    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight2.position.set(-10, -5, -5);
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 1.0);
+    directionalLight2.position.set(-10, -20, -5);
     scene.add(directionalLight2);
 
-    const pointLight = new THREE.PointLight(0xffffff, 0.6);
+    const pointLight = new THREE.PointLight(0xffffff, 0.8);
     pointLight.position.set(0, 0, 10);
     scene.add(pointLight);
+
+    // Atmospheric glow (optional, simple implementation)
+    // You can enhance further with a custom shader, but for simplicity:
+    const globeGlow = new THREE.Mesh(
+      new THREE.SphereGeometry(2.10, 128, 128),
+      new THREE.MeshBasicMaterial({
+        color: 0x7ddfff,
+        transparent: true,
+        opacity: 0.08,
+        blending: THREE.AdditiveBlending
+      })
+    );
+    scene.add(globeGlow);
 
     // Remove the hardcoded countryPositions, generate from canonical data:
     // Sample before:
