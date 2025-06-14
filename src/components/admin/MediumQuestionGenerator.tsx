@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { CountryService } from "@/services/supabase/countryService";
+import { CountryService, Country } from "@/services/supabase/countryService";
 import { MediumQuestionService } from "@/services/supabase/mediumQuestionService";
 import { Loader2, BookOpen, Globe, Zap } from "lucide-react";
 
@@ -17,7 +16,7 @@ export const MediumQuestionGenerator = () => {
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [questionsPerCategory, setQuestionsPerCategory] = useState(15);
   const [generationMode, setGenerationMode] = useState<"single" | "all">("single");
-  const [countries, setCountries] = useState<any[]>([]);
+  const [countries, setCountries] = useState<Country[]>([]);
   const [currentCountry, setCurrentCountry] = useState<string>("");
   const { toast } = useToast();
 
