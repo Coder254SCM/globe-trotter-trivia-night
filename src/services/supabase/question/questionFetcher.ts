@@ -128,8 +128,7 @@ export class QuestionFetcher {
       explanation: dbQuestion.explanation || `The correct answer is ${dbQuestion.correct_answer}.`,
       category: dbQuestion.category,
       difficulty: dbQuestion.difficulty,
-      imageUrl: dbQuestion.image_url,
-      countryName: dbQuestion.countries?.name
+      imageUrl: dbQuestion.image_url
     };
   }
 
