@@ -49,7 +49,7 @@ export class MediumQuestionService {
     
     for (const frontendCountry of countries) {
       // Convert frontend country to service country type
-      const { CountryConverter } = await import('../admin/mediumQuestions/CountryConverter');
+      const { CountryConverter } = await import('@/utils/countryConverter');
       const serviceCountry = CountryConverter.toServiceCountry(frontendCountry);
       await this.generateMediumQuestionsForCountry(serviceCountry, questionsPerCategory);
     }

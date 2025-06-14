@@ -9,7 +9,7 @@ import { BookOpen, Zap } from "lucide-react";
 import { GenerationSettings } from "./mediumQuestions/GenerationSettings";
 import { GenerationProgress } from "./mediumQuestions/GenerationProgress";
 import { CategoryInfo } from "./mediumQuestions/CategoryInfo";
-import { CountryConverter } from "./mediumQuestions/CountryConverter";
+import { CountryConverter } from "@/utils/countryConverter";
 
 interface SimpleCountry {
   id: string;
