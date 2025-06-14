@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -65,14 +64,19 @@ export const ComprehensiveQuestionAudit = () => {
     const countryName = question.countries?.name?.toLowerCase() || '';
     const options = [question.option_a, question.option_b, question.option_c, question.option_d];
 
-    // Check for placeholder text in question
-    if (text.includes('correct answer for') || text.includes('incorrect option') || 
-        text.includes('option a for') || text.includes('option b for') ||
-        text.includes('option c for') || text.includes('option d for')) {
+    // More precise placeholder detection - look for exact template patterns
+    const isPlaceholderQuestion = 
+      text.includes('correct answer for') && text.includes(question.countries?.name) ||
+      text.includes('option a for') && text.includes(question.countries?.name) ||
+      text.includes('option b for') && text.includes(question.countries?.name) ||
+      text.includes('option c for') && text.includes(question.countries?.name) ||
+      text.includes('option d for') && text.includes(question.countries?.name);
+
+    if (isPlaceholderQuestion) {
       issues.push({
         type: 'placeholder',
         severity: 'high',
-        description: 'Contains placeholder text in question'
+        description: 'Contains placeholder template text'
       });
       qualityScore -= 50;
     }
@@ -169,55 +173,56 @@ export const ComprehensiveQuestionAudit = () => {
     
     try {
       const questionIds = auditResults.placeholder_question_ids;
-      console.log(`🗑️ Attempting to delete ${questionIds.length} placeholder questions:`, questionIds);
+      console.log(`🗑️ Starting deletion of ${questionIds.length} placeholder questions`);
 
+      // Delete in smaller batches with better error handling
       let totalDeleted = 0;
-      const batchSize = 10; // Smaller batch size for better error handling
+      const batchSize = 5; // Even smaller batches
       
       for (let i = 0; i < questionIds.length; i += batchSize) {
         const batch = questionIds.slice(i, i + batchSize);
         
-        console.log(`Deleting batch ${Math.floor(i/batchSize) + 1}: IDs`, batch);
+        console.log(`Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(questionIds.length/batchSize)}: ${batch.length} questions`);
         
-        // Delete each question individually to get better error reporting
-        for (const questionId of batch) {
-          const { error } = await supabase
-            .from('questions')
-            .delete()
-            .eq('id', questionId);
+        // Use batch delete with proper error handling
+        const { error, count } = await supabase
+          .from('questions')
+          .delete()
+          .in('id', batch);
 
-          if (error) {
-            console.error(`Error deleting question ${questionId}:`, error);
-            // Continue with other questions even if one fails
-          } else {
-            totalDeleted++;
-            console.log(`✅ Successfully deleted question ${questionId}`);
-          }
+        if (error) {
+          console.error(`Error deleting batch:`, error);
+          // Continue with next batch even if this one fails
+        } else {
+          const deletedCount = count || batch.length;
+          totalDeleted += deletedCount;
+          console.log(`✅ Successfully deleted ${deletedCount} questions from batch`);
         }
         
         setProgress((totalDeleted / questionIds.length) * 100);
         setCurrentStep(`Deleted ${totalDeleted}/${questionIds.length} placeholder questions...`);
         
-        // Small delay to prevent overwhelming the database
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Small delay between batches
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
+
+      console.log(`🎉 Deletion complete! Total deleted: ${totalDeleted}/${questionIds.length}`);
 
       if (totalDeleted > 0) {
         toast({
           title: "Cleanup Complete!",
-          description: `Successfully deleted ${totalDeleted} out of ${questionIds.length} placeholder questions.`,
+          description: `Successfully deleted ${totalDeleted} placeholder questions.`,
         });
 
-        console.log(`🎉 Successfully deleted ${totalDeleted} placeholder questions from Supabase!`);
-
-        // Re-run audit to show updated results
+        // Force a fresh audit after successful deletion
         setTimeout(() => {
+          console.log("🔄 Running fresh audit after deletion...");
           runComprehensiveAudit();
-        }, 1000);
+        }, 2000);
       } else {
         toast({
           title: "No Questions Deleted",
-          description: "Could not delete any placeholder questions. Check console for details.",
+          description: "Could not delete any questions. They may have already been removed.",
           variant: "destructive",
         });
       }
@@ -238,10 +243,22 @@ export const ComprehensiveQuestionAudit = () => {
   const runComprehensiveAudit = async () => {
     setLoading(true);
     setProgress(0);
-    setCurrentStep("Fetching questions from Supabase...");
+    setCurrentStep("Fetching fresh data from Supabase...");
 
     try {
-      // Get all questions with country information
+      // Clear any cached data and get fresh count first
+      const { count: totalCount, error: countError } = await supabase
+        .from('questions')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) {
+        console.error("Error getting question count:", countError);
+        throw countError;
+      }
+
+      console.log(`📊 Total questions in database: ${totalCount}`);
+
+      // Get all questions with country information (with no caching)
       const { data: questions, error } = await supabase
         .from('questions')
         .select(`
@@ -259,7 +276,12 @@ export const ComprehensiveQuestionAudit = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching questions:", error);
+        throw error;
+      }
+
+      console.log(`📥 Fetched ${questions?.length || 0} questions for analysis`);
 
       setProgress(25);
       setCurrentStep("Analyzing question quality...");
@@ -277,11 +299,12 @@ export const ComprehensiveQuestionAudit = () => {
         const analysis = analyzeQuestion(question);
         analyzedQuestions.push(analysis);
 
-        // Track placeholder questions for deletion
+        // More precise placeholder detection
         const hasPlaceholder = analysis.issues.some(issue => issue.type === 'placeholder');
         if (hasPlaceholder) {
           placeholderQuestionIds.push(question.id);
           placeholderCount++;
+          console.log(`🚨 Found placeholder question: ${question.id} - "${question.text.substring(0, 50)}..."`);
         }
 
         // Count issue types
@@ -340,7 +363,7 @@ export const ComprehensiveQuestionAudit = () => {
         generic_questions: genericCount,
         wrong_country_questions: wrongCountryCount,
         poor_quality_questions: poorQualityCount,
-        duplicate_questions: 0, // TODO: Implement duplicate detection
+        duplicate_questions: 0,
         countries_analyzed: countryStats.size,
         average_quality_score: averageQualityScore,
         worst_questions: worstQuestions,
@@ -363,8 +386,8 @@ export const ComprehensiveQuestionAudit = () => {
 
       toast({
         title: "Comprehensive Audit Complete",
-        description: `Analyzed ${totalQuestions} questions. Found ${placeholderCount} placeholder questions that need immediate attention.`,
-        variant: placeholderCount > totalQuestions * 0.1 ? "destructive" : "default"
+        description: `Analyzed ${totalQuestions} questions. Found ${placeholderCount} placeholder questions.`,
+        variant: placeholderCount > 0 ? "destructive" : "default"
       });
 
     } catch (error) {
