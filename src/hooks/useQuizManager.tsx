@@ -53,7 +53,7 @@ export const useQuizManager = () => {
       latitude: country.position.lat,
       longitude: country.position.lng,
       flag_url: country.flagImageUrl || '',
-      categories: country.categories,
+      categories: country.categories as string[], // Convert back to string[] for AI service
       difficulty: country.difficulty
     };
   };
@@ -140,7 +140,7 @@ export const useQuizManager = () => {
         throw error;
       }
 
-      // Convert to the format expected by AIService
+      // Convert to the format expected by AIService with proper type casting
       const supabaseCountries: SupabaseCountry[] = (supabaseCountriesRaw || []).map(country => ({
         id: country.id,
         name: country.name,
@@ -151,7 +151,7 @@ export const useQuizManager = () => {
         latitude: country.latitude || 0,
         longitude: country.longitude || 0,
         flag_url: country.flag_url,
-        categories: country.categories,
+        categories: (country.categories || []) as string[], // Explicitly cast to string[]
         difficulty: country.difficulty
       }));
       
@@ -224,7 +224,7 @@ export const useQuizManager = () => {
               throw new Error('Country not found in database');
             }
 
-            // Convert to SupabaseCountry format
+            // Convert to SupabaseCountry format with proper type casting
             const supabaseCountry: SupabaseCountry = {
               id: countryData.id,
               name: countryData.name,
@@ -235,7 +235,7 @@ export const useQuizManager = () => {
               latitude: countryData.latitude || 0,
               longitude: countryData.longitude || 0,
               flag_url: countryData.flag_url,
-              categories: countryData.categories,
+              categories: (countryData.categories || []) as string[], // Explicitly cast to string[]
               difficulty: countryData.difficulty
             };
             
