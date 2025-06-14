@@ -1,15 +1,15 @@
 
-import countries from "@/data/countries";
 import { useDatabaseInit } from "./quiz/useDatabaseInit";
 import { useQuizState } from "./quiz/useQuizState";
 import { useQuizActions } from "./quiz/useQuizActions";
+import { useEnhancedCountries } from "./useEnhancedCountries";
 
 export const useQuizManager = () => {
   // Initialize database and AI questions
   useDatabaseInit();
 
-  // Use the static countries data directly - all 195 countries
-  const allCountries = countries;
+  // Use enhanced countries with 12+ categories each
+  const allCountries = useEnhancedCountries();
 
   // Quiz state management
   const {

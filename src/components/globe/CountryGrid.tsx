@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Country } from '@/types/quiz';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -110,7 +109,7 @@ export const CountryGrid = ({
                   </Badge>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Trophy className="w-3 h-3" />
-                    {country.categories.length} topics
+                    {country.categories.length} categories
                   </div>
                 </div>
 
