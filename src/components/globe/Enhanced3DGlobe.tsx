@@ -1,6 +1,7 @@
 
 import { useRef, useEffect } from 'react';
 import * as THREE from 'three';
+import countries from '@/data/countries';
 
 interface Enhanced3DGlobeProps {
   onCountryClick?: (countryId: string) => void;
@@ -11,6 +12,7 @@ export const Enhanced3DGlobe = ({ onCountryClick }: Enhanced3DGlobeProps) => {
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const globeRef = useRef<THREE.Mesh | null>(null);
+  const markersRef = useRef<THREE.Group | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -109,6 +111,55 @@ export const Enhanced3DGlobe = ({ onCountryClick }: Enhanced3DGlobeProps) => {
     const clouds = new THREE.Mesh(cloudsGeometry, cloudsMaterial);
     scene.add(clouds);
 
+    // Create country markers group
+    const markersGroup = new THREE.Group();
+    markersRef.current = markersGroup;
+    scene.add(markersGroup);
+
+    // Add country markers for all 195 countries
+    countries.forEach((country) => {
+      if (!country.position) return;
+
+      const { lat, lng } = country.position;
+      
+      // Convert lat/lng to 3D coordinates
+      const phi = (90 - lat) * (Math.PI / 180);
+      const theta = (lng + 180) * (Math.PI / 180);
+      
+      const x = -2.1 * Math.sin(phi) * Math.cos(theta);
+      const y = 2.1 * Math.cos(phi);
+      const z = 2.1 * Math.sin(phi) * Math.sin(theta);
+
+      // Create marker geometry - bright and visible
+      const markerGeometry = new THREE.SphereGeometry(0.02, 8, 8);
+      const markerMaterial = new THREE.MeshBasicMaterial({
+        color: 0x00ff88,
+        emissive: 0x004422,
+        emissiveIntensity: 0.5
+      });
+      
+      const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+      marker.position.set(x, y, z);
+      
+      // Add pulsing animation to markers
+      const animate = () => {
+        const time = Date.now() * 0.002;
+        const scale = 1 + Math.sin(time + country.name.length) * 0.3;
+        marker.scale.setScalar(scale);
+        requestAnimationFrame(animate);
+      };
+      animate();
+      
+      // Store country data for clicking
+      marker.userData = { 
+        countryId: country.id, 
+        country: country,
+        type: 'country-marker'
+      };
+      
+      markersGroup.add(marker);
+    });
+
     // Add atmospheric glow effect
     const atmosphereGeometry = new THREE.SphereGeometry(2.2, 64, 64);
     const atmosphereMaterial = new THREE.ShaderMaterial({
@@ -147,10 +198,10 @@ export const Enhanced3DGlobe = ({ onCountryClick }: Enhanced3DGlobeProps) => {
     scene.add(atmosphere);
 
     // Enhanced lighting setup for realistic illumination
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
 
-    const sunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
     sunLight.position.set(5, 3, 5);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 2048;
@@ -158,7 +209,7 @@ export const Enhanced3DGlobe = ({ onCountryClick }: Enhanced3DGlobeProps) => {
     scene.add(sunLight);
 
     // Add rim lighting for better depth perception
-    const rimLight = new THREE.DirectionalLight(0x4488ff, 0.5);
+    const rimLight = new THREE.DirectionalLight(0x4488ff, 0.3);
     rimLight.position.set(-5, 0, -2);
     scene.add(rimLight);
 
@@ -199,11 +250,15 @@ export const Enhanced3DGlobe = ({ onCountryClick }: Enhanced3DGlobeProps) => {
     const stars = new THREE.Points(starsGeometry, starsMaterial);
     scene.add(stars);
 
-    // Enhanced mouse controls with smooth interaction
+    // Enhanced mouse controls with clicking functionality
     let isDragging = false;
     let previousMousePosition = { x: 0, y: 0 };
     let rotationVelocity = { x: 0, y: 0 };
     let autoRotate = true;
+
+    // Raycaster for country clicking
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
 
     const handleMouseDown = (event: MouseEvent) => {
       isDragging = true;
@@ -225,6 +280,8 @@ export const Enhanced3DGlobe = ({ onCountryClick }: Enhanced3DGlobeProps) => {
 
       globeRef.current.rotation.x += rotationVelocity.x;
       globeRef.current.rotation.y += rotationVelocity.y;
+      markersGroup.rotation.x += rotationVelocity.x;
+      markersGroup.rotation.y += rotationVelocity.y;
 
       // Rotate clouds slightly differently for realism
       clouds.rotation.y += rotationVelocity.y * 0.8;
@@ -240,6 +297,31 @@ export const Enhanced3DGlobe = ({ onCountryClick }: Enhanced3DGlobeProps) => {
       }, 3000);
     };
 
+    const handleClick = (event: MouseEvent) => {
+      if (!onCountryClick || isDragging) return;
+
+      const rect = containerRef.current!.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(markersGroup.children);
+
+      if (intersects.length > 0) {
+        const clickedMarker = intersects[0].object;
+        if (clickedMarker.userData.type === 'country-marker') {
+          onCountryClick(clickedMarker.userData.countryId);
+          
+          // Visual feedback - scale up marker briefly
+          const originalScale = clickedMarker.scale.clone();
+          clickedMarker.scale.multiplyScalar(3);
+          setTimeout(() => {
+            clickedMarker.scale.copy(originalScale);
+          }, 300);
+        }
+      }
+    };
+
     const handleWheel = (event: WheelEvent) => {
       event.preventDefault();
       camera.position.z += event.deltaY * 0.01;
@@ -250,6 +332,7 @@ export const Enhanced3DGlobe = ({ onCountryClick }: Enhanced3DGlobeProps) => {
     containerRef.current.addEventListener('mousedown', handleMouseDown);
     containerRef.current.addEventListener('mousemove', handleMouseMove);
     containerRef.current.addEventListener('mouseup', handleMouseUp);
+    containerRef.current.addEventListener('click', handleClick);
     containerRef.current.addEventListener('wheel', handleWheel, { passive: false });
 
     // Enhanced animation loop
@@ -259,6 +342,7 @@ export const Enhanced3DGlobe = ({ onCountryClick }: Enhanced3DGlobeProps) => {
       // Auto-rotate when not interacting
       if (autoRotate && !isDragging && globeRef.current) {
         globeRef.current.rotation.y += 0.002;
+        markersGroup.rotation.y += 0.002;
         clouds.rotation.y += 0.0015; // Clouds rotate slightly faster
       }
 
@@ -269,6 +353,8 @@ export const Enhanced3DGlobe = ({ onCountryClick }: Enhanced3DGlobeProps) => {
         
         globeRef.current.rotation.x += rotationVelocity.x;
         globeRef.current.rotation.y += rotationVelocity.y;
+        markersGroup.rotation.x += rotationVelocity.x;
+        markersGroup.rotation.y += rotationVelocity.y;
         clouds.rotation.y += rotationVelocity.y * 0.8;
       }
 
@@ -308,6 +394,7 @@ export const Enhanced3DGlobe = ({ onCountryClick }: Enhanced3DGlobeProps) => {
         containerRef.current.removeEventListener('mousedown', handleMouseDown);
         containerRef.current.removeEventListener('mousemove', handleMouseMove);
         containerRef.current.removeEventListener('mouseup', handleMouseUp);
+        containerRef.current.removeEventListener('click', handleClick);
         containerRef.current.removeEventListener('wheel', handleWheel);
         
         if (renderer.domElement) {
@@ -317,7 +404,7 @@ export const Enhanced3DGlobe = ({ onCountryClick }: Enhanced3DGlobeProps) => {
       
       renderer.dispose();
     };
-  }, []);
+  }, [onCountryClick]);
 
   return (
     <div className="w-full h-screen bg-black relative">
@@ -326,18 +413,18 @@ export const Enhanced3DGlobe = ({ onCountryClick }: Enhanced3DGlobeProps) => {
       {/* Enhanced Instructions Overlay */}
       <div className="absolute top-4 left-4 text-white bg-black/70 backdrop-blur-sm p-4 rounded-lg border border-white/10">
         <h3 className="font-bold mb-2 text-blue-400">🌍 Enhanced Earth Globe</h3>
+        <p className="text-sm mb-1">• <span className="text-green-400">Green dots</span> mark countries</p>
+        <p className="text-sm mb-1">• Click any country marker to start quiz</p>
         <p className="text-sm mb-1">• Drag to rotate the planet</p>
         <p className="text-sm mb-1">• Scroll to zoom in/out</p>
-        <p className="text-sm mb-1">• Realistic textures & lighting</p>
-        <p className="text-sm mb-1">• Atmospheric glow & cloud layers</p>
-        <p className="text-sm">• Auto-rotation with momentum physics</p>
+        <p className="text-sm">• {countries.length} countries available!</p>
       </div>
 
-      {/* Visual enhancements indicator */}
+      {/* Countries counter */}
       <div className="absolute bottom-4 right-4 text-white bg-green-600/20 backdrop-blur-sm p-3 rounded-lg border border-green-400/30">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-          <span className="text-sm font-medium">Enhanced Rendering Active</span>
+          <span className="text-sm font-medium">{countries.length} Countries Visible</span>
         </div>
       </div>
     </div>
