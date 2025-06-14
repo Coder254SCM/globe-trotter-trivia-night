@@ -4,9 +4,8 @@ import { Country, DifficultyLevel } from "../types/quiz";
 import { CountryCard } from "./globe/CountryCard";
 import { GlobeHeader } from "./globe/GlobeHeader";
 import { GlobeFilters } from "./globe/GlobeFilters";
-import { GlobeLegend } from "./globe/GlobeLegend";
 import { GlobeSearch } from "./globe/GlobeSearch";
-import { Modern3DGlobe } from "./globe/Modern3DGlobe";
+import { CountryGrid } from "./globe/CountryGrid";
 import { useCountryFilter } from "../hooks/useCountryFilter";
 import { getQuestionStats } from "../utils/quiz/questionSets";
 import { toast } from "@/components/ui/use-toast";
@@ -21,8 +20,6 @@ interface GlobeProps {
 
 const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
-  const [showLabels, setShowLabels] = useState(false);
-  const [rotating, setRotating] = useState(true);
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   
@@ -41,17 +38,13 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
     clearFilters
   } = useCountryFilter({ allCountries });
 
-  // Handle country selection from globe
-  function handleCountryClick(countryId: string) {
-    const country = allCountries.find(c => c.id === countryId);
-    if (country) {
-      setSelectedCountry(country);
-      setRotating(false); // Stop rotation when country is selected
-      toast({
-        title: `🌍 ${country.name}`,
-        description: `Ready to explore ${country.name}? Choose your quiz difficulty!`,
-      });
-    }
+  // Handle country selection from grid
+  function handleCountryClick(country: Country) {
+    setSelectedCountry(country);
+    toast({
+      title: `🌍 ${country.name}`,
+      description: `Ready to explore ${country.name}? Choose your quiz difficulty!`,
+    });
   }
 
   const handleStartQuiz = useCallback((difficulty: string) => {
@@ -66,7 +59,6 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
 
   const handleCloseCard = useCallback(() => {
     setSelectedCountry(null);
-    setRotating(true); // Resume rotation when card is closed
   }, []);
 
   // Focus on a specific country by ID (for search)
@@ -74,7 +66,6 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
     const country = allCountries.find(c => c.id === countryId);
     if (country) {
       setSelectedCountry(country);
-      setRotating(false);
       toast({
         title: country.name,
         description: `Focused on ${country.name}. Click to start a quiz!`
@@ -87,59 +78,54 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
     navigate('/weekly-challenges');
   }, [navigate]);
 
-  // Toggle labels
-  const handleToggleLabels = useCallback(() => {
-    setShowLabels(prev => !prev);
-    toast({
-      title: showLabels ? "Labels Hidden" : "Labels Shown", 
-      description: showLabels ? "Country labels are now hidden" : "Country labels are now visible"
-    });
-  }, [showLabels]);
-
   // Show comprehensive stats on component mount
   useEffect(() => {
     const stats = getQuestionStats();
     
     toast({
-      title: "🌍 Globe Explorer Ready!",
-      description: `Interactive 3D Earth with ${allCountries.length} countries and ${stats.totalQuestions} questions. Click any country to start!`,
+      title: "🌍 Country Explorer Ready!",
+      description: `Interactive country cards with ${allCountries.length} countries and ${stats.totalQuestions} questions. Click any country to start!`,
     });
     
-    console.log("🌍 Globe Statistics:");
+    console.log("🌍 Country Grid Statistics:");
     console.log(`- Total Countries: ${allCountries.length}`);
     console.log(`- Countries with Questions: ${stats.countriesWithQuestions}`);
     console.log(`- Total Questions: ${stats.totalQuestions}`);
   }, [allCountries.length]);
 
   return (
-    <div className={`relative w-full h-screen overflow-hidden bg-gradient-to-b from-slate-900 via-blue-900 to-black ${isMobile ? 'touch-none' : ''}`}>
-      {/* Modern 3D Globe */}
-      <Modern3DGlobe onCountryClick={handleCountryClick} />
-      
+    <div className={`min-h-screen bg-gradient-to-br from-background via-background to-muted/20 ${isMobile ? 'touch-none' : ''}`}>
       <GlobeHeader 
-        onToggleLabels={handleToggleLabels}
+        onToggleLabels={() => {}} // Not needed for card view
         onStartWeeklyChallenge={handleWeeklyChallengeClick}
-        showLabels={showLabels}
+        showLabels={false}
       />
       
-      <GlobeSearch 
-        onCountrySelect={setSelectedCountry}
-        onCountryFocus={handleCountryFocus}
-      />
-      
-      <GlobeFilters
-        availableContinents={availableContinents}
-        allCategories={allCategories}
-        selectedContinent={selectedContinent}
-        selectedCategory={selectedCategory}
-        filteredCountriesCount={filteredCountries.length}
-        totalCountriesCount={allCountries.length}
-        onContinentChange={handleContinentChange}
-        onCategoryChange={handleCategoryChange}
-        onClearFilters={clearFilters}
-      />
-      
-      {!isMobile && <GlobeLegend />}
+      <div className="pt-20">
+        <GlobeSearch 
+          onCountrySelect={setSelectedCountry}
+          onCountryFocus={handleCountryFocus}
+        />
+        
+        <GlobeFilters
+          availableContinents={availableContinents}
+          allCategories={allCategories}
+          selectedContinent={selectedContinent}
+          selectedCategory={selectedCategory}
+          filteredCountriesCount={filteredCountries.length}
+          totalCountriesCount={allCountries.length}
+          onContinentChange={handleContinentChange}
+          onCategoryChange={handleCategoryChange}
+          onClearFilters={clearFilters}
+        />
+        
+        <CountryGrid
+          countries={filteredCountries}
+          onCountrySelect={handleCountryClick}
+          selectedContinent={selectedContinent}
+          selectedCategory={selectedCategory}
+        />
+      </div>
       
       {selectedCountry && (
         <CountryCard
