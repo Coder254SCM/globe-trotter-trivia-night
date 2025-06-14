@@ -15,7 +15,7 @@ export interface QuestionToValidate {
   option_c: string;
   option_d: string;
   correct_answer: string;
-  difficulty?: string; // Added difficulty property
+  difficulty?: string;
   country_id?: string;
   category: string;
 }
@@ -63,7 +63,7 @@ export class QuestionValidationService {
   }
 
   /**
-   * Client-side quick validation for immediate feedback
+   * Enhanced validation with improved placeholder detection
    */
   static quickValidate(question: QuestionToValidate): ValidationResult {
     const issues: string[] = [];
@@ -92,13 +92,13 @@ export class QuestionValidationService {
       severity = 'critical';
     }
 
-    // Reject easy questions if difficulty is specified
+    // Reject easy questions
     if (question.difficulty === 'easy') {
       issues.push('Easy questions are no longer allowed in the system');
       severity = 'critical';
     }
 
-    // Check for placeholder patterns
+    // Enhanced placeholder pattern detection
     const placeholderPatterns = [
       'correct answer for',
       'option a for',
@@ -108,7 +108,31 @@ export class QuestionValidationService {
       'incorrect option',
       '[country]',
       '[capital]',
-      'placeholder'
+      'placeholder',
+      'methodology a',
+      'methodology b', 
+      'methodology c',
+      'methodology d',
+      'approach a',
+      'approach b',
+      'approach c', 
+      'approach d',
+      'technique a',
+      'technique b',
+      'technique c',
+      'technique d',
+      'method a',
+      'method b',
+      'method c',
+      'method d',
+      'with specialized parameters',
+      'with novel framework',
+      'with enhanced precision',
+      'with optimized protocols',
+      'advanced methodology',
+      'cutting-edge approach',
+      'innovative technique',
+      'state-of-the-art method'
     ];
 
     const hasPlaceholders = [
@@ -124,7 +148,7 @@ export class QuestionValidationService {
     );
 
     if (hasPlaceholders) {
-      issues.push('Contains placeholder text that must be replaced');
+      issues.push('Contains generic placeholder text - questions must have specific, factual content');
       severity = 'critical';
     }
 
@@ -132,6 +156,26 @@ export class QuestionValidationService {
     const uniqueOptions = new Set(options.filter(opt => opt && opt.trim()));
     if (uniqueOptions.size < options.filter(opt => opt).length) {
       issues.push('Duplicate answer options detected');
+      if (severity === 'low') severity = 'medium';
+    }
+
+    // Check for vague or generic content
+    const genericPhrases = [
+      'various factors',
+      'multiple elements',
+      'different aspects',
+      'several components',
+      'numerous features'
+    ];
+
+    const hasGenericContent = [question.text, ...options].some(text =>
+      text && genericPhrases.some(phrase => 
+        text.toLowerCase().includes(phrase.toLowerCase())
+      )
+    );
+
+    if (hasGenericContent) {
+      issues.push('Content is too generic - questions should be specific and factual');
       if (severity === 'low') severity = 'medium';
     }
 

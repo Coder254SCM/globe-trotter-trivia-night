@@ -60,51 +60,63 @@ export class QuestionService {
   }
 
   /**
-   * Save questions to Supabase with validation and rate limiting
+   * Enhanced save with strict validation to prevent placeholder content
    */
   static async saveQuestions(questions: any[]): Promise<void> {
     try {
-      console.log(`🔍 Starting save operation for ${questions.length} questions...`);
+      console.log(`🔍 Starting ENHANCED save operation for ${questions.length} questions...`);
       
       if (!questions || questions.length === 0) {
         console.log('📝 No questions to save');
         return;
       }
       
-      // Filter out any easy questions and validate
-      const validQuestions = questions.filter(q => {
-        const isValid = q.text && 
-                       q.option_a && 
-                       q.option_b && 
-                       q.option_c && 
-                       q.option_d && 
-                       q.correct_answer &&
-                       q.country_id &&
-                       q.category &&
-                       (q.difficulty === 'medium' || q.difficulty === 'hard'); // Only medium/hard allowed
+      // Enhanced filtering with strict validation
+      const validQuestions = [];
+      
+      for (const q of questions) {
+        // Basic structure validation
+        const hasRequiredFields = q.text && 
+                                 q.option_a && 
+                                 q.option_b && 
+                                 q.option_c && 
+                                 q.option_d && 
+                                 q.correct_answer &&
+                                 q.country_id &&
+                                 q.category &&
+                                 (q.difficulty === 'medium' || q.difficulty === 'hard');
         
-        if (!isValid) {
-          console.warn('⚠️ Skipping invalid question:', q.text?.substring(0, 50) + '...');
+        if (!hasRequiredFields) {
+          console.warn('⚠️ Skipping question with missing fields:', q.text?.substring(0, 50) + '...');
+          continue;
         }
         
-        // Reject any easy questions
+        // Reject easy questions
         if (q.difficulty === 'easy') {
           console.warn('❌ Rejecting easy question - not allowed:', q.text?.substring(0, 50) + '...');
-          return false;
+          continue;
         }
         
-        return isValid;
-      });
+        // Enhanced validation using validation service
+        const validationResult = await QuestionValidationService.preValidateQuestion(q);
+        if (!validationResult.isValid || validationResult.severity === 'critical') {
+          console.warn('❌ Question failed enhanced validation:', validationResult.issues.join(', '));
+          console.warn('   Question text:', q.text?.substring(0, 100) + '...');
+          continue;
+        }
+        
+        validQuestions.push(q);
+      }
 
       if (validQuestions.length === 0) {
-        console.warn('⚠️ No valid medium/hard questions found after filtering');
+        console.warn('⚠️ No valid medium/hard questions found after enhanced filtering');
         return;
       }
 
-      console.log(`✅ ${validQuestions.length} medium/hard questions passed validation`);
+      console.log(`✅ ${validQuestions.length} questions passed enhanced validation (rejected ${questions.length - validQuestions.length} for quality issues)`);
 
       // Save with smaller batches to prevent rate limiting
-      const batchSize = 20;
+      const batchSize = 15; // Reduced batch size for better reliability
       const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
       
       for (let i = 0; i < validQuestions.length; i += batchSize) {
@@ -127,7 +139,7 @@ export class QuestionService {
           
           // Add delay between batches
           if (i + batchSize < validQuestions.length) {
-            await delay(500);
+            await delay(750); // Increased delay for better stability
           }
           
         } catch (batchError) {
@@ -136,16 +148,16 @@ export class QuestionService {
         }
       }
 
-      console.log(`🎉 Successfully saved all ${validQuestions.length} medium/hard questions to Supabase`);
+      console.log(`🎉 Successfully saved all ${validQuestions.length} high-quality medium/hard questions to Supabase`);
       
     } catch (error) {
-      console.error('❌ Save operation failed:', error);
+      console.error('❌ Enhanced save operation failed:', error);
       throw error;
     }
   }
 
   /**
-   * Validate a single question before saving
+   * Validate a single question before saving with enhanced checks
    */
   static async validateQuestion(question: QuestionToValidate): Promise<boolean> {
     try {
@@ -156,7 +168,13 @@ export class QuestionService {
       }
       
       const result = await QuestionValidationService.preValidateQuestion(question);
-      return result.isValid && result.severity !== 'critical';
+      const isValid = result.isValid && result.severity !== 'critical';
+      
+      if (!isValid) {
+        console.warn('❌ Question validation failed:', result.issues.join(', '));
+      }
+      
+      return isValid;
     } catch (error) {
       console.error('❌ Question validation failed:', error);
       return false;
