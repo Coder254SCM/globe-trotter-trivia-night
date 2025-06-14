@@ -4,96 +4,73 @@ import { Country } from "./supabase/quizService";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * AI Service using OpenRouter for production-ready online LLM access
- * Supports both free and paid models with excellent reliability
+ * AI Service using Supabase Edge Function for secure API access
+ * This avoids browser environment issues with API keys
  */
 export class AIService {
-  private static readonly OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
-  private static readonly FREE_MODEL = 'meta-llama/llama-3.1-8b-instruct:free'; // Free model
-  private static readonly PAID_MODEL = 'meta-llama/llama-3.1-8b-instruct'; // Cheap paid alternative
-
   /**
-   * Get OpenRouter API key from Supabase secrets
-   */
-  private static async getApiKey(): Promise<string> {
-    // In production, this would come from Supabase Edge Function environment
-    const apiKey = process.env.OPENROUTER_API_KEY || 'your-openrouter-api-key';
-    
-    if (!apiKey || apiKey === 'your-openrouter-api-key') {
-      throw new Error('OpenRouter API key not configured. Please set OPENROUTER_API_KEY in your environment.');
-    }
-    
-    return apiKey;
-  }
-
-  /**
-   * Check if OpenRouter is accessible
+   * Check if AI service is available by testing the edge function
    */
   static async isOpenRouterAvailable(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.OPENROUTER_BASE_URL}/models`, {
-        headers: {
-          'Authorization': `Bearer ${await this.getApiKey()}`,
+      // Test the edge function instead of direct API access
+      const { data, error } = await supabase.functions.invoke('ai-proxy', {
+        body: { 
+          prompt: "Test connection",
+          model: "meta-llama/llama-3.1-8b-instruct:free"
         }
       });
-      return response.ok;
+      
+      if (error) {
+        console.warn('AI Proxy not available:', error);
+        return false;
+      }
+      
+      return true;
     } catch (error) {
-      console.warn('OpenRouter not available:', error);
+      console.warn('AI service not available:', error);
       return false;
     }
   }
 
   /**
-   * Generate questions using OpenRouter and save to Supabase
+   * Generate questions using Supabase Edge Function
    */
   static async generateQuestions(
     country: Country,
     difficulty: 'easy' | 'medium' | 'hard',
     count: number = 10
   ): Promise<Question[]> {
-    const apiKey = await this.getApiKey();
     const prompt = this.buildPrompt(country, difficulty, count);
     
     try {
-      const response = await fetch(`${this.OPENROUTER_BASE_URL}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'Global Quiz Game'
-        },
-        body: JSON.stringify({
-          model: this.FREE_MODEL, // Start with free model
-          messages: [
-            {
-              role: 'system',
-              content: 'You are an expert quiz question generator. Create accurate, well-researched questions with proper difficulty levels.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 2000
-        })
+      const { data, error } = await supabase.functions.invoke('ai-proxy', {
+        body: { 
+          prompt,
+          model: "meta-llama/llama-3.1-8b-instruct:free"
+        }
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`OpenRouter API error: ${errorData.error?.message || 'Unknown error'}`);
+      if (error) {
+        throw new Error(`AI Proxy error: ${error.message}`);
       }
 
-      const data = await response.json();
-      const questions = this.parseQuestionsFromResponse(data.choices[0].message.content, country, difficulty);
+      if (!data || !data.choices || !data.choices[0]) {
+        throw new Error('Invalid response from AI service');
+      }
+
+      const questions = this.parseQuestionsFromResponse(
+        data.choices[0].message.content, 
+        country, 
+        difficulty
+      );
       
       // Save generated questions to Supabase
       await this.saveQuestionsToSupabase(questions, country, difficulty);
       
       return questions;
     } catch (error) {
-      console.error('OpenRouter generation failed:', error);
+      console.error('AI generation failed:', error);
       const fallbackQuestions = this.generateFallbackQuestions(country, difficulty, count);
       
       // Save fallback questions to Supabase as well
@@ -184,7 +161,7 @@ Return only a JSON array of questions. Ensure questions match the specified diff
       const questionsData = JSON.parse(jsonMatch[0]);
       
       return questionsData.map((q: any, index: number) => ({
-        id: `openrouter-${country.id}-${difficulty}-${Date.now()}-${index}`,
+        id: `ai-${country.id}-${difficulty}-${Date.now()}-${index}`,
         type: 'multiple-choice' as const,
         text: q.question,
         choices: q.options.map((option: string, i: number) => ({
@@ -198,7 +175,7 @@ Return only a JSON array of questions. Ensure questions match the specified diff
         imageUrl: undefined
       }));
     } catch (error) {
-      console.error('Failed to parse OpenRouter response:', error);
+      console.error('Failed to parse AI response:', error);
       return this.generateFallbackQuestions(country, difficulty, 5);
     }
   }
@@ -323,7 +300,7 @@ Return only a JSON array of questions. Ensure questions match the specified diff
     country: Country,
     questionsPerDifficulty: number = 20
   ): Promise<void> {
-    console.log(`🤖 Generating questions for ${country.name} using OpenRouter...`);
+    console.log(`🤖 Generating questions for ${country.name} using AI Proxy...`);
     
     const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
     
@@ -347,7 +324,7 @@ Return only a JSON array of questions. Ensure questions match the specified diff
     countries: Country[],
     questionsPerDifficulty: number = 20
   ): Promise<void> {
-    console.log(`🚀 Starting batch generation for ${countries.length} countries using OpenRouter...`);
+    console.log(`🚀 Starting batch generation for ${countries.length} countries using AI Proxy...`);
     
     for (let i = 0; i < countries.length; i++) {
       const country = countries[i];
@@ -369,34 +346,25 @@ Return only a JSON array of questions. Ensure questions match the specified diff
   }
 
   /**
-   * Get setup instructions for OpenRouter
+   * Get setup instructions for AI service
    */
   static getSetupInstructions(): string {
     return `
-🚀 **OpenRouter Setup Instructions**
+🚀 **AI Service Setup Instructions**
 
-1. **Create OpenRouter Account**:
-   - Visit: https://openrouter.ai
-   - Sign up for free account
+The AI service now uses Supabase Edge Functions for secure API access.
 
-2. **Get API Key**:
-   - Go to: https://openrouter.ai/keys
-   - Create new API key
-   - Copy the key
+1. **Edge Function**: The ai-proxy function handles all AI requests
+2. **API Key**: Set OPENROUTER_API_KEY in Supabase Edge Function secrets
+3. **Models**: Uses meta-llama/llama-3.1-8b-instruct:free by default
 
-3. **Free Models Available**:
-   - meta-llama/llama-3.1-8b-instruct:free
-   - microsoft/wizardlm-2-8x22b:free
-   - google/gemma-2-9b-it:free
+To set up the API key:
+1. Go to your Supabase project
+2. Navigate to Edge Functions → Settings
+3. Add OPENROUTER_API_KEY secret
+4. Get your key from https://openrouter.ai
 
-4. **Cheap Paid Models** ($0.001/1K tokens):
-   - meta-llama/llama-3.1-8b-instruct
-   - anthropic/claude-3-haiku
-
-5. **Set API Key**:
-   - Add to your environment: OPENROUTER_API_KEY=your_key_here
-
-This provides production-ready AI with free tier + cheap scaling!
+This provides secure AI generation without exposing keys in the browser!
     `;
   }
 }
