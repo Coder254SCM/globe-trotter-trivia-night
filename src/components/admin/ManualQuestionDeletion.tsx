@@ -25,50 +25,69 @@ export const ManualQuestionDeletion = () => {
 
     setDeleting(true);
     setErrors([]);
+    setDeletedCount(0);
     
     try {
-      console.log("🗑️ Starting direct SQL deletion of placeholder questions");
+      console.log("🗑️ Starting comprehensive deletion of placeholder questions");
 
-      // Delete questions with placeholder patterns in text
-      const { error: textError, count: textCount } = await supabase
+      // First, get all questions that match placeholder patterns
+      const { data: placeholderQuestions, error: fetchError } = await supabase
         .from('questions')
-        .delete()
-        .or(`text.ilike.%correct answer for%,text.ilike.%option a for%,text.ilike.%option b for%,text.ilike.%option c for%,text.ilike.%option d for%`);
+        .select('id, text, option_a, option_b, option_c, option_d')
+        .or('text.ilike.%correct answer for%,text.ilike.%option a for%,text.ilike.%option b for%,text.ilike.%option c for%,text.ilike.%option d for%,option_a.ilike.%correct answer for%,option_b.ilike.%correct answer for%,option_c.ilike.%correct answer for%,option_d.ilike.%correct answer for%,option_a.ilike.%incorrect option%,option_b.ilike.%incorrect option%,option_c.ilike.%incorrect option%,option_d.ilike.%incorrect option%');
 
-      if (textError) {
-        console.error("Error deleting questions with placeholder text:", textError);
-        setErrors(prev => [...prev, `Text deletion error: ${textError.message}`]);
-      } else {
-        console.log(`✅ Deleted ${textCount || 0} questions with placeholder text`);
+      if (fetchError) {
+        console.error("Error fetching placeholder questions:", fetchError);
+        setErrors([`Fetch error: ${fetchError.message}`]);
+        return;
       }
 
-      // Delete questions with placeholder patterns in options
-      const { error: optionError, count: optionCount } = await supabase
-        .from('questions')
-        .delete()
-        .or(`option_a.ilike.%correct answer for%,option_b.ilike.%correct answer for%,option_c.ilike.%correct answer for%,option_d.ilike.%correct answer for%`);
+      const questionIdsToDelete = placeholderQuestions?.map(q => q.id) || [];
+      console.log(`📋 Found ${questionIdsToDelete.length} placeholder questions to delete`);
 
-      if (optionError) {
-        console.error("Error deleting questions with placeholder options:", optionError);
-        setErrors(prev => [...prev, `Option deletion error: ${optionError.message}`]);
-      } else {
-        console.log(`✅ Deleted ${optionCount || 0} questions with placeholder options`);
-      }
-
-      const totalDeleted = (textCount || 0) + (optionCount || 0);
-      setDeletedCount(totalDeleted);
-
-      if (totalDeleted > 0) {
+      if (questionIdsToDelete.length === 0) {
         toast({
-          title: "Deletion Complete!",
-          description: `Successfully deleted ${totalDeleted} placeholder questions from Supabase.`,
+          title: "No Placeholder Questions Found",
+          description: "No questions with placeholder patterns were found.",
         });
-      } else {
-        toast({
-          title: "No Questions Found",
-          description: "No placeholder questions were found to delete.",
-        });
+        return;
       }
+
+      // Delete in smaller batches of 50
+      const batchSize = 50;
+      let totalDeleted = 0;
+      
+      for (let i = 0; i < questionIdsToDelete.length; i += batchSize) {
+        const batch = questionIdsToDelete.slice(i, i + batchSize);
+        
+        console.log(`🗑️ Deleting batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(questionIdsToDelete.length/batchSize)}: ${batch.length} questions`);
+        
+        const { error, count } = await supabase
+          .from('questions')
+          .delete()
+          .in('id', batch);
+
+        if (error) {
+          console.error(`Error deleting batch:`, error);
+          setErrors(prev => [...prev, `Batch ${Math.floor(i/batchSize) + 1} error: ${error.message}`]);
+        } else {
+          const deletedInBatch = count || batch.length;
+          totalDeleted += deletedInBatch;
+          console.log(`✅ Successfully deleted ${deletedInBatch} questions from batch`);
+        }
+        
+        setDeletedCount(totalDeleted);
+        
+        // Small delay between batches to avoid overwhelming the database
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      console.log(`🎉 Deletion complete! Total deleted: ${totalDeleted}/${questionIdsToDelete.length}`);
+
+      toast({
+        title: "Cleanup Complete!",
+        description: `Successfully deleted ${totalDeleted} placeholder questions from Supabase.`,
+      });
 
     } catch (error) {
       console.error("Failed to delete placeholder questions:", error);
@@ -158,7 +177,7 @@ export const ManualQuestionDeletion = () => {
               <h3 className="font-semibold">Automatic Placeholder Question Cleanup</h3>
             </div>
             <p className="text-sm text-muted-foreground">
-              This will scan and delete ALL questions containing placeholder text patterns like "correct answer for", "option a for", etc.
+              This will find and delete ALL questions containing placeholder text patterns like "correct answer for", "option a for", "incorrect option", etc.
             </p>
             <Button 
               onClick={handleDirectSQLDeletion}
@@ -166,7 +185,7 @@ export const ManualQuestionDeletion = () => {
               variant="destructive"
               className="w-full"
             >
-              {deleting ? "Deleting..." : "🗑️ Delete All Placeholder Questions"}
+              {deleting ? "Deleting..." : "🗑️ Find & Delete All Placeholder Questions"}
             </Button>
           </div>
 

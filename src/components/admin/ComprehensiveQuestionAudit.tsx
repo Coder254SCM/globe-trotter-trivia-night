@@ -168,23 +168,45 @@ export const ComprehensiveQuestionAudit = () => {
     }
     
     setFixing(true);
-    setCurrentStep("Deleting placeholder questions...");
+    setCurrentStep("Finding placeholder questions...");
     setProgress(0);
     
     try {
-      const questionIds = auditResults.placeholder_question_ids;
-      console.log(`🗑️ Starting deletion of ${questionIds.length} placeholder questions`);
+      // Get fresh list of placeholder questions
+      const { data: placeholderQuestions, error: fetchError } = await supabase
+        .from('questions')
+        .select('id')
+        .or('text.ilike.%correct answer for%,text.ilike.%option a for%,text.ilike.%option b for%,text.ilike.%option c for%,text.ilike.%option d for%,option_a.ilike.%correct answer for%,option_b.ilike.%correct answer for%,option_c.ilike.%correct answer for%,option_d.ilike.%correct answer for%,option_a.ilike.%incorrect option%,option_b.ilike.%incorrect option%,option_c.ilike.%incorrect option%,option_d.ilike.%incorrect option%');
 
-      // Delete in smaller batches with better error handling
+      if (fetchError) {
+        console.error("Error fetching placeholder questions:", fetchError);
+        throw fetchError;
+      }
+
+      const questionIdsToDelete = placeholderQuestions?.map(q => q.id) || [];
+      console.log(`🗑️ Found ${questionIdsToDelete.length} placeholder questions to delete`);
+
+      if (questionIdsToDelete.length === 0) {
+        toast({
+          title: "No Placeholder Questions Found",
+          description: "No questions with placeholder patterns were found.",
+        });
+        setFixing(false);
+        return;
+      }
+
+      setCurrentStep(`Deleting ${questionIdsToDelete.length} placeholder questions...`);
+      setProgress(25);
+
+      // Delete in batches of 50
+      const batchSize = 50;
       let totalDeleted = 0;
-      const batchSize = 5; // Even smaller batches
       
-      for (let i = 0; i < questionIds.length; i += batchSize) {
-        const batch = questionIds.slice(i, i + batchSize);
+      for (let i = 0; i < questionIdsToDelete.length; i += batchSize) {
+        const batch = questionIdsToDelete.slice(i, i + batchSize);
         
-        console.log(`Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(questionIds.length/batchSize)}: ${batch.length} questions`);
+        console.log(`🗑️ Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(questionIdsToDelete.length/batchSize)}: ${batch.length} questions`);
         
-        // Use batch delete with proper error handling
         const { error, count } = await supabase
           .from('questions')
           .delete()
@@ -192,21 +214,23 @@ export const ComprehensiveQuestionAudit = () => {
 
         if (error) {
           console.error(`Error deleting batch:`, error);
-          // Continue with next batch even if this one fails
         } else {
-          const deletedCount = count || batch.length;
-          totalDeleted += deletedCount;
-          console.log(`✅ Successfully deleted ${deletedCount} questions from batch`);
+          const deletedInBatch = count || batch.length;
+          totalDeleted += deletedInBatch;
+          console.log(`✅ Successfully deleted ${deletedInBatch} questions from batch`);
         }
         
-        setProgress((totalDeleted / questionIds.length) * 100);
-        setCurrentStep(`Deleted ${totalDeleted}/${questionIds.length} placeholder questions...`);
+        const progressPercent = 25 + ((totalDeleted / questionIdsToDelete.length) * 50);
+        setProgress(progressPercent);
+        setCurrentStep(`Deleted ${totalDeleted}/${questionIdsToDelete.length} placeholder questions...`);
         
         // Small delay between batches
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      console.log(`🎉 Deletion complete! Total deleted: ${totalDeleted}/${questionIds.length}`);
+      console.log(`🎉 Deletion complete! Total deleted: ${totalDeleted}/${questionIdsToDelete.length}`);
+      setProgress(75);
+      setCurrentStep("Running fresh audit...");
 
       if (totalDeleted > 0) {
         toast({
@@ -214,11 +238,9 @@ export const ComprehensiveQuestionAudit = () => {
           description: `Successfully deleted ${totalDeleted} placeholder questions.`,
         });
 
-        // Force a fresh audit after successful deletion
-        setTimeout(() => {
-          console.log("🔄 Running fresh audit after deletion...");
-          runComprehensiveAudit();
-        }, 2000);
+        // Run fresh audit after successful deletion
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await runComprehensiveAudit();
       } else {
         toast({
           title: "No Questions Deleted",
@@ -243,10 +265,11 @@ export const ComprehensiveQuestionAudit = () => {
   const runComprehensiveAudit = async () => {
     setLoading(true);
     setProgress(0);
-    setCurrentStep("Fetching fresh data from Supabase...");
+    setCurrentStep("Getting fresh question count...");
 
     try {
-      // Clear any cached data and get fresh count first
+      // Get fresh count with no caching
+      const timestamp = Date.now();
       const { count: totalCount, error: countError } = await supabase
         .from('questions')
         .select('*', { count: 'exact', head: true });
@@ -256,9 +279,10 @@ export const ComprehensiveQuestionAudit = () => {
         throw countError;
       }
 
-      console.log(`📊 Total questions in database: ${totalCount}`);
+      console.log(`📊 Current total questions in database: ${totalCount}`);
+      setCurrentStep(`Analyzing ${totalCount} questions...`);
 
-      // Get all questions with country information (with no caching)
+      // Get all questions with a timestamp to avoid caching
       const { data: questions, error } = await supabase
         .from('questions')
         .select(`
@@ -376,16 +400,12 @@ export const ComprehensiveQuestionAudit = () => {
       setCurrentStep("Audit complete!");
 
       // Log key findings
-      console.log("🔍 COMPREHENSIVE QUESTION AUDIT RESULTS:");
+      console.log("🔍 FRESH AUDIT RESULTS:");
       console.log(`📊 Total Questions: ${totalQuestions}`);
       console.log(`🚨 Placeholder Questions: ${placeholderCount} (${((placeholderCount/totalQuestions)*100).toFixed(1)}%)`);
-      console.log(`⚠️ Generic Questions: ${genericCount}`);
-      console.log(`❌ Wrong Country Questions: ${wrongCountryCount}`);
-      console.log(`📉 Average Quality Score: ${averageQualityScore}/100`);
-      console.log(`🗑️ Placeholder Question IDs ready for deletion:`, placeholderQuestionIds.slice(0, 10));
 
       toast({
-        title: "Comprehensive Audit Complete",
+        title: "Audit Complete",
         description: `Analyzed ${totalQuestions} questions. Found ${placeholderCount} placeholder questions.`,
         variant: placeholderCount > 0 ? "destructive" : "default"
       });
@@ -394,7 +414,7 @@ export const ComprehensiveQuestionAudit = () => {
       console.error("Audit failed:", error);
       toast({
         title: "Audit Failed",
-        description: "Could not complete the comprehensive audit. Check console for details.",
+        description: "Could not complete the audit. Check console for details.",
         variant: "destructive",
       });
     } finally {
