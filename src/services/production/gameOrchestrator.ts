@@ -127,7 +127,7 @@ export class GameOrchestrator {
     const categories = ['Geography', 'Culture', 'History', 'Politics', 'Economy'];
     const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
     
-    const generationRequests: GenerationRequest[] = [];
+    const generationRequests: any[] = [];
 
     for (const country of countries) {
       for (const difficulty of difficulties) {
@@ -156,49 +156,7 @@ export class GameOrchestrator {
     }
 
     console.log(`📝 Need to generate ${generationRequests.length} question batches`);
-
-    // Process in batches to avoid overwhelming the system
-    const batches = this.chunkArray(generationRequests, this.config.generationBatchSize);
-    
-    for (let i = 0; i < batches.length; i++) {
-      const batch = batches[i];
-      console.log(`🔄 Processing batch ${i + 1}/${batches.length} (${batch.length} requests)`);
-      
-      try {
-        const results = await QuestionGeneratorService.batchGenerate(batch);
-        await this.saveGeneratedQuestions(results);
-        
-        // Short delay between batches
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-      } catch (error) {
-        console.error(`Failed to process batch ${i + 1}:`, error);
-      }
-    }
-  }
-
-  /**
-   * Save generated questions to database
-   */
-  private async saveGeneratedQuestions(results: Map<string, any[]>): Promise<void> {
-    const allQuestions: any[] = [];
-    
-    for (const [key, questions] of results) {
-      allQuestions.push(...questions);
-    }
-
-    if (allQuestions.length === 0) return;
-
-    const { error } = await supabase
-      .from('questions')
-      .insert(allQuestions);
-
-    if (error) {
-      console.error("Failed to save generated questions:", error);
-      throw error;
-    }
-
-    console.log(`💾 Saved ${allQuestions.length} new questions`);
+    console.warn("AI question generation is disabled. Skipping generation.");
   }
 
   /**
@@ -266,7 +224,7 @@ export class GameOrchestrator {
   async regenerateCountryQuestions(countryIds: string[]): Promise<void> {
     console.log(`🔄 Regenerating questions for ${countryIds.length} countries...`);
     
-    const requests: GenerationRequest[] = [];
+    const requests: any[] = [];
     const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
     const categories = ['Geography', 'Culture'];
 
@@ -290,8 +248,7 @@ export class GameOrchestrator {
       }
     }
 
-    const results = await QuestionGeneratorService.batchGenerate(requests);
-    await this.saveGeneratedQuestions(results);
+    console.warn("AI question regeneration has been disabled. Skipping regeneration.");
     
     console.log(`✅ Regenerated questions for ${countryIds.length} countries`);
   }
