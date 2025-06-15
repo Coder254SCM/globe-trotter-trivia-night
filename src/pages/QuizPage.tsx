@@ -19,18 +19,8 @@ export default function QuizPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // FORCE scroll to top immediately
-    const scrollToTop = () => {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    };
-    
-    scrollToTop();
-    setTimeout(scrollToTop, 0);
-    setTimeout(scrollToTop, 10);
-    setTimeout(scrollToTop, 50);
-    setTimeout(scrollToTop, 100);
+    // Force scroll to top
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
 
     const loadQuizData = async () => {
       try {
@@ -53,72 +43,55 @@ export default function QuizPage() {
         setSelectedCountry(country);
         setQuestionCount(count);
 
-        console.log(`[QuizPage] Loading ${count} questions for ${country.name} (id: ${country.id}) at difficulty "${country.difficulty}"`);
+        console.log(`[QuizPage] Loading ${count} questions for ${country.name} (${country.difficulty})`);
         
-        // Try to get questions using clean fetcher
-        let questions = await getCleanQuizQuestions(
-          country.id, 
-          country.difficulty, 
-          count
-        );
+        // Try to get questions
+        let questions = await getCleanQuizQuestions(country.id, country.difficulty, count);
 
-        console.log(`[QuizPage] Clean fetcher returned ${questions.length} questions`);
+        console.log(`[QuizPage] Found ${questions.length} questions`);
 
-        // If no questions found, generate them immediately
+        // If no questions, generate some immediately
         if (questions.length === 0) {
-          console.log(`[QuizPage] 🔧 No questions found, generating immediately...`);
+          console.log(`[QuizPage] No questions found, generating...`);
           setGeneratingQuestions(true);
           
           toast({
             title: "Generating Questions",
-            description: `No questions found for ${country.name}. Generating them now...`,
+            description: `Creating questions for ${country.name}...`,
           });
 
           try {
             // Get country data for generation
-            const countryData = await CountryService.getAllServiceCountries()
-              .then(countries => countries.find(c => c.id === country.id));
+            const serviceCountries = await CountryService.getAllServiceCountries();
+            const countryData = serviceCountries.find(c => c.id === country.id);
 
             if (countryData) {
-              // Generate questions for all difficulties
-              const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
-              const categories = ['Geography', 'Culture'];
-
-              for (const diff of difficulties) {
-                for (const category of categories) {
-                  await TemplateQuestionService.generateQuestions(
-                    countryData,
-                    diff,
-                    5,
-                    category
-                  );
-                }
-              }
-
-              // Wait a moment for questions to be saved
-              await new Promise(resolve => setTimeout(resolve, 1000));
-
-              // Try fetching again
-              questions = await getCleanQuizQuestions(
-                country.id, 
-                country.difficulty, 
-                count
+              // Generate questions for the selected difficulty
+              await TemplateQuestionService.generateQuestions(
+                countryData,
+                country.difficulty,
+                Math.max(count, 5),
+                'Geography'
               );
 
-              console.log(`[QuizPage] ✅ After generation: ${questions.length} questions available`);
+              // Wait and try fetching again
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              questions = await getCleanQuizQuestions(country.id, country.difficulty, count);
+              
+              console.log(`[QuizPage] After generation: ${questions.length} questions`);
             }
           } catch (generationError) {
-            console.error('[QuizPage] Question generation failed:', generationError);
+            console.error('[QuizPage] Generation failed:', generationError);
           } finally {
             setGeneratingQuestions(false);
           }
         }
 
         if (questions.length === 0) {
-          console.warn(`[QuizPage] ❌ Still no questions after generation for ${country.name}`);
+          console.warn(`[QuizPage] Still no questions for ${country.name}`);
           toast({
             title: "No Questions Available",
-            description: `Unable to generate questions for ${country.name} at ${country.difficulty} difficulty. Please try a different country or check the admin panel.`,
+            description: `No questions found for ${country.name}. Please try a different country.`,
             variant: "destructive",
           });
           navigate('/');
@@ -126,22 +99,18 @@ export default function QuizPage() {
         }
 
         setQuizQuestions(questions);
-        console.log(`[QuizPage] ✅ Successfully loaded ${questions.length} questions for ${country.name}`);
-        scrollToTop();
+        console.log(`[QuizPage] Quiz ready with ${questions.length} questions`);
 
       } catch (error) {
-        console.error('[QuizPage] Failed to load quiz questions:', error);
+        console.error('[QuizPage] Error loading quiz:', error);
         toast({
           title: "Quiz Loading Error",
-          description: "Failed to load questions. Please try again or select a different country.",
+          description: "Failed to load questions. Please try again.",
           variant: "destructive",
         });
         navigate('/');
       } finally {
         setLoading(false);
-        setTimeout(() => {
-          window.scrollTo({ top: 0, behavior: 'instant' });
-        }, 100);
       }
     };
 
@@ -169,14 +138,8 @@ export default function QuizPage() {
           </h2>
           <p className="text-muted-foreground">
             {generatingQuestions 
-              ? `Creating ${questionCount} questions for ${selectedCountry?.name ?? "—"}`
-              : `Preparing ${questionCount} questions for ${selectedCountry?.name ?? "—"}`
-            }
-          </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            {generatingQuestions 
-              ? "This may take a moment as we create fresh questions for you"
-              : "Please wait while we load your quiz"
+              ? `Creating questions for ${selectedCountry?.name ?? "—"}`
+              : `Preparing your quiz`
             }
           </p>
         </div>
@@ -190,13 +153,7 @@ export default function QuizPage() {
         <div className="text-center space-y-2">
           <h2 className="text-xl font-semibold mb-2">No Quiz Questions Available</h2>
           <p className="text-muted-foreground mb-1">
-            {selectedCountry 
-              ? `Unable to load questions for "${selectedCountry.name}" at "${selectedCountry.difficulty}" difficulty.`
-              : "No questions available for this selection."
-            }
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Questions may still be generating. Please try again in a moment.
+            Unable to load questions for the selected country.
           </p>
           <button onClick={handleBack} className="bg-primary text-primary-foreground px-4 py-2 rounded mt-3">
             Back to Countries

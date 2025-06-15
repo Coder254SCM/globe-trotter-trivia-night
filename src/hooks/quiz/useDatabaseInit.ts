@@ -25,81 +25,58 @@ export const useDatabaseInit = () => {
           console.log(`✅ Database already has ${supabaseCountries.length} countries`);
         }
         
-        // Check database stats and force generation if needed
+        // Check if we have any questions at all
         const stats = await CountryService.getDatabaseStats();
         console.log('📊 Database stats:', stats);
         
-        if (stats.totalQuestions < 1000) { // Increased threshold to ensure we have enough questions
-          console.log('🚀 Insufficient questions found - starting comprehensive generation...');
+        if (stats.totalQuestions < 100) {
+          console.log('🚀 Starting basic question generation...');
           
           toast({
             title: "Generating Questions",
-            description: "Generating questions for all countries and difficulties. This may take a moment...",
+            description: "Setting up basic questions for the quiz system...",
           });
 
           try {
-            // Generate questions for ALL countries with all difficulties
+            // Get first 10 countries for initial generation
             const serviceCountries = await CountryService.getAllServiceCountries();
-            const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
-            const categories = ['Geography', 'Culture', 'History'];
+            const firstCountries = serviceCountries.slice(0, 10);
             
-            console.log(`🎯 Generating questions for ${serviceCountries.length} countries...`);
+            console.log(`🎯 Generating questions for ${firstCountries.length} countries...`);
             
-            // Process countries in smaller batches to avoid overwhelming the system
-            for (let i = 0; i < serviceCountries.length; i += 5) {
-              const batch = serviceCountries.slice(i, i + 5);
-              
-              const batchPromises = batch.map(async (country) => {
-                try {
-                  console.log(`🔧 Generating for ${country.name}...`);
-                  
-                  for (const difficulty of difficulties) {
-                    for (const category of categories) {
-                      await TemplateQuestionService.generateQuestions(
-                        country, 
-                        difficulty, 
-                        3, // Generate 3 questions per difficulty/category combination
-                        category
-                      );
-                    }
-                  }
-                } catch (error) {
-                  console.error(`❌ Failed to generate for ${country.name}:`, error);
-                }
-              });
-              
-              await Promise.all(batchPromises);
-              
-              // Small delay between batches
-              if (i + 5 < serviceCountries.length) {
-                await new Promise(resolve => setTimeout(resolve, 500));
+            for (const country of firstCountries) {
+              try {
+                console.log(`🔧 Generating for ${country.name}...`);
+                
+                // Generate a few questions for each difficulty
+                await TemplateQuestionService.generateQuestions(country, 'easy', 2, 'Geography');
+                await TemplateQuestionService.generateQuestions(country, 'medium', 2, 'Geography');
+                await TemplateQuestionService.generateQuestions(country, 'hard', 2, 'Culture');
+                
+                // Small delay to avoid overwhelming the system
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+              } catch (error) {
+                console.error(`❌ Failed to generate for ${country.name}:`, error);
               }
             }
             
-            // Check stats again after generation
-            setTimeout(async () => {
-              const newStats = await CountryService.getDatabaseStats();
-              console.log('📊 Updated stats after generation:', newStats);
-              
-              if (newStats.totalQuestions > 0) {
-                toast({
-                  title: "Questions Ready!",
-                  description: `Successfully generated ${newStats.totalQuestions} questions. All features are now available!`,
-                });
-              }
-            }, 3000);
+            toast({
+              title: "Questions Ready!",
+              description: `Basic question set generated. You can now start quizzes!`,
+            });
             
           } catch(e) {
-             console.error('❌ Failed to auto-generate questions:', e);
+             console.error('❌ Failed to generate initial questions:', e);
              toast({
-              title: "Generation Failed",
-              description: "Could not automatically generate questions. Please try the admin panel.",
+              title: "Generation Issue",
+              description: "Some questions may be missing. The system will generate them as needed.",
               variant: "destructive",
             });
           }
         } else {
           toast({
-            title: "Database Ready",
+            title: "System Ready",
             description: `${stats.totalQuestions} questions available across ${stats.totalCountries} countries`,
           });
         }
@@ -108,7 +85,7 @@ export const useDatabaseInit = () => {
         console.error('❌ Failed to initialize database:', error);
         toast({
           title: "Database Error",
-          description: "Failed to initialize countries database.",
+          description: "Failed to initialize database. Some features may not work properly.",
           variant: "destructive",
         });
       }
