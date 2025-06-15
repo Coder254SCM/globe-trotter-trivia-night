@@ -19,8 +19,6 @@ export default function QuizSettingsPage() {
     };
     
     scrollToTop();
-    
-    // Multiple attempts to ensure scroll works
     setTimeout(scrollToTop, 0);
     setTimeout(scrollToTop, 10);
     setTimeout(scrollToTop, 50);
@@ -29,6 +27,7 @@ export default function QuizSettingsPage() {
     // Get the selected country from sessionStorage
     const storedCountry = sessionStorage.getItem('selectedCountry');
     if (storedCountry) {
+      console.log('[QuizSettings] Read from sessionStorage:', storedCountry);
       setSelectedCountry(JSON.parse(storedCountry));
     } else {
       // If no country is stored, redirect back to home
@@ -40,6 +39,8 @@ export default function QuizSettingsPage() {
     if (selectedCountry) {
       // Store the question count and navigate to quiz
       sessionStorage.setItem('questionCount', questionCount.toString());
+      // Log for troubleshooting
+      console.log('[QuizSettings] Starting quiz for:', selectedCountry.name, '| Difficulty:', selectedCountry.difficulty, '| Question Count:', questionCount);
       navigate('/quiz');
     }
   };

@@ -1,4 +1,3 @@
-
 import { Country, DifficultyLevel } from "@/types/quiz";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,6 +12,16 @@ interface CountryCardProps {
 
 export const CountryCard = ({ country, onClose, onStartQuiz }: CountryCardProps) => {
   const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>(country.difficulty);
+
+  // Center modal on screen and prevent background scroll when card is open
+  React.useEffect(() => {
+    // Lock scroll on mount
+    document.body.classList.add("overflow-hidden");
+    return () => {
+      // Release scroll lock on unmount
+      document.body.classList.remove("overflow-hidden");
+    };
+  }, []);
 
   const getIcon = () => {
     switch (country.iconType) {
@@ -41,17 +50,23 @@ export const CountryCard = ({ country, onClose, onStartQuiz }: CountryCardProps)
   };
 
   const handleStartQuiz = () => {
-    console.log('🎯 CountryCard: Starting quiz with difficulty:', selectedDifficulty);
+    // Build up-to-date country, set in storage, and log for verification
+    const countryWithDifficulty = {
+      ...country,
+      difficulty: selectedDifficulty
+    };
+    sessionStorage.setItem('selectedCountry', JSON.stringify(countryWithDifficulty));
+    console.log('🌍 [CountryCard] Saved country in sessionStorage:', countryWithDifficulty);
     onStartQuiz(selectedDifficulty);
   };
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center z-10 animate-fade-in">
+    <div className="fixed inset-0 flex items-center justify-center z-50" style={{ backgroundColor: "rgba(16,21,33,0.88)" }}>
+      {/* Clicking backdrop closes the modal */}
       <div className="absolute inset-0 bg-background/90 backdrop-blur-md" onClick={onClose}></div>
-      <Card className="w-full max-w-md p-6 relative z-20 border-primary/20 shadow-lg shadow-primary/20">
+      <Card className="w-full max-w-md p-6 relative z-20 border-primary/20 shadow-lg shadow-primary/20 animate-fade-in">
         <div className="flex items-center gap-4 mb-6">
           {getIcon()}
-          
           {country.flagImageUrl && (
             <img 
               src={country.flagImageUrl} 
@@ -85,13 +100,14 @@ export const CountryCard = ({ country, onClose, onStartQuiz }: CountryCardProps)
               <button
                 key={difficulty}
                 onClick={() => setSelectedDifficulty(difficulty)}
-                className={`p-3 rounded-md border-2 transition-all capitalize
+                className={`p-3 rounded-md border-2 transition-all capitalize font-semibold text-lg
                   ${selectedDifficulty === difficulty ? 
                     `${getDifficultyColor(difficulty)} text-white border-transparent` : 
                     'border-border hover:border-primary/50'
                   }`}
+                style={selectedDifficulty === difficulty ? { boxShadow: "0 0 0 2px #10b981" } : undefined}
               >
-                {difficulty}
+                {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
               </button>
             ))}
           </div>
@@ -118,7 +134,7 @@ export const CountryCard = ({ country, onClose, onStartQuiz }: CountryCardProps)
         
         <Button 
           onClick={handleStartQuiz}
-          className={`w-full ${getDifficultyColor(selectedDifficulty)} hover:opacity-90 transition-opacity`}
+          className={`w-full ${getDifficultyColor(selectedDifficulty)} hover:opacity-90 transition-opacity font-semibold text-lg py-3`}
         >
           Continue to Quiz Settings
         </Button>

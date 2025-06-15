@@ -49,8 +49,7 @@ export default function QuizPage() {
         setSelectedCountry(country);
         setQuestionCount(count);
 
-        console.log(`🎯 Loading ${count} clean questions for ${country.name} (id: ${country.id}) at difficulty ${country.difficulty}`);
-
+        console.log(`[QuizPage] Loading ${count} clean questions for ${country.name} (id: ${country.id}) at difficulty "${country.difficulty}"`);
         // Use clean question fetcher with the actual difficulty from the country object
         const questions = await getCleanQuizQuestions(
           country.id, 
@@ -59,7 +58,7 @@ export default function QuizPage() {
         );
 
         if (questions.length === 0) {
-          console.warn(`❌ No validated questions found for country=${country.name}, id=${country.id}, difficulty=${country.difficulty}`);
+          console.warn(`[QuizPage] ❌ No validated questions found for country=${country.name}, id=${country.id}, difficulty=${country.difficulty}`);
           toast({
             title: "No Clean Questions Available",
             description: `No validated ${country.difficulty} questions found for ${country.name} (countryId: ${country.id}).\nTry a different country or check your question population.`,
@@ -71,11 +70,11 @@ export default function QuizPage() {
 
         setQuizQuestions(questions);
 
-        console.log(`✅ Loaded ${questions.length} clean ${country.difficulty} questions for ${country.name}`);
+        console.log(`[QuizPage] ✅ Loaded ${questions.length} clean ${country.difficulty} questions for ${country.name}`);
         scrollToTop();
 
       } catch (error) {
-        console.error('Failed to load clean quiz questions:', error);
+        console.error('[QuizPage] Failed to load clean quiz questions:', error);
         toast({
           title: "Quiz Loading Error",
           description: "Failed to load clean questions. Please try again.",
