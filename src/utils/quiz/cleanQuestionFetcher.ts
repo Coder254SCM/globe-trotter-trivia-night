@@ -1,4 +1,3 @@
-
 import { Question } from "../../types/quiz";
 import { QuestionService } from "@/services/supabase/questionService";
 
@@ -13,30 +12,23 @@ export const getCleanQuizQuestions = async (
   console.log(`🧹 Fetching clean questions:`, { countryId, difficulty, count });
   
   try {
-    // Only allow medium and hard difficulties
-    const validDifficulty = difficulty === 'hard' ? 'hard' : 'medium';
-    
-    if (difficulty === 'easy') {
-      console.warn('❌ Easy questions are no longer available - using medium instead');
-    }
-    
-    // Get questions from Supabase with validation
+    // Get questions from Supabase with validation, allowing all difficulties
     const questions = await QuestionService.getFilteredQuestions({
       countryId,
-      difficulty: validDifficulty,
+      difficulty,
       limit: count * 2, // Get extra to filter out any remaining bad ones
-      excludeEasy: true,
+      excludeEasy: false, // Allow easy questions
       validateContent: true
     });
     
     if (questions.length === 0) {
-      console.warn(`⚠️ No clean questions found for country: ${countryId}, difficulty: ${validDifficulty}`);
+      console.warn(`⚠️ No clean questions found for country: ${countryId}, difficulty: ${difficulty}`);
       
       // Fallback: try any difficulty for this country
       const fallbackQuestions = await QuestionService.getFilteredQuestions({
         countryId,
         limit: count * 2,
-        excludeEasy: true,
+        excludeEasy: false, // Allow easy questions in fallback
         validateContent: true
       });
       

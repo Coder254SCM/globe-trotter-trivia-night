@@ -48,29 +48,17 @@ export default function QuizPage() {
 
         console.log(`🎯 Loading ${count} clean questions for ${country.name}`);
         
-        // Force medium/hard difficulties only - NO EASY QUESTIONS
-        let validDifficulty = country.difficulty;
-        if (validDifficulty === 'easy') {
-          console.warn('❌ Easy difficulty blocked - using medium instead');
-          validDifficulty = 'medium';
-        }
-        
-        // Ensure only medium or hard
-        if (validDifficulty !== 'medium' && validDifficulty !== 'hard') {
-          validDifficulty = 'medium';
-        }
-
-        // Use clean question fetcher
+        // Use clean question fetcher with the actual difficulty from the country object
         const questions = await getCleanQuizQuestions(
           country.id, 
-          validDifficulty, 
+          country.difficulty, 
           count
         );
         
         if (questions.length === 0) {
           toast({
             title: "No Clean Questions Available",
-            description: `No validated ${validDifficulty} questions found for ${country.name}. Please try another country or check back later.`,
+            description: `No validated ${country.difficulty} questions found for ${country.name}. Please try another country or check back later.`,
             variant: "destructive",
           });
           navigate('/');
@@ -79,7 +67,7 @@ export default function QuizPage() {
         
         setQuizQuestions(questions);
         
-        console.log(`✅ Loaded ${questions.length} clean ${validDifficulty} questions for ${country.name}`);
+        console.log(`✅ Loaded ${questions.length} clean ${country.difficulty} questions for ${country.name}`);
         
         // Final scroll to top after questions are loaded
         scrollToTop();
