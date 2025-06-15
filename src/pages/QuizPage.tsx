@@ -23,8 +23,6 @@ export default function QuizPage() {
     };
     
     scrollToTop();
-    
-    // Multiple attempts to ensure scroll works
     setTimeout(scrollToTop, 0);
     setTimeout(scrollToTop, 10);
     setTimeout(scrollToTop, 50);
@@ -36,42 +34,46 @@ export default function QuizPage() {
         const storedQuestionCount = sessionStorage.getItem('questionCount');
         
         if (!storedCountry) {
+          toast({
+            title: "No Country Selected",
+            description: "Please choose a country to begin.",
+            variant: "destructive"
+          });
           navigate('/');
           return;
         }
 
         const country = JSON.parse(storedCountry);
         const count = storedQuestionCount ? parseInt(storedQuestionCount) : 10;
-        
+
         setSelectedCountry(country);
         setQuestionCount(count);
 
-        console.log(`🎯 Loading ${count} clean questions for ${country.name}`);
-        
+        console.log(`🎯 Loading ${count} clean questions for ${country.name} (id: ${country.id}) at difficulty ${country.difficulty}`);
+
         // Use clean question fetcher with the actual difficulty from the country object
         const questions = await getCleanQuizQuestions(
           country.id, 
           country.difficulty, 
           count
         );
-        
+
         if (questions.length === 0) {
+          console.warn(`❌ No validated questions found for country=${country.name}, id=${country.id}, difficulty=${country.difficulty}`);
           toast({
             title: "No Clean Questions Available",
-            description: `No validated ${country.difficulty} questions found for ${country.name}. Please try another country or check back later.`,
+            description: `No validated ${country.difficulty} questions found for ${country.name} (countryId: ${country.id}).\nTry a different country or check your question population.`,
             variant: "destructive",
           });
           navigate('/');
           return;
         }
-        
+
         setQuizQuestions(questions);
-        
+
         console.log(`✅ Loaded ${questions.length} clean ${country.difficulty} questions for ${country.name}`);
-        
-        // Final scroll to top after questions are loaded
         scrollToTop();
-        
+
       } catch (error) {
         console.error('Failed to load clean quiz questions:', error);
         toast({
@@ -82,7 +84,6 @@ export default function QuizPage() {
         navigate('/');
       } finally {
         setLoading(false);
-        // Ensure scroll to top even after loading is complete
         setTimeout(scrollToTop, 100);
       }
     };
@@ -103,12 +104,12 @@ export default function QuizPage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-background flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-background flex items-center justify-center z-50 min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
           <h2 className="text-xl font-semibold mb-2">Loading Clean Quiz...</h2>
           <p className="text-muted-foreground">
-            Preparing {questionCount} validated questions for {selectedCountry?.name}
+            Preparing {questionCount} validated questions for {selectedCountry?.name ?? "—"}
           </p>
           <p className="text-sm text-muted-foreground mt-2">
             Only high-quality questions are included
@@ -120,13 +121,19 @@ export default function QuizPage() {
 
   if (!selectedCountry || quizQuestions.length === 0) {
     return (
-      <div className="fixed inset-0 bg-background flex items-center justify-center z-50">
-        <div className="text-center">
+      <div className="fixed inset-0 bg-background flex items-center justify-center z-50 min-h-screen">
+        <div className="text-center space-y-2">
           <h2 className="text-xl font-semibold mb-2">Clean Quiz Not Available</h2>
-          <p className="text-muted-foreground mb-4">
-            No validated questions available for this selection.
+          <p className="text-muted-foreground mb-1">
+            {selectedCountry 
+              ? `No validated "${selectedCountry.difficulty}" questions found for "${selectedCountry.name}" (countryId:${selectedCountry.id}).`
+              : "No validated questions available for this selection."
+            }
           </p>
-          <button onClick={handleBack} className="bg-primary text-primary-foreground px-4 py-2 rounded">
+          <p className="text-xs text-muted-foreground">
+            Please try a different country, check your country population, or ensure questions exist at this difficulty.
+          </p>
+          <button onClick={handleBack} className="bg-primary text-primary-foreground px-4 py-2 rounded mt-3">
             Back to Countries
           </button>
         </div>
