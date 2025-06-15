@@ -16,24 +16,34 @@ export default function QuizPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Force immediate scroll to top
-    const scrollToTop = () => {
-      try {
-        window.scrollTo(0, 0);
+    // AGGRESSIVE scroll to top - multiple methods to ensure it works
+    const forceScrollToTop = () => {
+      // Method 1: Direct scroll
+      window.scrollTo(0, 0);
+      
+      // Method 2: Document element scroll
+      if (document.documentElement) {
         document.documentElement.scrollTop = 0;
+      }
+      
+      // Method 3: Body scroll
+      if (document.body) {
         document.body.scrollTop = 0;
-        
-        if (document.scrollingElement) {
-          document.scrollingElement.scrollTop = 0;
-        }
-      } catch (error) {
-        console.warn('Scroll to top failed:', error);
+      }
+      
+      // Method 4: Scrolling element
+      if (document.scrollingElement) {
+        document.scrollingElement.scrollTop = 0;
       }
     };
     
-    scrollToTop();
-    setTimeout(scrollToTop, 0);
-    setTimeout(scrollToTop, 50);
+    // Execute immediately
+    forceScrollToTop();
+    
+    // Execute after a brief delay to handle any layout shifts
+    setTimeout(forceScrollToTop, 0);
+    setTimeout(forceScrollToTop, 50);
+    setTimeout(forceScrollToTop, 100);
 
     const loadQuizData = async () => {
       try {
@@ -86,6 +96,9 @@ export default function QuizPage() {
         
         console.log(`✅ Loaded ${questions.length} clean ${validDifficulty} questions for ${country.name}`);
         
+        // Final scroll to top after questions are loaded
+        forceScrollToTop();
+        
       } catch (error) {
         console.error('Failed to load clean quiz questions:', error);
         toast({
@@ -96,6 +109,8 @@ export default function QuizPage() {
         navigate('/');
       } finally {
         setLoading(false);
+        // Ensure scroll to top even after loading is complete
+        setTimeout(forceScrollToTop, 100);
       }
     };
 
@@ -115,7 +130,7 @@ export default function QuizPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background" style={{ paddingTop: 0, marginTop: 0 }}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
           <h2 className="text-xl font-semibold mb-2">Loading Clean Quiz...</h2>
@@ -132,7 +147,7 @@ export default function QuizPage() {
 
   if (!selectedCountry || quizQuestions.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background" style={{ paddingTop: 0, marginTop: 0 }}>
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">Clean Quiz Not Available</h2>
           <p className="text-muted-foreground mb-4">
@@ -147,13 +162,15 @@ export default function QuizPage() {
   }
 
   return (
-    <ErrorBoundary>
-      <Quiz
-        country={selectedCountry}
-        questions={quizQuestions}
-        onFinish={handleQuizComplete}
-        onBack={handleBack}
-      />
-    </ErrorBoundary>
+    <div className="min-h-screen bg-background" style={{ paddingTop: 0, marginTop: 0, overflow: 'hidden auto' }}>
+      <ErrorBoundary>
+        <Quiz
+          country={selectedCountry}
+          questions={quizQuestions}
+          onFinish={handleQuizComplete}
+          onBack={handleBack}
+        />
+      </ErrorBoundary>
+    </div>
   );
 }

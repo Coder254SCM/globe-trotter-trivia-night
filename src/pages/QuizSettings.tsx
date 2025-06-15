@@ -11,6 +11,24 @@ export default function QuizSettingsPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Force scroll to top immediately when page loads
+    const forceScrollToTop = () => {
+      window.scrollTo(0, 0);
+      if (document.documentElement) {
+        document.documentElement.scrollTop = 0;
+      }
+      if (document.body) {
+        document.body.scrollTop = 0;
+      }
+      if (document.scrollingElement) {
+        document.scrollingElement.scrollTop = 0;
+      }
+    };
+    
+    forceScrollToTop();
+    setTimeout(forceScrollToTop, 0);
+    setTimeout(forceScrollToTop, 50);
+
     // Get the selected country from sessionStorage
     const storedCountry = sessionStorage.getItem('selectedCountry');
     if (storedCountry) {
@@ -37,7 +55,7 @@ export default function QuizSettingsPage() {
 
   if (!selectedCountry) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">Loading...</h2>
           <p className="text-muted-foreground">Setting up your quiz</p>
@@ -47,9 +65,9 @@ export default function QuizSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-background p-6" style={{ paddingTop: 0, marginTop: 0 }}>
       <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
+        <div className="mb-6 pt-6">
           <Button variant="ghost" onClick={handleBack} className="flex items-center gap-2">
             <ArrowLeft size={16} />
             Back to Countries
