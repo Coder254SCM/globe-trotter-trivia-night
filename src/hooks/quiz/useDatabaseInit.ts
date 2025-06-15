@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { CountryService } from "@/services/supabase/countryService";
+import { GameOrchestrator } from "@/services/production/gameOrchestrator";
 
 export const useDatabaseInit = () => {
   const { toast } = useToast();
@@ -24,7 +25,7 @@ export const useDatabaseInit = () => {
           console.log(`✅ Database already has ${supabaseCountries.length} countries`);
         }
         
-        // Check database stats without trying to generate AI questions
+        // Check database stats and generate if needed
         const stats = await CountryService.getDatabaseStats();
         console.log('📊 Database stats:', stats);
         
@@ -36,9 +37,34 @@ export const useDatabaseInit = () => {
         } else {
           toast({
             title: "No Questions Found",
-            description: "Use the admin panel to generate questions for countries.",
-            variant: "destructive",
+            description: "Attempting to generate initial questions. This may take a moment...",
           });
+
+          try {
+            const orchestrator = GameOrchestrator.getInstance();
+            await orchestrator.initialize();
+            
+            const newStats = await CountryService.getDatabaseStats();
+            if (newStats.totalQuestions > 0) {
+              toast({
+                title: "Questions Generated!",
+                description: `Successfully generated ${newStats.totalQuestions} questions. The game is ready!`,
+              });
+            } else {
+              toast({
+                title: "Generation Complete, No Questions",
+                description: "The generation process ran, but there are still no questions. Check console for errors.",
+                variant: "destructive"
+              });
+            }
+          } catch(e) {
+             console.error('❌ Failed to auto-generate questions:', e);
+             toast({
+              title: "Generation Failed",
+              description: "Could not automatically generate questions. Please use the admin panel.",
+              variant: "destructive",
+            });
+          }
         }
         
       } catch (error) {
