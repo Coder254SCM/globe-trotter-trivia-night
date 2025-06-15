@@ -7,95 +7,72 @@ import { useEnhancedCountries } from "./useEnhancedCountries";
 export const useQuizManager = () => {
   console.log('🔧 useQuizManager: Starting initialization...');
   
-  try {
-    // Initialize database and AI questions
-    console.log('🔧 useQuizManager: Initializing database...');
-    useDatabaseInit();
+  // Initialize database and AI questions
+  console.log('🔧 useQuizManager: Initializing database...');
+  useDatabaseInit();
 
-    // Use enhanced countries with 12+ categories each
-    console.log('🔧 useQuizManager: Loading enhanced countries...');
-    const allCountries = useEnhancedCountries();
-    console.log('🔧 useQuizManager: Enhanced countries loaded:', allCountries?.length || 0);
+  // Use enhanced countries with 12+ categories each
+  console.log('🔧 useQuizManager: Loading enhanced countries...');
+  const allCountries = useEnhancedCountries();
+  console.log('🔧 useQuizManager: Enhanced countries loaded:', allCountries?.length || 0);
 
-    // Quiz state management
-    console.log('🔧 useQuizManager: Initializing quiz state...');
-    const {
-      selectedCountry,
-      showQuiz,
-      showSettings,
-      quizResult,
-      quizQuestions,
-      isGeneratingQuestions,
-      questionCount,
-      setSelectedCountry,
-      setShowQuiz,
-      setShowSettings,
-      setQuizResult,
-      setQuizQuestions,
-      setIsGeneratingQuestions,
-      setQuestionCount
-    } = useQuizState();
+  // Quiz state management
+  console.log('🔧 useQuizManager: Initializing quiz state...');
+  const {
+    selectedCountry,
+    showQuiz,
+    showSettings,
+    quizResult,
+    quizQuestions,
+    isGeneratingQuestions,
+    questionCount,
+    setSelectedCountry,
+    setShowQuiz,
+    setShowSettings,
+    setQuizResult,
+    setQuizQuestions,
+    setIsGeneratingQuestions,
+    setQuestionCount
+  } = useQuizState();
 
-    // Quiz actions
-    console.log('🔧 useQuizManager: Initializing quiz actions...');
-    const {
-      handleCountryClick,
-      handleStartQuiz,
-      handleQuizComplete,
-      handleBackToGlobe,
-      handleRetryQuiz,
-      handleShowSettings,
-      handleStartQuizWithCount
-    } = useQuizActions({
-      selectedCountry,
-      questionCount,
-      setSelectedCountry,
-      setShowQuiz,
-      setShowSettings,
-      setQuizResult,
-      setQuizQuestions,
-      setQuestionCount
-    });
+  // Quiz actions
+  console.log('🔧 useQuizManager: Initializing quiz actions...');
+  const {
+    handleCountryClick,
+    handleStartQuiz,
+    handleQuizComplete,
+    handleBackToGlobe,
+    handleRetryQuiz,
+    handleShowSettings,
+    handleStartQuizWithCount
+  } = useQuizActions({
+    selectedCountry,
+    questionCount,
+    setSelectedCountry,
+    setShowQuiz,
+    setShowSettings,
+    setQuizResult,
+    setQuizQuestions,
+    setQuestionCount
+  });
 
-    console.log('🔧 useQuizManager: Initialization complete');
+  console.log('🔧 useQuizManager: Initialization complete');
 
-    return {
-      allCountries,
-      selectedCountry,
-      showQuiz,
-      showSettings,
-      quizResult,
-      quizQuestions,
-      isGeneratingQuestions,
-      questionCount,
-      handleCountryClick,
-      handleStartQuiz,
-      handleQuizComplete,
-      handleBackToGlobe,
-      handleRetryQuiz,
-      handleShowSettings,
-      handleStartQuizWithCount
-    };
-  } catch (error) {
-    console.error('🔧 useQuizManager: Error during initialization:', error);
-    
-    // Return safe defaults to prevent crashes
-    return {
-      allCountries: [],
-      selectedCountry: null,
-      showQuiz: false,
-      showSettings: false,
-      quizResult: null,
-      quizQuestions: [],
-      isGeneratingQuestions: false,
-      questionCount: 10,
-      handleCountryClick: () => {},
-      handleStartQuiz: () => {},
-      handleQuizComplete: () => {},
-      handleBackToGlobe: () => {},
-      handleRetryQuiz: () => {},
-      handleShowSettings: () => {},
-      handleStartQuizWithCount: () => {}
-    };
-  }
+  return {
+    allCountries,
+    selectedCountry,
+    showQuiz,
+    showSettings,
+    quizResult,
+    quizQuestions,
+    isGeneratingQuestions,
+    questionCount,
+    handleCountryClick,
+    handleStartQuiz,
+    handleQuizComplete,
+    handleBackToGlobe,
+    handleRetryQuiz,
+    handleShowSettings,
+    handleStartQuizWithCount
+  };
 };

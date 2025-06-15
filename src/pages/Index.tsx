@@ -25,28 +25,8 @@ const AppHeader = React.lazy(() =>
   }))
 );
 
-// Import hooks separately to avoid circular deps
-let useQuizManager: any;
-try {
-  useQuizManager = require("@/hooks/useQuizManager").useQuizManager;
-} catch (error) {
-  console.error('❌ Failed to import useQuizManager:', error);
-  useQuizManager = () => ({
-    allCountries: [],
-    selectedCountry: null,
-    showQuiz: false,
-    showSettings: false,
-    quizResult: null,
-    quizQuestions: [],
-    isGeneratingQuestions: false,
-    questionCount: 10,
-    handleCountryClick: () => {},
-    handleQuizComplete: () => {},
-    handleBackToGlobe: () => {},
-    handleRetryQuiz: () => {},
-    handleStartQuizWithCount: () => {}
-  });
-}
+// Import hooks with proper error handling
+import { useQuizManager } from "@/hooks/useQuizManager";
 
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -58,34 +38,10 @@ function IndexContent() {
   console.log('🔄 Index component loading...');
   
   const [weeklyChallenge, setWeeklyChallenge] = useState<{questions: any[], challengeId: string} | null>(null);
-  const [initError, setInitError] = useState<string | null>(null);
   const navigate = useNavigate();
   
   console.log('🔄 Initializing useQuizManager...');
   
-  let quizManagerResult;
-  try {
-    quizManagerResult = useQuizManager();
-  } catch (error) {
-    console.error('❌ useQuizManager failed:', error);
-    setInitError('Failed to initialize quiz manager');
-    quizManagerResult = {
-      allCountries: [],
-      selectedCountry: null,
-      showQuiz: false,
-      showSettings: false,
-      quizResult: null,
-      quizQuestions: [],
-      isGeneratingQuestions: false,
-      questionCount: 10,
-      handleCountryClick: () => {},
-      handleQuizComplete: () => {},
-      handleBackToGlobe: () => {},
-      handleRetryQuiz: () => {},
-      handleStartQuizWithCount: () => {}
-    };
-  }
-
   const {
     allCountries,
     selectedCountry,
@@ -99,13 +55,14 @@ function IndexContent() {
     handleBackToGlobe,
     handleRetryQuiz,
     handleStartQuizWithCount
-  } = quizManagerResult;
+  } = useQuizManager();
 
   console.log('🔄 useQuizManager initialized, countries count:', allCountries?.length || 0);
 
   useEffect(() => {
     console.log('🔄 Index component mounted successfully');
-  }, []);
+    console.log('🔄 Countries loaded:', allCountries?.length || 0);
+  }, [allCountries]);
 
   const handleWeeklyChallengeStart = (questions: any[], challengeId: string) => {
     console.log('🔄 Starting weekly challenge:', challengeId);
@@ -134,25 +91,8 @@ function IndexContent() {
     showQuiz,
     quizResult: !!quizResult,
     selectedCountry: selectedCountry?.name,
-    initError
+    countriesAvailable: allCountries?.length || 0
   });
-
-  if (initError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold text-destructive">Initialization Error</h1>
-          <p className="text-muted-foreground">{initError}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
-          >
-            Reload Page
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   if (weeklyChallenge) {
     console.log('🔄 Rendering weekly challenge quiz');
