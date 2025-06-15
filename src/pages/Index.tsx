@@ -7,8 +7,8 @@ import React, { Suspense } from "react";
 
 // Lazy load only the components needed for the main page
 const Globe = React.lazy(() => import("@/components/Globe"));
-const MainLayout = React.lazy(() => import("@/components/layout/MainLayout"));
-const AppHeader = React.lazy(() => import("@/components/layout/AppHeader"));
+const MainLayout = React.lazy(() => import("@/components/layout/MainLayout").then(module => ({ default: module.MainLayout })));
+const AppHeader = React.lazy(() => import("@/components/layout/AppHeader").then(module => ({ default: module.AppHeader })));
 
 // Import hooks
 import { useEnhancedCountries } from "@/hooks/useEnhancedCountries";
