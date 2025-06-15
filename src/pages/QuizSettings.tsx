@@ -11,23 +11,20 @@ export default function QuizSettingsPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Force scroll to top immediately when page loads
-    const forceScrollToTop = () => {
-      window.scrollTo(0, 0);
-      if (document.documentElement) {
-        document.documentElement.scrollTop = 0;
-      }
-      if (document.body) {
-        document.body.scrollTop = 0;
-      }
-      if (document.scrollingElement) {
-        document.scrollingElement.scrollTop = 0;
-      }
+    // FORCE scroll to top immediately
+    const scrollToTop = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
     };
     
-    forceScrollToTop();
-    setTimeout(forceScrollToTop, 0);
-    setTimeout(forceScrollToTop, 50);
+    scrollToTop();
+    
+    // Multiple attempts to ensure scroll works
+    setTimeout(scrollToTop, 0);
+    setTimeout(scrollToTop, 10);
+    setTimeout(scrollToTop, 50);
+    setTimeout(scrollToTop, 100);
 
     // Get the selected country from sessionStorage
     const storedCountry = sessionStorage.getItem('selectedCountry');
@@ -55,7 +52,7 @@ export default function QuizSettingsPage() {
 
   if (!selectedCountry) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="fixed inset-0 bg-background flex items-center justify-center z-50">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-2">Loading...</h2>
           <p className="text-muted-foreground">Setting up your quiz</p>
@@ -65,7 +62,7 @@ export default function QuizSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6" style={{ paddingTop: 0, marginTop: 0 }}>
+    <div className="fixed inset-0 bg-background overflow-auto p-6">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6 pt-6">
           <Button variant="ghost" onClick={handleBack} className="flex items-center gap-2">
