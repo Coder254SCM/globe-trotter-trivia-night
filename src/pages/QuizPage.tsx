@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Country, Question } from "@/types/quiz";
@@ -148,15 +147,13 @@ export default function QuizPage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-background overflow-auto">
-      <ErrorBoundary>
-        <Quiz
-          country={selectedCountry}
-          questions={quizQuestions}
-          onFinish={handleQuizComplete}
-          onBack={handleBack}
-        />
-      </ErrorBoundary>
-    </div>
+    <ErrorBoundary>
+      <Quiz
+        country={selectedCountry}
+        questions={quizQuestions}
+        onFinish={handleQuizComplete}
+        onBack={handleBack}
+      />
+    </ErrorBoundary>
   );
 }
