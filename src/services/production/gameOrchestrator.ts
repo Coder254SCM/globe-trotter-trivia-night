@@ -1,42 +1,26 @@
+
+```typescript
 import { AutomatedAuditService, QualityReport } from "../quality/automatedAudit";
-import { supabase } from "@/integrations/supabase/client";
-import countries from "@/data/countries";
+import { ProductionConfigService, ProductionConfig } from "./orchestrator/config";
+import { ProductionStatusService, ProductionStatus } from "./orchestrator/status";
+import { QuestionMaintenanceService } from "./orchestrator/maintenance";
 
-export interface ProductionConfig {
-  minQuestionsPerDifficulty: number;
-  qualityThreshold: number;
-  auditIntervalHours: number;
-  generationBatchSize: number;
-  autoCleanup: boolean;
-  autoGeneration: boolean;
-}
-
-export interface ProductionStatus {
-  isReady: boolean;
-  overallQuality: number;
-  countryCoverage: number;
-  totalQuestions: number;
-  lastAudit: Date;
-  nextScheduledAudit: Date;
-  criticalIssues: string[];
-  actions: string[];
-}
+export { ProductionStatus };
 
 export class GameOrchestrator {
   private static instance: GameOrchestrator;
-  private config: ProductionConfig;
+  private configService: ProductionConfigService;
+  private statusService: ProductionStatusService;
+  private maintenanceService: QuestionMaintenanceService;
   private isRunning: boolean = false;
   private lastAudit: QualityReport | null = null;
+  private auditInterval: number | null = null;
 
   private constructor() {
-    this.config = {
-      minQuestionsPerDifficulty: 10,
-      qualityThreshold: 95,
-      auditIntervalHours: 6,
-      generationBatchSize: 5,
-      autoCleanup: true,
-      autoGeneration: true
-    };
+    this.configService = new ProductionConfigService();
+    const config = this.configService.getConfig();
+    this.statusService = new ProductionStatusService(config);
+    this.maintenanceService = new QuestionMaintenanceService(config);
   }
 
   static getInstance(): GameOrchestrator {
@@ -46,243 +30,82 @@ export class GameOrchestrator {
     return GameOrchestrator.instance;
   }
 
-  /**
-   * Initialize production-ready system
-   */
   async initialize(): Promise<void> {
     console.log("🚀 Initializing production game system...");
-    
     if (this.isRunning) {
       console.log("System already running");
       return;
     }
 
     try {
-      // Step 1: Run initial audit
-      console.log("📊 Running initial quality audit...");
       this.lastAudit = await AutomatedAuditService.runFullAudit();
-      
-      // Step 2: Clean up existing issues
-      if (this.config.autoCleanup) {
-        await this.performCleanup();
-      }
-
-      // Step 3: Fill coverage gaps
-      if (this.config.autoGeneration) {
-        await this.ensureFullCoverage();
-      }
-
-      // Step 4: Start automated monitoring
+      const config = this.configService.getConfig();
+      if (config.autoCleanup) await this.maintenanceService.performCleanup();
+      if (config.autoGeneration) await this.maintenanceService.ensureFullCoverage();
       this.startAutomatedMonitoring();
-      
       this.isRunning = true;
       console.log("✅ Production system initialized successfully");
-      
     } catch (error) {
       console.error("❌ Failed to initialize production system:", error);
       throw error;
     }
   }
 
-  /**
-   * Get current production status
-   */
   async getProductionStatus(): Promise<ProductionStatus> {
-    const currentAudit = this.lastAudit || await AutomatedAuditService.runFullAudit();
-    
-    const isReady = currentAudit.overallScore >= this.config.qualityThreshold &&
-                   currentAudit.countryCoverage >= 95;
-
-    const actions: string[] = [];
-    
-    if (currentAudit.overallScore < this.config.qualityThreshold) {
-      actions.push(`Improve quality from ${currentAudit.overallScore.toFixed(1)}% to ${this.config.qualityThreshold}%`);
-    }
-    
-    if (currentAudit.countryCoverage < 95) {
-      actions.push(`Increase country coverage from ${currentAudit.countryCoverage.toFixed(1)}% to 95%`);
-    }
-
-    actions.push(...currentAudit.recommendations.slice(0, 3));
-
-    return {
-      isReady,
-      overallQuality: currentAudit.overallScore,
-      countryCoverage: currentAudit.countryCoverage,
-      totalQuestions: currentAudit.totalQuestions,
-      lastAudit: new Date(),
-      nextScheduledAudit: new Date(Date.now() + this.config.auditIntervalHours * 60 * 60 * 1000),
-      criticalIssues: currentAudit.criticalIssues,
-      actions
-    };
+    return this.statusService.getProductionStatus(this.lastAudit);
   }
 
-  /**
-   * Ensure full coverage across all countries and difficulties
-   */
   async ensureFullCoverage(): Promise<void> {
-    console.log("🌍 Ensuring full country and difficulty coverage...");
-    
-    const categories = ['Geography', 'Culture', 'History', 'Politics', 'Economy'];
-    const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
-    
-    const generationRequests: any[] = [];
-
-    for (const country of countries) {
-      for (const difficulty of difficulties) {
-        for (const category of categories.slice(0, 2)) { // Start with top 2 categories
-          // Check current question count
-          const { count } = await supabase
-            .from('questions')
-            .select('*', { count: 'exact', head: true })
-            .eq('country_id', country.id)
-            .eq('difficulty', difficulty)
-            .eq('category', category);
-
-          const currentCount = count || 0;
-          const needed = Math.max(0, this.config.minQuestionsPerDifficulty - currentCount);
-
-          if (needed > 0) {
-            generationRequests.push({
-              countryId: country.id,
-              difficulty,
-              category,
-              count: needed
-            });
-          }
-        }
-      }
-    }
-
-    console.log(`📝 Need to generate ${generationRequests.length} question batches`);
-    console.warn("AI question generation is disabled. Skipping generation.");
+    return this.maintenanceService.ensureFullCoverage();
   }
 
-  /**
-   * Perform automated cleanup
-   */
-  private async performCleanup(): Promise<void> {
-    console.log("🧹 Performing automated cleanup...");
-    
-    // Remove questions with placeholder content
-    const placeholderPatterns = [
-      '%methodology%',
-      '%approach%', 
-      '%technique%',
-      '%placeholder%',
-      '%option a for%',
-      '%option b for%',
-      '%option c for%',
-      '%option d for%'
-    ];
-
-    for (const pattern of placeholderPatterns) {
-      const { error } = await supabase
-        .from('questions')
-        .delete()
-        .or(`text.ilike.${pattern},option_a.ilike.${pattern},option_b.ilike.${pattern},option_c.ilike.${pattern},option_d.ilike.${pattern}`);
-
-      if (error) {
-        console.error(`Failed to clean pattern ${pattern}:`, error);
-      }
-    }
-
-    console.log("✅ Cleanup completed");
-  }
-
-  /**
-   * Start automated monitoring and maintenance
-   */
   private startAutomatedMonitoring(): void {
-    console.log("🔄 Starting automated monitoring...");
+    if (this.auditInterval) clearInterval(this.auditInterval);
     
-    // Schedule regular audits
-    setInterval(async () => {
+    console.log("🔄 Starting automated monitoring...");
+    const config = this.configService.getConfig();
+    
+    this.auditInterval = setInterval(async () => {
       try {
         console.log("⏰ Running scheduled audit...");
         this.lastAudit = await AutomatedAuditService.runFullAudit();
-        
-        // Auto-fix issues if quality drops
-        if (this.lastAudit.overallScore < this.config.qualityThreshold) {
+        if (this.lastAudit.overallScore < config.qualityThreshold) {
           console.log("🚨 Quality dropped, triggering auto-fix...");
-          await this.performCleanup();
-          await this.ensureFullCoverage();
+          await this.maintenanceService.performCleanup();
+          await this.maintenanceService.ensureFullCoverage();
         }
-        
       } catch (error) {
         console.error("Scheduled audit failed:", error);
       }
-    }, this.config.auditIntervalHours * 60 * 60 * 1000);
+    }, config.auditIntervalHours * 60 * 60 * 1000);
 
-    console.log(`📅 Scheduled audits every ${this.config.auditIntervalHours} hours`);
+    console.log(`📅 Scheduled audits every ${config.auditIntervalHours} hours`);
   }
 
-  /**
-   * Force regeneration for specific countries
-   */
   async regenerateCountryQuestions(countryIds: string[]): Promise<void> {
-    console.log(`🔄 Regenerating questions for ${countryIds.length} countries...`);
-    
-    const requests: any[] = [];
-    const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
-    const categories = ['Geography', 'Culture'];
-
-    for (const countryId of countryIds) {
-      // First, delete existing questions
-      await supabase
-        .from('questions')
-        .delete()
-        .eq('country_id', countryId);
-
-      // Then generate new ones
-      for (const difficulty of difficulties) {
-        for (const category of categories) {
-          requests.push({
-            countryId,
-            difficulty,
-            category,
-            count: this.config.minQuestionsPerDifficulty
-          });
-        }
-      }
-    }
-
-    console.warn("AI question regeneration has been disabled. Skipping regeneration.");
-    
-    console.log(`✅ Regenerated questions for ${countryIds.length} countries`);
+    return this.maintenanceService.regenerateCountryQuestions(countryIds);
   }
 
-  /**
-   * Utility: Chunk array into smaller arrays
-   */
-  private chunkArray<T>(array: T[], chunkSize: number): T[][] {
-    const chunks: T[][] = [];
-    for (let i = 0; i < array.length; i += chunkSize) {
-      chunks.push(array.slice(i, i + chunkSize));
-    }
-    return chunks;
-  }
-
-  /**
-   * Get system configuration
-   */
   getConfig(): ProductionConfig {
-    return { ...this.config };
+    return this.configService.getConfig();
   }
 
-  /**
-   * Update system configuration
-   */
   updateConfig(newConfig: Partial<ProductionConfig>): void {
-    this.config = { ...this.config, ...newConfig };
-    console.log("⚙️ Updated system configuration:", newConfig);
+    this.configService.updateConfig(newConfig);
+    const config = this.configService.getConfig();
+    this.statusService = new ProductionStatusService(config);
+    this.maintenanceService = new QuestionMaintenanceService(config);
+    this.startAutomatedMonitoring();
+    console.log("⚙️ System configuration updated and services re-initialized.");
   }
 
-  /**
-   * Stop the system
-   */
   stop(): void {
     this.isRunning = false;
+    if (this.auditInterval) {
+      clearInterval(this.auditInterval);
+      this.auditInterval = null;
+    }
     console.log("🛑 Production system stopped");
   }
 }
+```
