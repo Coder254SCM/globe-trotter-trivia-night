@@ -1,4 +1,3 @@
-
 import { useToast } from "@/hooks/use-toast";
 import { QuestionService } from "@/services/supabase/questionService";
 import { RotationService } from "@/services/supabase/rotationService";
@@ -66,66 +65,50 @@ export const useQuizActions = ({
     
     if (targetCountry) {
       try {
-        console.log(`🎯 Loading ${targetCount} questions for ${targetCountry.name} with rotation system (medium/hard only)`);
+        console.log(`🎯 Loading ${targetCount} questions for ${targetCountry.name} (difficulty: ${targetCountry.difficulty})`);
         
-        // Force medium/hard difficulties only - no easy questions allowed
-        let validDifficulty = targetCountry.difficulty;
-        if (validDifficulty === 'easy') {
-          console.warn('❌ Easy difficulty requested but not available - using medium instead');
-          validDifficulty = 'medium';
-        }
-        
-        // Ensure only medium or hard
-        if (validDifficulty !== 'medium' && validDifficulty !== 'hard') {
-          validDifficulty = 'medium';
-        }
-        
-        // Check cache first
-        const cacheKey = `${targetCountry.id}-${validDifficulty}-${targetCount}`;
+        const cacheKey = `${targetCountry.id}-${targetCountry.difficulty}-${targetCount}`;
         const cachedQuestions = questionCache.get(cacheKey);
         const cacheTime = cacheTimestamps.get(cacheKey) || 0;
-        
+
         if (cachedQuestions && (Date.now() - cacheTime) < cacheTimeout) {
-          console.log(`✅ Using cached medium/hard questions for ${targetCountry.name}`);
+          console.log(`✅ Using cached questions for ${targetCountry.name}`);
           setQuizQuestions(cachedQuestions);
           setShowQuiz(true);
           setQuizResult(null);
           return;
         }
-        
-        // Use rotation service to get current month questions (medium/hard only)
-        const questions = await RotationService.getCurrentMonthQuestions(
-          targetCountry.id, 
-          validDifficulty, 
-          targetCount
-        );
+
+        const questions = await QuestionService.getFilteredQuestions({
+          countryId: targetCountry.id,
+          difficulty: targetCountry.difficulty,
+          limit: targetCount,
+          validateContent: true
+        });
         
         if (questions.length === 0) {
           toast({
             title: "No Questions Available",
-            description: `No ${validDifficulty} questions found for ${targetCountry.name}. Easy questions have been removed from the system.`,
+            description: `No '${targetCountry.difficulty}' questions found for ${targetCountry.name}. Try generating some!`,
             variant: "destructive",
           });
           return;
         }
         
-        // Transform to frontend format
-        const transformedQuestions = questions.map(q => QuestionService.transformToFrontendQuestion(q));
-        
         // Cache the questions
-        questionCache.set(cacheKey, transformedQuestions);
+        questionCache.set(cacheKey, questions);
         cacheTimestamps.set(cacheKey, Date.now());
         
-        setQuizQuestions(transformedQuestions);
+        setQuizQuestions(questions);
         setShowQuiz(true);
         setQuizResult(null);
-        console.log(`✅ Loaded ${questions.length} ${validDifficulty} questions for ${targetCountry.name} (no easy questions)`);
+        console.log(`✅ Loaded ${questions.length} ${targetCountry.difficulty} questions for ${targetCountry.name}`);
         
       } catch (error) {
         console.error('Failed to load quiz questions:', error);
         toast({
           title: "Database Error",
-          description: "Failed to load questions. Easy questions have been removed from the system.",
+          description: "Failed to load questions.",
           variant: "destructive",
         });
       }
