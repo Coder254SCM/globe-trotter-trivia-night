@@ -47,9 +47,10 @@ export class AIService {
   static async generateQuestions(
     country: Country,
     difficulty: 'easy' | 'medium' | 'hard',
-    count: number = 10
+    count: number = 10,
+    category?: string
   ): Promise<Question[]> {
-    console.log(`🤖 Generating ${count} ${difficulty} questions for ${country.name}...`);
+    console.log(`🤖 Generating ${count} ${difficulty} questions for ${country.name}` + (category ? ` in category: ${category}` : ''));
     
     try {
       // Check if AI service is available first
@@ -59,7 +60,7 @@ export class AIService {
         return this.generateEnhancedFallbackQuestions(country, difficulty, count);
       }
 
-      const prompt = this.buildPrompt(country, difficulty, count);
+      const prompt = this.buildPrompt(country, difficulty, count, category);
       
       const { data, error } = await supabase.functions.invoke('ai-proxy', {
         body: { 
@@ -110,7 +111,7 @@ export class AIService {
   /**
    * Build the prompt for question generation
    */
-  private static buildPrompt(country: Country, difficulty: string, count: number): string {
+  private static buildPrompt(country: Country, difficulty: string, count: number, category?: string): string {
     const difficultyInstructions = {
       easy: `EASY LEVEL - Basic facts that most people would know:
         - Capital city, continent, major landmarks
@@ -139,10 +140,17 @@ export class AIService {
         - Technical government policies, bureaucratic details`
     };
 
+    const categoryInstruction = category
+      ? `\nCATEGORY: ${category}\nAll questions must be from this category.`
+      : `\nCATEGORY: Choose one of the following for each question: "Geography|History|Culture|Economy|Politics|Demographics|Legal"`;
+    
+    const jsonFormatCategory = category ? `"${category}"` : `"The category you chose"`;
+
     return `Generate ${count} multiple-choice trivia questions about ${country.name}.
 
 DIFFICULTY: ${difficulty.toUpperCase()}
 ${difficultyInstructions[difficulty as keyof typeof difficultyInstructions]}
+${categoryInstruction}
 
 Country Information:
 - Capital: ${country.capital}
@@ -164,7 +172,7 @@ Format each question as JSON:
   "options": ["A", "B", "C", "D"],
   "correct": 0,
   "explanation": "Detailed explanation with context",
-  "category": "Geography|History|Culture|Economy|Politics|Demographics|Legal"
+  "category": ${jsonFormatCategory}
 }
 
 Return only a JSON array of questions. Ensure questions match the specified difficulty level exactly.`;

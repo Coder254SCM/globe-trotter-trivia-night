@@ -1,6 +1,9 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import countries from "@/data/countries";
+import countriesData from "@/data/countries";
 import { ProductionConfig } from "./config";
+import AIService from "@/services/aiService";
+import { Country } from "@/types/quiz";
 
 export class QuestionMaintenanceService {
   private config: ProductionConfig;
@@ -15,11 +18,12 @@ export class QuestionMaintenanceService {
     const categories = ['Geography', 'Culture', 'History', 'Politics', 'Economy'];
     const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
     
-    const generationRequests: any[] = [];
+    const generationRequests: { countryId: string; difficulty: 'easy' | 'medium' | 'hard'; category: string; count: number }[] = [];
+    const allCountries: Country[] = countriesData;
 
-    for (const country of countries) {
+    for (const country of allCountries) {
       for (const difficulty of difficulties) {
-        for (const category of categories.slice(0, 2)) {
+        for (const category of categories.slice(0, 2)) { // Limiting to 2 categories for now to manage generation time
           const { count } = await supabase
             .from('questions')
             .select('*', { count: 'exact', head: true })
@@ -42,8 +46,50 @@ export class QuestionMaintenanceService {
       }
     }
 
-    console.log(`📝 Need to generate ${generationRequests.length} question batches`);
-    console.warn("AI question generation is disabled. Skipping generation.");
+    console.log(`📝 Need to generate questions for ${generationRequests.length} batches.`);
+    
+    if (generationRequests.length === 0) {
+      console.log("✅ All countries have sufficient questions. No generation needed.");
+      return;
+    }
+
+    console.log(`🤖 Starting AI question generation for ${generationRequests.length} requests...`);
+    
+    const batchSize = this.config.generationBatchSize > 0 ? this.config.generationBatchSize : 5;
+
+    for (let i = 0; i < generationRequests.length; i += batchSize) {
+      const batch = generationRequests.slice(i, i + batchSize);
+      console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(generationRequests.length / batchSize)}...`);
+      
+      const promises = batch.map(async (req) => {
+        const countryData = allCountries.find(c => c.id === req.countryId);
+        if (!countryData) {
+          console.warn(`Could not find country data for ID: ${req.countryId}`);
+          return;
+        }
+
+        try {
+          await AIService.generateQuestions(
+            countryData,
+            req.difficulty,
+            req.count,
+            req.category
+          );
+        } catch (error) {
+           console.error(`Failed to generate questions for ${req.countryId} (${req.difficulty}, ${req.category}):`, error);
+        }
+      });
+      
+      await Promise.all(promises);
+
+      if (i + batchSize < generationRequests.length) {
+        const delay = 2000;
+        console.log(`Waiting for ${delay / 1000} seconds before next batch...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+
+    console.log("✅ Automated question generation process completed.");
   }
 
   public async performCleanup(): Promise<void> {
