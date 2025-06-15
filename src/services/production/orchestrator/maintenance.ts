@@ -1,9 +1,9 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import countriesData from "@/data/countries";
-import { ProductionConfig } from "./config";
 import AIService from "@/services/aiService";
-import { Country } from "@/types/quiz";
 import { CountryService } from "@/services/supabase/countryService";
+import { ProductionConfig } from "./config";
+import { TemplateQuestionService } from "@/services/templateQuestionService";
 
 export class QuestionMaintenanceService {
   private config: ProductionConfig;
@@ -18,6 +18,13 @@ export class QuestionMaintenanceService {
     const categories = ['Geography', 'Culture', 'History', 'Politics', 'Economy'];
     const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
     
+    const isAiAvailable = await AIService.isOpenRouterAvailable();
+    if (!isAiAvailable) {
+      console.warn("🤖 AI service is not available. Using reliable template-based generation as a fallback.");
+    } else {
+      console.log("🤖 AI service is available. Proceeding with AI-powered generation.");
+    }
+
     const generationRequests: { countryId: string; difficulty: 'easy' | 'medium' | 'hard'; category: string; count: number }[] = [];
     const allCountries = await CountryService.getAllServiceCountries();
 
@@ -53,7 +60,7 @@ export class QuestionMaintenanceService {
       return;
     }
 
-    console.log(`🤖 Starting AI question generation for ${generationRequests.length} requests...`);
+    console.log(`⚡ Starting question generation for ${generationRequests.length} requests...`);
     
     const batchSize = this.config.generationBatchSize > 0 ? this.config.generationBatchSize : 5;
 
@@ -69,12 +76,21 @@ export class QuestionMaintenanceService {
         }
 
         try {
-          await AIService.generateQuestions(
-            countryData,
-            req.difficulty,
-            req.count,
-            req.category
-          );
+          if (isAiAvailable) {
+            await AIService.generateQuestions(
+              countryData,
+              req.difficulty,
+              req.count,
+              req.category
+            );
+          } else {
+            await TemplateQuestionService.generateQuestions(
+              countryData,
+              req.difficulty,
+              req.count,
+              req.category
+            );
+          }
         } catch (error) {
            console.error(`Failed to generate questions for ${req.countryId} (${req.difficulty}, ${req.category}):`, error);
         }
