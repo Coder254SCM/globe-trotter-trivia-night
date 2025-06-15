@@ -1,9 +1,10 @@
 
 import { Question } from "../../types/quiz";
 import { QuestionService } from "../../services/supabase/questionService";
+import { markQuestionsAsUsed, getUnusedQuestions } from "./questionCache";
 
 /**
- * Simple and reliable question fetcher
+ * Simple and reliable question fetcher with duplicate prevention
  */
 export const getCleanQuizQuestions = async (
   countryId: string,
@@ -13,15 +14,36 @@ export const getCleanQuizQuestions = async (
   console.log(`🔍 [CleanFetcher] Fetching ${count} ${difficulty} questions for ${countryId}`);
   
   try {
-    const questions = await QuestionService.getFilteredQuestions({
+    // Fetch more questions than needed to allow for filtering out used ones
+    const fetchCount = Math.max(count * 3, 30);
+    
+    const allQuestions = await QuestionService.getFilteredQuestions({
       countryId,
       difficulty,
-      limit: count,
+      limit: fetchCount,
       validateContent: false
     });
     
-    console.log(`📋 [CleanFetcher] Found ${questions.length} questions`);
-    return questions;
+    console.log(`📋 [CleanFetcher] Found ${allQuestions.length} total questions`);
+    
+    if (allQuestions.length === 0) {
+      return [];
+    }
+    
+    // Filter out previously used questions
+    const unusedQuestions = getUnusedQuestions(allQuestions);
+    console.log(`🔄 [CleanFetcher] ${unusedQuestions.length} unused questions available`);
+    
+    // If we don't have enough unused questions, use all available
+    const questionsToReturn = unusedQuestions.length >= count 
+      ? unusedQuestions.slice(0, count)
+      : allQuestions.slice(0, count);
+    
+    // Mark these questions as used
+    markQuestionsAsUsed(questionsToReturn.map(q => q.id));
+    
+    console.log(`✅ [CleanFetcher] Returning ${questionsToReturn.length} questions (${questionsToReturn.length} newly used)`);
+    return questionsToReturn;
 
   } catch (error) {
     console.error('❌ [CleanFetcher] Error fetching questions:', error);
@@ -30,20 +52,25 @@ export const getCleanQuizQuestions = async (
 };
 
 /**
- * Get questions for weekly challenge
+ * Get questions for weekly challenge with rotation
  */
 export const getWeeklyChallengeQuestions = async (count: number = 20): Promise<Question[]> => {
   console.log(`🏆 [CleanFetcher] Fetching ${count} questions for weekly challenge`);
   
   try {
-    const questions = await QuestionService.getFilteredQuestions({
+    const allQuestions = await QuestionService.getFilteredQuestions({
       difficulty: 'medium',
-      limit: count,
+      limit: count * 2, // Fetch more for variety
       validateContent: false
     });
 
-    console.log(`✅ [CleanFetcher] Weekly challenge: ${questions.length} questions ready`);
-    return questions;
+    const unusedQuestions = getUnusedQuestions(allQuestions);
+    const questionsToReturn = unusedQuestions.slice(0, count);
+    
+    markQuestionsAsUsed(questionsToReturn.map(q => q.id));
+
+    console.log(`✅ [CleanFetcher] Weekly challenge: ${questionsToReturn.length} questions ready`);
+    return questionsToReturn;
   } catch (error) {
     console.error('❌ [CleanFetcher] Weekly challenge fetch failed:', error);
     return [];
@@ -51,7 +78,7 @@ export const getWeeklyChallengeQuestions = async (count: number = 20): Promise<Q
 };
 
 /**
- * Get questions for ultimate quiz
+ * Get questions for ultimate quiz with strict no-repeat policy
  */
 export const getUltimateQuizQuestions = async (
   userId: string,
@@ -60,14 +87,19 @@ export const getUltimateQuizQuestions = async (
   console.log(`🎯 [CleanFetcher] Fetching ${count} ultimate quiz questions`);
   
   try {
-    const questions = await QuestionService.getFilteredQuestions({
+    const allQuestions = await QuestionService.getFilteredQuestions({
       difficulty: 'hard',
-      limit: count,
+      limit: count * 4, // Fetch many more for ultimate quiz variety
       validateContent: false
     });
 
-    console.log(`✅ [CleanFetcher] Ultimate quiz: ${questions.length} questions ready`);
-    return questions;
+    const unusedQuestions = getUnusedQuestions(allQuestions);
+    const questionsToReturn = unusedQuestions.slice(0, count);
+    
+    markQuestionsAsUsed(questionsToReturn.map(q => q.id));
+
+    console.log(`✅ [CleanFetcher] Ultimate quiz: ${questionsToReturn.length} questions ready`);
+    return questionsToReturn;
   } catch (error) {
     console.error('❌ [CleanFetcher] Ultimate quiz fetch failed:', error);
     return [];

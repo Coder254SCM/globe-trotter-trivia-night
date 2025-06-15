@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Country, Question } from "@/types/quiz";
@@ -43,26 +42,24 @@ export default function QuizPage() {
 
         console.log(`[QuizPage] Loading ${count} questions for ${country.name} (${country.difficulty})`);
         
-        // Try to get existing questions
+        // Get questions with duplicate prevention
         let questions = await getCleanQuizQuestions(country.id, country.difficulty, count);
-        console.log(`[QuizPage] Found ${questions.length} existing questions`);
+        console.log(`[QuizPage] Found ${questions.length} questions after duplicate filtering`);
 
-        // If no questions exist, generate them
+        // If still no questions, try generating them
         if (questions.length === 0) {
-          console.log(`[QuizPage] No questions found, generating for ${country.name}...`);
+          console.log(`[QuizPage] No questions available, generating for ${country.name}...`);
           
           toast({
             title: "Generating Questions",
-            description: `Creating questions for ${country.name}...`,
+            description: `Creating new questions for ${country.name}...`,
           });
 
           try {
-            // Get the country data for generation
             const serviceCountries = await CountryService.getAllServiceCountries();
             const countryData = serviceCountries.find(c => c.id === country.id);
 
             if (countryData) {
-              // Generate questions
               await TemplateQuestionService.generateQuestions(
                 countryData,
                 country.difficulty,
@@ -70,16 +67,14 @@ export default function QuizPage() {
                 'Geography'
               );
 
-              // Wait and try fetching again
+              // Wait and fetch again
               await new Promise(resolve => setTimeout(resolve, 2000));
               questions = await getCleanQuizQuestions(country.id, country.difficulty, count);
-              
-              console.log(`[QuizPage] After generation: ${questions.length} questions`);
               
               if (questions.length > 0) {
                 toast({
                   title: "Questions Ready!",
-                  description: `Generated ${questions.length} questions for ${country.name}`,
+                  description: `Generated ${questions.length} fresh questions for ${country.name}`,
                 });
               }
             }
@@ -93,7 +88,6 @@ export default function QuizPage() {
           }
         }
 
-        // Final check
         if (questions.length === 0) {
           console.warn(`[QuizPage] No questions available for ${country.name}`);
           toast({
@@ -106,7 +100,7 @@ export default function QuizPage() {
         }
 
         setQuizQuestions(questions);
-        console.log(`[QuizPage] Quiz ready with ${questions.length} questions`);
+        console.log(`[QuizPage] Quiz ready with ${questions.length} unique questions`);
 
       } catch (error) {
         console.error('[QuizPage] Error loading quiz:', error);
