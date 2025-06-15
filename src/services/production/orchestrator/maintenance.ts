@@ -19,7 +19,7 @@ export class QuestionMaintenanceService {
     const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
     
     const generationRequests: { countryId: string; difficulty: 'easy' | 'medium' | 'hard'; category: string; count: number }[] = [];
-    const allCountries = await CountryService.getAllCountries();
+    const allCountries = await CountryService.getAllServiceCountries();
 
     for (const country of allCountries) {
       for (const difficulty of difficulties) {

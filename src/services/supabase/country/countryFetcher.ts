@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Country as FrontendCountry } from "@/types/quiz";
+import { Country as ServiceCountry } from "./countryTypes";
 
 export class CountryFetcher {
   /**
@@ -36,6 +37,30 @@ export class CountryFetcher {
       }));
     } catch (error) {
       console.error('Failed to fetch countries from Supabase:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all countries from Supabase in service format
+   */
+  static async getAllServiceCountries(): Promise<ServiceCountry[]> {
+    try {
+      const { data, error } = await supabase
+        .from('countries')
+        .select('id, name, capital, continent, population, area_km2, latitude, longitude, flag_url, categories, difficulty')
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching service countries:', error);
+        throw error;
+      }
+
+      console.log(`📊 Loaded ${data?.length || 0} service countries from Supabase`);
+      
+      return (data || []) as ServiceCountry[];
+    } catch (error) {
+      console.error('Failed to fetch service countries from Supabase:', error);
       throw error;
     }
   }

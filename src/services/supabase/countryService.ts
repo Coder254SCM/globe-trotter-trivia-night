@@ -10,6 +10,7 @@ export type { Country } from "./country/countryTypes";
 export class CountryService {
   // Delegate to specialized classes
   static getAllCountries = CountryFetcher.getAllCountries;
+  static getAllServiceCountries = CountryFetcher.getAllServiceCountries;
   static populateAllCountries = CountryPopulator.populateAllCountries;
   static getDatabaseStats = CountryStats.getDatabaseStats;
 }
