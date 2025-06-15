@@ -2,6 +2,7 @@
 import { Question } from "../../types/quiz";
 import { QuestionService } from "../../services/supabase/questionService";
 import { markQuestionsAsUsed, getUnusedQuestions } from "./questionCache";
+import { deduplicateQuestions } from "./questionDeduplication";
 
 /**
  * Simple and reliable question fetcher with duplicate prevention
@@ -12,37 +13,46 @@ export const getCleanQuizQuestions = async (
   count: number = 10
 ): Promise<Question[]> => {
   console.log(`🔍 [CleanFetcher] Fetching ${count} ${difficulty} questions for ${countryId}`);
-  
+
   try {
     // Fetch more questions than needed to allow for filtering out used ones
     const fetchCount = Math.max(count * 3, 30);
-    
+
     const allQuestions = await QuestionService.getFilteredQuestions({
       countryId,
       difficulty,
       limit: fetchCount,
       validateContent: false
     });
-    
+
     console.log(`📋 [CleanFetcher] Found ${allQuestions.length} total questions`);
-    
+
     if (allQuestions.length === 0) {
       return [];
     }
-    
+
     // Filter out previously used questions
-    const unusedQuestions = getUnusedQuestions(allQuestions);
-    console.log(`🔄 [CleanFetcher] ${unusedQuestions.length} unused questions available`);
-    
-    // If we don't have enough unused questions, use all available
-    const questionsToReturn = unusedQuestions.length >= count 
-      ? unusedQuestions.slice(0, count)
-      : allQuestions.slice(0, count);
-    
+    let unusedQuestions = getUnusedQuestions(allQuestions);
+
+    // Deduplicate unused questions by text
+    unusedQuestions = deduplicateQuestions(unusedQuestions);
+    console.log(`🔄 [CleanFetcher] ${unusedQuestions.length} deduped & unused questions available`);
+
+    let questionsToReturn: Question[];
+    if (unusedQuestions.length >= count) {
+      questionsToReturn = unusedQuestions.slice(0, count);
+    } else {
+      // Not enough unused unique questions, fall back to all deduped questions
+      const allDeduped = deduplicateQuestions(allQuestions);
+      questionsToReturn = allDeduped.slice(0, count);
+    }
+
     // Mark these questions as used
     markQuestionsAsUsed(questionsToReturn.map(q => q.id));
-    
-    console.log(`✅ [CleanFetcher] Returning ${questionsToReturn.length} questions (${questionsToReturn.length} newly used)`);
+
+    console.log(
+      `✅ [CleanFetcher] Returning ${questionsToReturn.length} unique questions (${questionsToReturn.length} newly used)`
+    );
     return questionsToReturn;
 
   } catch (error) {
@@ -56,7 +66,7 @@ export const getCleanQuizQuestions = async (
  */
 export const getWeeklyChallengeQuestions = async (count: number = 20): Promise<Question[]> => {
   console.log(`🏆 [CleanFetcher] Fetching ${count} questions for weekly challenge`);
-  
+
   try {
     const allQuestions = await QuestionService.getFilteredQuestions({
       difficulty: 'medium',
@@ -64,12 +74,21 @@ export const getWeeklyChallengeQuestions = async (count: number = 20): Promise<Q
       validateContent: false
     });
 
-    const unusedQuestions = getUnusedQuestions(allQuestions);
-    const questionsToReturn = unusedQuestions.slice(0, count);
-    
+    // Deduplicate and filter unused
+    let unusedQuestions = getUnusedQuestions(allQuestions);
+    unusedQuestions = deduplicateQuestions(unusedQuestions);
+    let questionsToReturn: Question[];
+
+    if (unusedQuestions.length >= count) {
+      questionsToReturn = unusedQuestions.slice(0, count);
+    } else {
+      const allDeduped = deduplicateQuestions(allQuestions);
+      questionsToReturn = allDeduped.slice(0, count);
+    }
+
     markQuestionsAsUsed(questionsToReturn.map(q => q.id));
 
-    console.log(`✅ [CleanFetcher] Weekly challenge: ${questionsToReturn.length} questions ready`);
+    console.log(`✅ [CleanFetcher] Weekly challenge: ${questionsToReturn.length} unique questions ready`);
     return questionsToReturn;
   } catch (error) {
     console.error('❌ [CleanFetcher] Weekly challenge fetch failed:', error);
@@ -85,7 +104,7 @@ export const getUltimateQuizQuestions = async (
   count: number = 10
 ): Promise<Question[]> => {
   console.log(`🎯 [CleanFetcher] Fetching ${count} ultimate quiz questions`);
-  
+
   try {
     const allQuestions = await QuestionService.getFilteredQuestions({
       difficulty: 'hard',
@@ -93,12 +112,20 @@ export const getUltimateQuizQuestions = async (
       validateContent: false
     });
 
-    const unusedQuestions = getUnusedQuestions(allQuestions);
-    const questionsToReturn = unusedQuestions.slice(0, count);
-    
+    let unusedQuestions = getUnusedQuestions(allQuestions);
+    unusedQuestions = deduplicateQuestions(unusedQuestions);
+
+    let questionsToReturn: Question[];
+    if (unusedQuestions.length >= count) {
+      questionsToReturn = unusedQuestions.slice(0, count);
+    } else {
+      const allDeduped = deduplicateQuestions(allQuestions);
+      questionsToReturn = allDeduped.slice(0, count);
+    }
+
     markQuestionsAsUsed(questionsToReturn.map(q => q.id));
 
-    console.log(`✅ [CleanFetcher] Ultimate quiz: ${questionsToReturn.length} questions ready`);
+    console.log(`✅ [CleanFetcher] Ultimate quiz: ${questionsToReturn.length} unique questions ready`);
     return questionsToReturn;
   } catch (error) {
     console.error('❌ [CleanFetcher] Ultimate quiz fetch failed:', error);
