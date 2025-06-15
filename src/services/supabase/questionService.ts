@@ -2,15 +2,20 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Question as FrontendQuestion } from "@/types/quiz";
 import { SimpleQuestionFetcher } from "./question/simpleQuestionFetcher";
+import { EnhancedQuestionFetcher } from "./question/enhancedQuestionFetcher";
 import { QuestionStatsService } from "./question/questionStats";
 
 // Re-export types for backward compatibility
 export type { Question } from "./question/questionTypes";
 
 export class QuestionService {
-  // Use simple question fetching operations
+  // Use simple question fetching for basic operations
   static getFilteredQuestions = SimpleQuestionFetcher.getFilteredQuestions;
   static transformToFrontendQuestion = SimpleQuestionFetcher.transformToFrontendQuestion;
+
+  // Enhanced fetching for complex operations
+  static getFilteredQuestionsEnhanced = EnhancedQuestionFetcher.getFilteredQuestions;
+  static getQuestionsEnhanced = EnhancedQuestionFetcher.getQuestions;
 
   // Legacy method for backward compatibility
   static async getQuestions(
