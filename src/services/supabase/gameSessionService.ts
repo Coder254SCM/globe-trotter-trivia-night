@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface GameSession {
@@ -65,18 +66,25 @@ export class GameSessionService {
     correctAnswers: number,
     score: number,
     timeTaken: number,
-    failedQuestionIds: string[] = []
+    failedQuestionIds: string[] = [],
+    challengeId?: string
   ): Promise<void> {
     try {
+      const updatePayload: { [key: string]: any } = {
+        correct_answers: correctAnswers,
+        score: score,
+        time_taken: timeTaken,
+        completed_at: new Date().toISOString()
+      };
+
+      if (challengeId) {
+        updatePayload.weekly_challenge_id = challengeId;
+      }
+      
       // Update the session
       const { error: sessionError } = await supabase
         .from('quiz_sessions')
-        .update({
-          correct_answers: correctAnswers,
-          score: score,
-          time_taken: timeTaken,
-          completed_at: new Date().toISOString()
-        })
+        .update(updatePayload)
         .eq('id', sessionId);
 
       if (sessionError) throw sessionError;
