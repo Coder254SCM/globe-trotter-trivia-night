@@ -1,8 +1,9 @@
+import React, { useState } from "react";
 import { Country, DifficultyLevel } from "@/types/quiz";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { MapPin, Landmark, Trophy, Globe, Leaf, Palette } from "lucide-react";
-import { useState } from "react";
+import { useEffect } from "react";
 
 interface CountryCardProps {
   country: Country;
@@ -14,7 +15,7 @@ export const CountryCard = ({ country, onClose, onStartQuiz }: CountryCardProps)
   const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>(country.difficulty);
 
   // Center modal on screen and prevent background scroll when card is open
-  React.useEffect(() => {
+  useEffect(() => {
     // Lock scroll on mount
     document.body.classList.add("overflow-hidden");
     return () => {
