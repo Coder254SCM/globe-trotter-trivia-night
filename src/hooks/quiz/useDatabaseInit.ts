@@ -25,46 +25,55 @@ export const useDatabaseInit = () => {
           console.log(`✅ Database already has ${supabaseCountries.length} countries`);
         }
         
-        // Check database stats and generate if needed
+        // Check database stats and force generation if needed
         const stats = await CountryService.getDatabaseStats();
         console.log('📊 Database stats:', stats);
         
-        if (stats.totalQuestions > 0) {
+        if (stats.totalQuestions === 0) {
+          console.log('🚀 No questions found - forcing automatic generation...');
+          
           toast({
-            title: "Database Ready",
-            description: `${stats.totalQuestions} questions available across ${stats.totalCountries} countries`,
-          });
-        } else {
-          toast({
-            title: "No Questions Found",
-            description: "Attempting to generate initial questions. This may take a moment...",
+            title: "Generating Questions",
+            description: "No questions found. Starting automatic generation process...",
           });
 
           try {
             const orchestrator = GameOrchestrator.getInstance();
             await orchestrator.initialize();
             
-            const newStats = await CountryService.getDatabaseStats();
-            if (newStats.totalQuestions > 0) {
-              toast({
-                title: "Questions Generated!",
-                description: `Successfully generated ${newStats.totalQuestions} questions. The game is ready!`,
-              });
-            } else {
-              toast({
-                title: "Generation Complete, No Questions",
-                description: "The generation process ran, but there are still no questions. Check console for errors.",
-                variant: "destructive"
-              });
-            }
+            // Wait a moment then check again
+            setTimeout(async () => {
+              const newStats = await CountryService.getDatabaseStats();
+              console.log('📊 Updated stats after generation:', newStats);
+              
+              if (newStats.totalQuestions > 0) {
+                toast({
+                  title: "Questions Ready!",
+                  description: `Successfully generated ${newStats.totalQuestions} questions. The game is now ready to play!`,
+                });
+              } else {
+                console.warn('⚠️ Generation completed but no questions found');
+                toast({
+                  title: "Generation Issue",
+                  description: "Question generation ran but no questions were created. Check console for details.",
+                  variant: "destructive"
+                });
+              }
+            }, 3000);
+            
           } catch(e) {
              console.error('❌ Failed to auto-generate questions:', e);
              toast({
               title: "Generation Failed",
-              description: "Could not automatically generate questions. Please use the admin panel.",
+              description: "Could not automatically generate questions. Please try the admin panel.",
               variant: "destructive",
             });
           }
+        } else {
+          toast({
+            title: "Database Ready",
+            description: `${stats.totalQuestions} questions available across ${stats.totalCountries} countries`,
+          });
         }
         
       } catch (error) {
