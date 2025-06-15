@@ -1,22 +1,37 @@
-
 import { Question } from "@/types/quiz";
 import { Country } from "../supabase/country/countryTypes";
 import { generateGeographyQuestion } from "./geographyGenerator";
 import { generateCultureQuestion } from "./cultureGenerator";
 import { isValidQuestion } from "./questionValidation";
+import { generateAdvancedQuestion } from "./advancedTemplateGenerator";
+import { getCountryInfo } from "../../utils/external/restCountriesApi";
 
-export function buildValidQuestions(
+export async function buildValidQuestions(
   country: Country,
   difficulty: 'easy' | 'medium' | 'hard',
   count: number,
   category: string
-): Question[] {
+): Promise<Question[]> {
   const questions: Question[] = [];
-  const maxAttempts = count * 3; // Allow multiple attempts per desired question
+  const maxAttempts = count * 3;
+
+  // Try to get external data once (for all generated questions)
+  const externalData = await getCountryInfo(country.name);
 
   for (let attempt = 0; attempt < maxAttempts && questions.length < count; attempt++) {
-    const questionData = generateSingleQuestion(country, difficulty, category, attempt);
-    
+    let questionData;
+    // Use advanced templates for more variation
+    if (externalData) {
+      questionData = await generateAdvancedQuestion({
+        country,
+        difficulty,
+        seed: attempt,
+        extraData: externalData
+      });
+    } else {
+      // Fallback to existing generators for now
+      questionData = generateSingleQuestion(country, difficulty, category, attempt);
+    }
     if (questionData && isValidQuestion(questionData)) {
       const question: Question = {
         id: `template-${country.id}-${difficulty}-${category.toLowerCase()}-${Date.now()}-${attempt}`,
