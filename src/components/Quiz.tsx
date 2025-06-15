@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";
@@ -232,6 +231,7 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
                            currentQuestion.choices.some(c => 
                              c.text.toLowerCase().includes('placeholder') ||
                              c.text.toLowerCase().includes('option a for') ||
+                             c.text.toLowerCase().includes('option a for') ||
                              c.text.toLowerCase().includes('incorrect option') ||
                              c.text.toLowerCase().includes('methodology') ||
                              c.text.toLowerCase().includes('approach') ||
@@ -271,7 +271,7 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
   }
 
   return (
-    <div className="min-h-screen w-full bg-background" style={{ paddingTop: 0, marginTop: 0 }}>
+    <div className="fixed inset-0 w-full bg-background overflow-auto" style={{ paddingTop: 0, marginTop: 0 }}>
       <QuizTimer
         timeRemaining={timeRemaining}
         setTimeRemaining={setTimeRemaining}

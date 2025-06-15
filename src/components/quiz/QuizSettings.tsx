@@ -24,7 +24,7 @@ export const QuizSettings = ({ onStartQuiz, countryName, countryId, onBack }: Qu
   };
 
   return (
-    <div className="min-h-screen w-full p-4 flex items-center justify-center">
+    <div className="w-full p-4 flex items-center justify-center">
       <div className="w-full max-w-2xl">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
