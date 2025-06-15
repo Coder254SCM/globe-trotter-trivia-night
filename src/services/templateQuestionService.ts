@@ -37,28 +37,41 @@ export class TemplateQuestionService {
     const allTemplates: any[] = [];
 
     if (category.toLowerCase() === 'geography') {
-      allTemplates.push(...[
-        {
+      // Proactive check: Only add capital question if capital is known
+      if (country.capital) {
+        allTemplates.push({
           difficulty: 'easy', text: `What is the capital of ${country.name}?`, correct: country.capital,
           options: [country.capital, 'London', 'Paris', 'Tokyo'],
           explanation: `The capital is ${country.capital}.`
-        },
-        {
+        });
+      }
+
+      // Proactive check: Continent is generally safe, but good practice
+      if (country.continent) {
+        allTemplates.push({
           difficulty: 'easy', text: `Which continent is ${country.name} located in?`, correct: country.continent,
           options: [country.continent, 'Asia', 'Africa', 'Europe'].filter(c => c !== country.continent),
           explanation: `${country.name} is on ${country.continent}.`
-        },
-        {
-          difficulty: 'medium', text: `What is the approximate area of ${country.name} in square kilometers?`, correct: `${country.area_km2?.toLocaleString()} km²`,
-          options: [`${country.area_km2?.toLocaleString()} km²`, `${(country.area_km2 * 1.5).toLocaleString()} km²`, `${(country.area_km2 * 0.5).toLocaleString()} km²`],
-          explanation: `The area is ${country.area_km2?.toLocaleString()} km².`
-        },
-        {
+        });
+      }
+
+      // Proactive check: Only add area question if area is known and > 0
+      if (country.area_km2 && country.area_km2 > 0) {
+        allTemplates.push({
+          difficulty: 'medium', text: `What is the approximate area of ${country.name} in square kilometers?`, correct: `${country.area_km2.toLocaleString()} km²`,
+          options: [`${country.area_km2.toLocaleString()} km²`, `${(country.area_km2 * 1.5).toLocaleString()} km²`, `${(country.area_km2 * 0.5).toLocaleString()} km²`],
+          explanation: `The area is ${country.area_km2.toLocaleString()} km².`
+        });
+      }
+      
+      // Proactive check: Only add density question if population and area are known and valid
+      if (country.population && country.population > 0 && country.area_km2 && country.area_km2 > 0) {
+        allTemplates.push({
           difficulty: 'hard', text: `What is the population density of ${country.name}? (people per km²)`, correct: `${(country.population / country.area_km2).toFixed(2)}`,
           options: [`${(country.population / country.area_km2).toFixed(2)}`, `${(country.population / country.area_km2 * 1.2).toFixed(2)}`, `${(country.population / country.area_km2 * 0.8).toFixed(2)}`],
           explanation: `Density is population (${country.population.toLocaleString()}) divided by area (${country.area_km2.toLocaleString()} km²).`
-        }
-      ]);
+        });
+      }
     }
     
     if (category.toLowerCase() === 'culture') {
