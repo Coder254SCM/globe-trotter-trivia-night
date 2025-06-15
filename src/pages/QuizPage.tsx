@@ -102,6 +102,15 @@ export default function QuizPage() {
         setQuizQuestions(questions);
         console.log(`[QuizPage] Quiz ready with ${questions.length} unique questions`);
 
+        // Show warning if less than requested number of questions
+        if (questions.length < count) {
+          toast({
+            title: "Fewer Questions Available",
+            description: `Only ${questions.length} unique questions were available for ${country.name}. This may cause repeated or similar questions. Try again later or report missing questions to the admin.`,
+            variant: "warning"
+          });
+        }
+
       } catch (error) {
         console.error('[QuizPage] Error loading quiz:', error);
         toast({

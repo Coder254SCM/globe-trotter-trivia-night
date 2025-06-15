@@ -3,43 +3,46 @@ import { Question } from "../../types/quiz";
 
 // Create a unique fingerprint for each question to detect duplicates
 const createQuestionFingerprint = (question: Question): string => {
-  // Normalize text by removing extra spaces, punctuation, and converting to lowercase
   const normalizedText = question.text
     .toLowerCase()
     .replace(/[^\w\s]/g, '') // Remove punctuation
     .replace(/\s+/g, ' ') // Normalize spaces
     .trim();
-  
-  // Include choices in fingerprint for multiple choice questions
   const choicesFingerprint = question.choices
     ?.map(choice => choice.text.toLowerCase().replace(/[^\w\s]/g, '').trim())
     .sort()
     .join('|') || '';
-  
   return `${normalizedText}|${choicesFingerprint}|${question.type}`;
 };
 
-// Advanced deduplication that removes questions with similar content
+// Enhanced deduplication that logs all fingerprints and duplicate clusters
 export const deduplicateQuestions = (questions: Question[]): Question[] => {
-  const seen = new Set<string>();
-  const uniqueQuestions: Question[] = [];
-  const duplicatesLog: string[] = [];
-  
+  const seen = new Map<string, Question>();
+  const clusters: Record<string, string[]> = {};
+
   questions.forEach((question, index) => {
     const fingerprint = createQuestionFingerprint(question);
-    
-    if (!seen.has(fingerprint)) {
-      seen.add(fingerprint);
-      uniqueQuestions.push(question);
-    } else {
-      duplicatesLog.push(`Duplicate found: "${question.text.substring(0, 50)}..." (ID: ${question.id})`);
+    if (!clusters[fingerprint]) {
+      clusters[fingerprint] = [];
+    }
+    clusters[fingerprint].push(`"${question.text.substring(0, 45)}..." (ID: ${question.id})`);
+  });
+
+  Object.entries(clusters).forEach(([fp, list]) => {
+    if (list.length > 1) {
+      console.warn(`[Deduplication] Cluster with ${list.length} dupes:`, list);
     }
   });
-  
-  if (duplicatesLog.length > 0) {
-    console.log(`Removed ${duplicatesLog.length} duplicate questions:`, duplicatesLog);
+
+  const uniqueQuestions: Question[] = [];
+  for (const question of questions) {
+    const fingerprint = createQuestionFingerprint(question);
+    if (!seen.has(fingerprint)) {
+      seen.set(fingerprint, question);
+      uniqueQuestions.push(question);
+    }
   }
-  
+  console.log(`[Deduplication] ${Object.keys(clusters).length} unique fingerprints from ${questions.length} questions`);
   return uniqueQuestions;
 };
 
