@@ -29,34 +29,54 @@ export const useDatabaseInit = () => {
         const stats = await CountryService.getDatabaseStats();
         console.log('📊 Database stats:', stats);
         
-        if (stats.totalQuestions === 0) {
-          console.log('🚀 No questions found - forcing immediate generation...');
+        if (stats.totalQuestions < 1000) { // Increased threshold to ensure we have enough questions
+          console.log('🚀 Insufficient questions found - starting comprehensive generation...');
           
           toast({
             title: "Generating Questions",
-            description: "No questions found. Starting immediate generation process...",
+            description: "Generating questions for all countries and difficulties. This may take a moment...",
           });
 
           try {
-            // Generate questions for first 10 countries immediately
+            // Generate questions for ALL countries with all difficulties
             const serviceCountries = await CountryService.getAllServiceCountries();
-            const firstCountries = serviceCountries.slice(0, 10);
+            const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
+            const categories = ['Geography', 'Culture', 'History'];
             
-            console.log(`🎯 Generating questions for first ${firstCountries.length} countries...`);
+            console.log(`🎯 Generating questions for ${serviceCountries.length} countries...`);
             
-            const generationPromises = firstCountries.map(async (country) => {
-              try {
-                console.log(`🔧 Generating for ${country.name}...`);
-                await TemplateQuestionService.generateQuestions(country, 'medium', 5, 'Geography');
-                await TemplateQuestionService.generateQuestions(country, 'easy', 3, 'Culture');
-              } catch (error) {
-                console.error(`❌ Failed to generate for ${country.name}:`, error);
+            // Process countries in smaller batches to avoid overwhelming the system
+            for (let i = 0; i < serviceCountries.length; i += 5) {
+              const batch = serviceCountries.slice(i, i + 5);
+              
+              const batchPromises = batch.map(async (country) => {
+                try {
+                  console.log(`🔧 Generating for ${country.name}...`);
+                  
+                  for (const difficulty of difficulties) {
+                    for (const category of categories) {
+                      await TemplateQuestionService.generateQuestions(
+                        country, 
+                        difficulty, 
+                        3, // Generate 3 questions per difficulty/category combination
+                        category
+                      );
+                    }
+                  }
+                } catch (error) {
+                  console.error(`❌ Failed to generate for ${country.name}:`, error);
+                }
+              });
+              
+              await Promise.all(batchPromises);
+              
+              // Small delay between batches
+              if (i + 5 < serviceCountries.length) {
+                await new Promise(resolve => setTimeout(resolve, 500));
               }
-            });
+            }
             
-            await Promise.all(generationPromises);
-            
-            // Check stats again
+            // Check stats again after generation
             setTimeout(async () => {
               const newStats = await CountryService.getDatabaseStats();
               console.log('📊 Updated stats after generation:', newStats);
@@ -64,10 +84,10 @@ export const useDatabaseInit = () => {
               if (newStats.totalQuestions > 0) {
                 toast({
                   title: "Questions Ready!",
-                  description: `Successfully generated ${newStats.totalQuestions} questions. The game is now ready to play!`,
+                  description: `Successfully generated ${newStats.totalQuestions} questions. All features are now available!`,
                 });
               }
-            }, 2000);
+            }, 3000);
             
           } catch(e) {
              console.error('❌ Failed to auto-generate questions:', e);

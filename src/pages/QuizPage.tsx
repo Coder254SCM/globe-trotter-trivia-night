@@ -5,6 +5,8 @@ import { Country, Question } from "@/types/quiz";
 import Quiz from "@/components/Quiz";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { getCleanQuizQuestions } from "@/utils/quiz/cleanQuestionFetcher";
+import { TemplateQuestionService } from "@/services/templateQuestionService";
+import { CountryService } from "@/services/supabase/countryService";
 import { useToast } from "@/hooks/use-toast";
 
 export default function QuizPage() {
@@ -12,6 +14,7 @@ export default function QuizPage() {
   const [questionCount, setQuestionCount] = useState<number>(10);
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
+  const [generatingQuestions, setGeneratingQuestions] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -52,20 +55,70 @@ export default function QuizPage() {
 
         console.log(`[QuizPage] Loading ${count} questions for ${country.name} (id: ${country.id}) at difficulty "${country.difficulty}"`);
         
-        // Use clean question fetcher with enhanced fallbacks
-        const questions = await getCleanQuizQuestions(
+        // Try to get questions using clean fetcher
+        let questions = await getCleanQuizQuestions(
           country.id, 
           country.difficulty, 
           count
         );
 
-        console.log(`[QuizPage] Loaded ${questions.length} questions from fetcher`);
+        console.log(`[QuizPage] Clean fetcher returned ${questions.length} questions`);
+
+        // If no questions found, generate them immediately
+        if (questions.length === 0) {
+          console.log(`[QuizPage] 🔧 No questions found, generating immediately...`);
+          setGeneratingQuestions(true);
+          
+          toast({
+            title: "Generating Questions",
+            description: `No questions found for ${country.name}. Generating them now...`,
+          });
+
+          try {
+            // Get country data for generation
+            const countryData = await CountryService.getAllServiceCountries()
+              .then(countries => countries.find(c => c.id === country.id));
+
+            if (countryData) {
+              // Generate questions for all difficulties
+              const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
+              const categories = ['Geography', 'Culture'];
+
+              for (const diff of difficulties) {
+                for (const category of categories) {
+                  await TemplateQuestionService.generateQuestions(
+                    countryData,
+                    diff,
+                    5,
+                    category
+                  );
+                }
+              }
+
+              // Wait a moment for questions to be saved
+              await new Promise(resolve => setTimeout(resolve, 1000));
+
+              // Try fetching again
+              questions = await getCleanQuizQuestions(
+                country.id, 
+                country.difficulty, 
+                count
+              );
+
+              console.log(`[QuizPage] ✅ After generation: ${questions.length} questions available`);
+            }
+          } catch (generationError) {
+            console.error('[QuizPage] Question generation failed:', generationError);
+          } finally {
+            setGeneratingQuestions(false);
+          }
+        }
 
         if (questions.length === 0) {
-          console.warn(`[QuizPage] ❌ No questions found for country=${country.name}, id=${country.id}, difficulty=${country.difficulty}`);
+          console.warn(`[QuizPage] ❌ Still no questions after generation for ${country.name}`);
           toast({
             title: "No Questions Available",
-            description: `No questions found for ${country.name}. The automatic generation may still be running. Please wait a moment and try again, or select a different country.`,
+            description: `Unable to generate questions for ${country.name} at ${country.difficulty} difficulty. Please try a different country or check the admin panel.`,
             variant: "destructive",
           });
           navigate('/');
@@ -73,7 +126,6 @@ export default function QuizPage() {
         }
 
         setQuizQuestions(questions);
-
         console.log(`[QuizPage] ✅ Successfully loaded ${questions.length} questions for ${country.name}`);
         scrollToTop();
 
@@ -107,17 +159,25 @@ export default function QuizPage() {
     navigate('/');
   };
 
-  if (loading) {
+  if (loading || generatingQuestions) {
     return (
       <div className="fixed inset-0 bg-background flex items-center justify-center z-50 min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold mb-2">Loading Quiz...</h2>
+          <h2 className="text-xl font-semibold mb-2">
+            {generatingQuestions ? "Generating Questions..." : "Loading Quiz..."}
+          </h2>
           <p className="text-muted-foreground">
-            Preparing {questionCount} questions for {selectedCountry?.name ?? "—"}
+            {generatingQuestions 
+              ? `Creating ${questionCount} questions for ${selectedCountry?.name ?? "—"}`
+              : `Preparing ${questionCount} questions for ${selectedCountry?.name ?? "—"}`
+            }
           </p>
           <p className="text-sm text-muted-foreground mt-2">
-            If this is your first time, questions are being generated automatically
+            {generatingQuestions 
+              ? "This may take a moment as we create fresh questions for you"
+              : "Please wait while we load your quiz"
+            }
           </p>
         </div>
       </div>
@@ -131,12 +191,12 @@ export default function QuizPage() {
           <h2 className="text-xl font-semibold mb-2">No Quiz Questions Available</h2>
           <p className="text-muted-foreground mb-1">
             {selectedCountry 
-              ? `No questions found for "${selectedCountry.name}" at "${selectedCountry.difficulty}" difficulty.`
+              ? `Unable to load questions for "${selectedCountry.name}" at "${selectedCountry.difficulty}" difficulty.`
               : "No questions available for this selection."
             }
           </p>
           <p className="text-xs text-muted-foreground">
-            Questions may still be generating in the background. Please wait a moment and try again.
+            Questions may still be generating. Please try again in a moment.
           </p>
           <button onClick={handleBack} className="bg-primary text-primary-foreground px-4 py-2 rounded mt-3">
             Back to Countries
