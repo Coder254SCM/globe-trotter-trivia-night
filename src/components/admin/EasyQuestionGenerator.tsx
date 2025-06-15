@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,99 +33,74 @@ export const EasyQuestionGenerator = () => {
     questionsValidated: 0,
     questionsSaved: 0,
     validationErrors: 0,
+    countriesProcessed: 0,
     currentCountry: '',
     timeElapsed: 0
   });
 
-  // Predefined easy difficulty question templates
-  const easyQuestionTemplates = {
-    Geography: [
-      {
-        template: "What is the capital city of {country}?",
-        getOptions: (country: any) => ({
-          correct: country.capital || 'Unknown',
-          incorrect: ['Paris', 'London', 'Tokyo', 'New York', 'Berlin', 'Rome']
-            .filter(c => c !== country.capital).slice(0, 3)
-        })
-      },
-      {
-        template: "Which continent is {country} located in?",
-        getOptions: (country: any) => ({
-          correct: country.continent,
-          incorrect: ['Europe', 'Asia', 'Africa', 'North America', 'South America', 'Oceania']
-            .filter(c => c !== country.continent).slice(0, 3)
-        })
-      }
-    ],
-    Culture: [
-      {
-        template: "What language is commonly spoken in {country}?",
-        getOptions: (country: any) => {
-          const languages = {
-            'France': { correct: 'French', incorrect: ['German', 'Spanish', 'Italian'] },
-            'Germany': { correct: 'German', incorrect: ['French', 'Spanish', 'Dutch'] },
-            'Spain': { correct: 'Spanish', incorrect: ['French', 'Portuguese', 'Italian'] },
-            'Japan': { correct: 'Japanese', incorrect: ['Chinese', 'Korean', 'Thai'] },
-            'Brazil': { correct: 'Portuguese', incorrect: ['Spanish', 'French', 'Italian'] }
-          };
-          return languages[country.name] || { 
-            correct: 'Local language', 
-            incorrect: ['English', 'French', 'Spanish'] 
-          };
-        }
-      }
-    ],
-    Basic: [
-      {
-        template: "{country} is a country located in which region?",
-        getOptions: (country: any) => ({
-          correct: country.continent,
-          incorrect: ['Europe', 'Asia', 'Africa', 'Americas', 'Oceania']
-            .filter(c => c !== country.continent).slice(0, 3)
-        })
-      }
-    ]
-  };
-
+  // This function is now hardened to only generate questions with valid, existing data.
+  // It avoids placeholders and generic content entirely.
   const generateEasyQuestions = async (country: any): Promise<QuestionTemplate[]> => {
     const questions: QuestionTemplate[] = [];
-    const categories = Object.keys(easyQuestionTemplates);
+    const incorrectCapitals = ['Paris', 'London', 'Tokyo', 'New York', 'Beijing', 'Moscow'];
+    const incorrectContinents = ['Europe', 'Asia', 'Africa', 'North America', 'South America', 'Oceania'];
 
-    for (const category of categories) {
-      const templates = easyQuestionTemplates[category as keyof typeof easyQuestionTemplates];
-      
-      for (const template of templates) {
-        try {
-          const options = template.getOptions(country);
-          const allOptions = [options.correct, ...options.incorrect];
-          
-          // Shuffle options
-          const shuffledOptions = allOptions.sort(() => Math.random() - 0.5);
-          
-          const question: QuestionTemplate = {
-            text: template.template.replace('{country}', country.name),
-            option_a: shuffledOptions[0],
-            option_b: shuffledOptions[1],
-            option_c: shuffledOptions[2],
-            option_d: shuffledOptions[3],
-            correct_answer: options.correct,
-            category,
-            difficulty: 'easy',
-            country_id: country.id
-          };
+    // --- Template 1: Capital City (only if capital exists and is valid) ---
+    if (country.capital && country.capital !== 'N/A' && country.capital.length > 1) {
+      const options = [
+        country.capital,
+        ...incorrectCapitals.filter(c => c !== country.capital && c !== country.name).slice(0, 3)
+      ].sort(() => Math.random() - 0.5);
 
-          // Validate the question before adding
-          const validation = await QuestionValidationService.preValidateQuestion(question);
-          if (validation.isValid) {
-            questions.push(question);
-          }
-        } catch (error) {
-          console.error(`Error generating question for ${country.name}:`, error);
-        }
+      if (options.length === 4) { // Ensure we have 4 distinct options
+        const capitalQuestion: QuestionTemplate = {
+          text: `What is the capital city of ${country.name}?`,
+          option_a: options[0],
+          option_b: options[1],
+          option_c: options[2],
+          option_d: options[3],
+          correct_answer: country.capital,
+          category: 'Geography',
+          difficulty: 'easy',
+          country_id: country.id,
+        };
+        questions.push(capitalQuestion);
       }
     }
 
-    return questions;
+    // --- Template 2: Continent (always available) ---
+    const continentOptions = [
+      country.continent,
+      ...incorrectContinents.filter(c => c !== country.continent).slice(0, 3)
+    ].sort(() => Math.random() - 0.5);
+
+    if (continentOptions.length === 4) {
+      const continentQuestion: QuestionTemplate = {
+        text: `Which continent is ${country.name} located in?`,
+        option_a: continentOptions[0],
+        option_b: continentOptions[1],
+        option_c: continentOptions[2],
+        option_d: continentOptions[3],
+        correct_answer: country.continent,
+        category: 'Geography',
+        difficulty: 'easy',
+        country_id: country.id,
+      };
+      questions.push(continentQuestion);
+    }
+    
+    // --- Final Validation Step ---
+    const validatedQuestions: QuestionTemplate[] = [];
+    for (const q of questions) {
+      const validation = await QuestionValidationService.preValidateQuestion(q);
+      if (validation.isValid) {
+        validatedQuestions.push(q);
+      } else {
+        console.warn(`Generated question for ${country.name} failed validation: ${validation.issues.join(', ')}`);
+      }
+    }
+
+    return validatedQuestions;
   };
 
   const handleGenerateQuestions = async () => {
@@ -138,6 +112,17 @@ export const EasyQuestionGenerator = () => {
     setIsGenerating(true);
     const startTime = Date.now();
     
+    // Reset stats for new generation run
+    setStats({
+      questionsGenerated: 0,
+      questionsValidated: 0,
+      questionsSaved: 0,
+      validationErrors: 0,
+      countriesProcessed: 0,
+      currentCountry: '',
+      timeElapsed: 0
+    });
+    
     try {
       const countriesToProcess = generationMode === 'all' 
         ? countries 
@@ -147,9 +132,11 @@ export const EasyQuestionGenerator = () => {
       let totalValidated = 0;
       let totalSaved = 0;
       let totalErrors = 0;
+      let countriesProcessed = 0;
 
       for (const country of countriesToProcess) {
         setStats(prev => ({ ...prev, currentCountry: country.name }));
+        countriesProcessed++;
 
         try {
           const questions = await generateEasyQuestions(country);
@@ -177,6 +164,7 @@ export const EasyQuestionGenerator = () => {
             questionsValidated: totalValidated,
             questionsSaved: totalSaved,
             validationErrors: totalErrors,
+            countriesProcessed: countriesProcessed,
             timeElapsed: Math.floor((Date.now() - startTime) / 1000)
           }));
 
@@ -196,7 +184,9 @@ export const EasyQuestionGenerator = () => {
     }
   };
 
-  const progress = generationMode === 'all' ? (stats.questionsGenerated / (countries.length * 5)) * 100 : 0;
+  const progress = generationMode === 'all' && countries.length > 0
+    ? (stats.countriesProcessed / countries.length) * 100 
+    : (isGenerating ? 100 : 0);
 
   return (
     <div className="space-y-6">
