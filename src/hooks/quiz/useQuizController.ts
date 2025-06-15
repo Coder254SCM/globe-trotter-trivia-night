@@ -9,6 +9,7 @@ interface UseQuizControllerProps {
   questions: Question[];
   onFinish: (result: QuizResult) => void;
   isWeeklyChallenge?: boolean;
+  challengeId?: string;
 }
 
 export const useQuizController = ({
@@ -16,6 +17,7 @@ export const useQuizController = ({
   questions,
   onFinish,
   isWeeklyChallenge = false,
+  challengeId,
 }: UseQuizControllerProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
@@ -123,7 +125,8 @@ export const useQuizController = ({
             correctAnswers,
             score,
             timeTaken,
-            failedQuestionIds
+            failedQuestionIds,
+            isWeeklyChallenge ? challengeId : undefined
           );
         } catch (error) {
           console.error('Failed to complete session:', error);
@@ -139,7 +142,7 @@ export const useQuizController = ({
         failedQuestionIds
       });
     }
-  }, [currentQuestionIndex, questions.length, startTime, correctAnswers, gameSession, user, failedQuestionIds, onFinish, correctQuestions]);
+  }, [currentQuestionIndex, questions.length, startTime, correctAnswers, gameSession, user, failedQuestionIds, onFinish, correctQuestions, isWeeklyChallenge, challengeId]);
 
   const handleSkip = useCallback(() => {
     if (currentQuestionIndex < questions.length - 1) {
@@ -172,4 +175,3 @@ export const useQuizController = ({
     handleSkip,
   };
 };
-

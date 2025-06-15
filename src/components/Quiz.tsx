@@ -12,9 +12,10 @@ interface QuizProps {
   onFinish: (result: QuizResult) => void;
   onBack: () => void;
   isWeeklyChallenge?: boolean;
+  challengeId?: string;
 }
 
-const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false }: QuizProps) => {
+const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false, challengeId }: QuizProps) => {
   useEffect(() => {
     const scrollToTop = () => {
       window.scrollTo(0, 0);
@@ -42,6 +43,7 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false 
     questions,
     onFinish,
     isWeeklyChallenge,
+    challengeId,
   });
 
   if (!questions || questions.length === 0) {
