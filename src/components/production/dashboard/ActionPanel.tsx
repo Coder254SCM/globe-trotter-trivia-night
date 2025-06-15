@@ -1,5 +1,4 @@
 
-```tsx
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ProductionStatus } from "@/services/production/gameOrchestrator";
@@ -49,4 +48,3 @@ export const ActionPanel = ({ status, isLoading, onRegenerate, onAudit }: Action
     </Card>
   );
 };
-```

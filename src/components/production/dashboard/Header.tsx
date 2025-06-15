@@ -1,5 +1,4 @@
 
-```tsx
 import { Button } from "@/components/ui/button";
 import { Target, RefreshCw, Play } from "lucide-react";
 
@@ -44,4 +43,3 @@ export const DashboardHeader = ({ isLoading, isInitializing, onRefresh, onInitia
     </div>
   </div>
 );
-```

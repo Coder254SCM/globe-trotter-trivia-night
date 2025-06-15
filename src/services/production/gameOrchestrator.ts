@@ -1,5 +1,3 @@
-
-```typescript
 import { AutomatedAuditService, QualityReport } from "../quality/automatedAudit";
 import { ProductionConfigService, ProductionConfig } from "./orchestrator/config";
 import { ProductionStatusService, ProductionStatus } from "./orchestrator/status";
@@ -108,4 +106,3 @@ export class GameOrchestrator {
     console.log("🛑 Production system stopped");
   }
 }
-```

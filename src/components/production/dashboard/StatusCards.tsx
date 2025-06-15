@@ -1,5 +1,3 @@
-
-```tsx
 import { Card } from "@/components/ui/card";
 import { ProductionStatus } from "@/services/production/gameOrchestrator";
 import { BarChart3, Globe, Settings, CheckCircle, XCircle } from "lucide-react";
@@ -69,4 +67,3 @@ export const StatusCards = ({ status }: StatusCardsProps) => (
     </Card>
   </div>
 );
-```

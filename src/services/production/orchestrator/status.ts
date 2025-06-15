@@ -1,5 +1,3 @@
-
-```typescript
 import { AutomatedAuditService, QualityReport } from "../../quality/automatedAudit";
 import { ProductionConfig } from "./config";
 
@@ -51,4 +49,3 @@ export class ProductionStatusService {
     };
   }
 }
-```

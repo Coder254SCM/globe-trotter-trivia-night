@@ -1,5 +1,3 @@
-
-```typescript
 import { supabase } from "@/integrations/supabase/client";
 import countries from "@/data/countries";
 import { ProductionConfig } from "./config";
@@ -99,4 +97,3 @@ export class QuestionMaintenanceService {
     console.log(`✅ Regenerated questions for ${countryIds.length} countries`);
   }
 }
-```
