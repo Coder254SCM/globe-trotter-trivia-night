@@ -107,7 +107,7 @@ export default function QuizPage() {
           toast({
             title: "Fewer Questions Available",
             description: `Only ${questions.length} unique questions were available for ${country.name}. This may cause repeated or similar questions. Try again later or report missing questions to the admin.`,
-            variant: "warning"
+            variant: "default"
           });
         }
 
