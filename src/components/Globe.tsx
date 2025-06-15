@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Country, DifficultyLevel } from "../types/quiz";
 import { CountryCard } from "./globe/CountryCard";
 import { GlobeHeader } from "./globe/GlobeHeader";
@@ -11,7 +11,7 @@ import { getQuestionStats } from "../utils/quiz/questionSets";
 import { toast } from "@/components/ui/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNavigate } from "react-router-dom";
-import countries from "@/data/countries";
+import { useEnhancedCountries } from "../hooks/useEnhancedCountries";
 
 interface GlobeProps {
   onCountrySelect: (country: Country) => void;
@@ -23,8 +23,8 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   
-  // Use static countries data - all 195 countries
-  const allCountries = useMemo(() => countries, []);
+  // Use enhanced countries data with all categories
+  const allCountries = useEnhancedCountries();
   
   // Custom hooks for country filtering
   const {
