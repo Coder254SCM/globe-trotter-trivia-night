@@ -3,17 +3,27 @@ import { useState, useEffect } from "react";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { useNavigate } from "react-router-dom";
 import { Country } from "@/types/quiz";
+import React, { Suspense } from "react";
 
-// Lazy load components to prevent circular dependencies
+// Lazy load components with proper handling for named exports
 const Globe = React.lazy(() => import("@/components/Globe"));
 const Quiz = React.lazy(() => import("@/components/Quiz"));
 const QuizResult = React.lazy(() => import("@/components/QuizResult"));
-const QuizSettings = React.lazy(() => import("@/components/quiz/QuizSettings"));
-const MainLayout = React.lazy(() => import("@/components/layout/MainLayout"));
-const AppHeader = React.lazy(() => import("@/components/layout/AppHeader"));
-
-// Import React after lazy imports to prevent issues
-import React, { Suspense } from "react";
+const QuizSettings = React.lazy(() => 
+  import("@/components/quiz/QuizSettings").then(module => ({ 
+    default: module.QuizSettings 
+  }))
+);
+const MainLayout = React.lazy(() => 
+  import("@/components/layout/MainLayout").then(module => ({ 
+    default: module.MainLayout 
+  }))
+);
+const AppHeader = React.lazy(() => 
+  import("@/components/layout/AppHeader").then(module => ({ 
+    default: module.AppHeader 
+  }))
+);
 
 // Import hooks separately to avoid circular deps
 let useQuizManager: any;
@@ -95,12 +105,6 @@ function IndexContent() {
 
   useEffect(() => {
     console.log('🔄 Index component mounted successfully');
-    
-    // Test that all required components are available
-    const requiredComponents = ['Globe', 'Quiz', 'QuizResult', 'MainLayout', 'AppHeader'];
-    requiredComponents.forEach(comp => {
-      console.log(`📦 ${comp} component available:`, !!eval(comp));
-    });
   }, []);
 
   const handleWeeklyChallengeStart = (questions: any[], challengeId: string) => {
