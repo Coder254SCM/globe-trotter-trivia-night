@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Country, Question } from "@/types/quiz";
@@ -49,19 +50,22 @@ export default function QuizPage() {
         setSelectedCountry(country);
         setQuestionCount(count);
 
-        console.log(`[QuizPage] Loading ${count} clean questions for ${country.name} (id: ${country.id}) at difficulty "${country.difficulty}"`);
-        // Use clean question fetcher with the actual difficulty from the country object
+        console.log(`[QuizPage] Loading ${count} questions for ${country.name} (id: ${country.id}) at difficulty "${country.difficulty}"`);
+        
+        // Use clean question fetcher with enhanced fallbacks
         const questions = await getCleanQuizQuestions(
           country.id, 
           country.difficulty, 
           count
         );
 
+        console.log(`[QuizPage] Loaded ${questions.length} questions from fetcher`);
+
         if (questions.length === 0) {
-          console.warn(`[QuizPage] ❌ No validated questions found for country=${country.name}, id=${country.id}, difficulty=${country.difficulty}`);
+          console.warn(`[QuizPage] ❌ No questions found for country=${country.name}, id=${country.id}, difficulty=${country.difficulty}`);
           toast({
-            title: "No Clean Questions Available",
-            description: `No validated ${country.difficulty} questions found for ${country.name} (countryId: ${country.id}).\nTry a different country or check your question population.`,
+            title: "No Questions Available",
+            description: `No questions found for ${country.name}. The automatic generation may still be running. Please wait a moment and try again, or select a different country.`,
             variant: "destructive",
           });
           navigate('/');
@@ -70,20 +74,22 @@ export default function QuizPage() {
 
         setQuizQuestions(questions);
 
-        console.log(`[QuizPage] ✅ Loaded ${questions.length} clean ${country.difficulty} questions for ${country.name}`);
+        console.log(`[QuizPage] ✅ Successfully loaded ${questions.length} questions for ${country.name}`);
         scrollToTop();
 
       } catch (error) {
-        console.error('[QuizPage] Failed to load clean quiz questions:', error);
+        console.error('[QuizPage] Failed to load quiz questions:', error);
         toast({
           title: "Quiz Loading Error",
-          description: "Failed to load clean questions. Please try again.",
+          description: "Failed to load questions. Please try again or select a different country.",
           variant: "destructive",
         });
         navigate('/');
       } finally {
         setLoading(false);
-        setTimeout(scrollToTop, 100);
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'instant' });
+        }, 100);
       }
     };
 
@@ -106,12 +112,12 @@ export default function QuizPage() {
       <div className="fixed inset-0 bg-background flex items-center justify-center z-50 min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold mb-2">Loading Clean Quiz...</h2>
+          <h2 className="text-xl font-semibold mb-2">Loading Quiz...</h2>
           <p className="text-muted-foreground">
-            Preparing {questionCount} validated questions for {selectedCountry?.name ?? "—"}
+            Preparing {questionCount} questions for {selectedCountry?.name ?? "—"}
           </p>
           <p className="text-sm text-muted-foreground mt-2">
-            Only high-quality questions are included
+            If this is your first time, questions are being generated automatically
           </p>
         </div>
       </div>
@@ -122,15 +128,15 @@ export default function QuizPage() {
     return (
       <div className="fixed inset-0 bg-background flex items-center justify-center z-50 min-h-screen">
         <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold mb-2">Clean Quiz Not Available</h2>
+          <h2 className="text-xl font-semibold mb-2">No Quiz Questions Available</h2>
           <p className="text-muted-foreground mb-1">
             {selectedCountry 
-              ? `No validated "${selectedCountry.difficulty}" questions found for "${selectedCountry.name}" (countryId:${selectedCountry.id}).`
-              : "No validated questions available for this selection."
+              ? `No questions found for "${selectedCountry.name}" at "${selectedCountry.difficulty}" difficulty.`
+              : "No questions available for this selection."
             }
           </p>
           <p className="text-xs text-muted-foreground">
-            Please try a different country, check your country population, or ensure questions exist at this difficulty.
+            Questions may still be generating in the background. Please wait a moment and try again.
           </p>
           <button onClick={handleBack} className="bg-primary text-primary-foreground px-4 py-2 rounded mt-3">
             Back to Countries

@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Question as FrontendQuestion } from "@/types/quiz";
-import { Question as DatabaseQuestion } from "./questionTypes";
 
 export interface QuestionFilter {
   countryId?: string;
@@ -14,10 +13,10 @@ export interface QuestionFilter {
 
 export class QuestionFetcher {
   /**
-   * Get filtered questions with enhanced validation
+   * Get filtered questions with enhanced validation and better logging
    */
   static async getFilteredQuestions(filter: QuestionFilter): Promise<FrontendQuestion[]> {
-    console.log('🔍 Fetching filtered questions:', filter);
+    console.log('🔍 [QuestionFetcher] Fetching filtered questions:', filter);
     
     try {
       let query = supabase
@@ -63,31 +62,37 @@ export class QuestionFetcher {
       // Order by creation date (newest first)
       query = query.order('created_at', { ascending: false });
 
+      console.log('🔍 [QuestionFetcher] Executing query...');
       const { data, error } = await query;
 
       if (error) {
-        console.error('Error fetching filtered questions:', error);
+        console.error('❌ [QuestionFetcher] Database error:', error);
         throw error;
       }
 
+      console.log(`📋 [QuestionFetcher] Raw data returned: ${data?.length || 0} questions`);
+
       if (!data?.length) {
-        console.warn('No questions found with filters:', filter);
+        console.warn('⚠️ [QuestionFetcher] No questions found with filters:', filter);
         return [];
       }
 
       // Transform to frontend format
       let transformedQuestions = data.map(q => this.transformToFrontendQuestion(q));
+      console.log(`🔄 [QuestionFetcher] Transformed ${transformedQuestions.length} questions`);
 
       // Apply content validation if requested
       if (filter.validateContent) {
+        const beforeValidation = transformedQuestions.length;
         transformedQuestions = this.validateQuestionContent(transformedQuestions);
+        console.log(`✅ [QuestionFetcher] After validation: ${transformedQuestions.length}/${beforeValidation} questions passed`);
       }
 
-      console.log(`✅ Retrieved ${transformedQuestions.length} filtered questions`);
+      console.log(`✅ [QuestionFetcher] Returning ${transformedQuestions.length} final questions`);
       return transformedQuestions;
 
     } catch (error) {
-      console.error('Failed to fetch filtered questions:', error);
+      console.error('❌ [QuestionFetcher] Failed to fetch filtered questions:', error);
       return [];
     }
   }
@@ -100,12 +105,13 @@ export class QuestionFetcher {
     difficulty?: string,
     limit: number = 10
   ): Promise<FrontendQuestion[]> {
+    console.log(`🔍 [QuestionFetcher] Legacy getQuestions called: countryId=${countryId}, difficulty=${difficulty}, limit=${limit}`);
+    
     return this.getFilteredQuestions({
       countryId,
       difficulty,
       limit,
-      excludeEasy: true,
-      validateContent: true
+      validateContent: false  // Less strict for legacy calls
     });
   }
 
@@ -162,7 +168,7 @@ export class QuestionFetcher {
       );
 
       if (hasPlaceholders) {
-        console.warn('❌ Filtered out question with placeholder content:', question.text.substring(0, 50));
+        console.warn('❌ [QuestionFetcher] Filtered out question with placeholder content:', question.text.substring(0, 50));
         return false;
       }
 

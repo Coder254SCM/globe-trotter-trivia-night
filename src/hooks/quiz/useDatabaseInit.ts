@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { CountryService } from "@/services/supabase/countryService";
-import { GameOrchestrator } from "@/services/production/gameOrchestrator";
+import { TemplateQuestionService } from "@/services/templateQuestionService";
 
 export const useDatabaseInit = () => {
   const { toast } = useToast();
@@ -30,18 +30,33 @@ export const useDatabaseInit = () => {
         console.log('📊 Database stats:', stats);
         
         if (stats.totalQuestions === 0) {
-          console.log('🚀 No questions found - forcing automatic generation...');
+          console.log('🚀 No questions found - forcing immediate generation...');
           
           toast({
             title: "Generating Questions",
-            description: "No questions found. Starting automatic generation process...",
+            description: "No questions found. Starting immediate generation process...",
           });
 
           try {
-            const orchestrator = GameOrchestrator.getInstance();
-            await orchestrator.initialize();
+            // Generate questions for first 10 countries immediately
+            const serviceCountries = await CountryService.getAllServiceCountries();
+            const firstCountries = serviceCountries.slice(0, 10);
             
-            // Wait a moment then check again
+            console.log(`🎯 Generating questions for first ${firstCountries.length} countries...`);
+            
+            const generationPromises = firstCountries.map(async (country) => {
+              try {
+                console.log(`🔧 Generating for ${country.name}...`);
+                await TemplateQuestionService.generateQuestions(country, 'medium', 5, 'Geography');
+                await TemplateQuestionService.generateQuestions(country, 'easy', 3, 'Culture');
+              } catch (error) {
+                console.error(`❌ Failed to generate for ${country.name}:`, error);
+              }
+            });
+            
+            await Promise.all(generationPromises);
+            
+            // Check stats again
             setTimeout(async () => {
               const newStats = await CountryService.getDatabaseStats();
               console.log('📊 Updated stats after generation:', newStats);
@@ -51,15 +66,8 @@ export const useDatabaseInit = () => {
                   title: "Questions Ready!",
                   description: `Successfully generated ${newStats.totalQuestions} questions. The game is now ready to play!`,
                 });
-              } else {
-                console.warn('⚠️ Generation completed but no questions found');
-                toast({
-                  title: "Generation Issue",
-                  description: "Question generation ran but no questions were created. Check console for details.",
-                  variant: "destructive"
-                });
               }
-            }, 3000);
+            }, 2000);
             
           } catch(e) {
              console.error('❌ Failed to auto-generate questions:', e);
