@@ -1,9 +1,9 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import countriesData from "@/data/countries";
 import { ProductionConfig } from "./config";
 import AIService from "@/services/aiService";
 import { Country } from "@/types/quiz";
+import { CountryService } from "@/services/supabase/countryService";
 
 export class QuestionMaintenanceService {
   private config: ProductionConfig;
@@ -19,7 +19,7 @@ export class QuestionMaintenanceService {
     const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
     
     const generationRequests: { countryId: string; difficulty: 'easy' | 'medium' | 'hard'; category: string; count: number }[] = [];
-    const allCountries: Country[] = countriesData;
+    const allCountries = await CountryService.getAllCountries();
 
     for (const country of allCountries) {
       for (const difficulty of difficulties) {
