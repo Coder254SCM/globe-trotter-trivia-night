@@ -61,7 +61,6 @@ export default function QuestionValidationDashboard() {
         console.error('Deletion errors:', result.errors);
       }
 
-      // Reload stats
       await loadStats();
     } catch (error) {
       console.error('Failed to delete placeholder questions:', error);
@@ -87,7 +86,6 @@ export default function QuestionValidationDashboard() {
         </div>
       </div>
 
-      {/* Critical Issues Alert */}
       {stats.critical > 0 && (
         <Alert className="border-red-200 bg-red-50">
           <AlertTriangle className="h-4 w-4 text-red-600" />
@@ -97,7 +95,6 @@ export default function QuestionValidationDashboard() {
         </Alert>
       )}
 
-      {/* Placeholder Content Alert */}
       {stats.placeholderCount > 0 && (
         <Alert className="border-orange-200 bg-orange-50">
           <AlertTriangle className="h-4 w-4 text-orange-600" />
@@ -107,7 +104,6 @@ export default function QuestionValidationDashboard() {
         </Alert>
       )}
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card className="p-4">
           <div className="flex items-center justify-between">
@@ -159,7 +155,6 @@ export default function QuestionValidationDashboard() {
         </Card>
       </div>
 
-      {/* Quality Score */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Overall Quality Score</h3>
         <div className="space-y-2">
@@ -178,7 +173,6 @@ export default function QuestionValidationDashboard() {
         )}
       </Card>
 
-      {/* Actions */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Validation Actions</h3>
         <div className="space-y-4">
@@ -224,7 +218,6 @@ export default function QuestionValidationDashboard() {
         </div>
       </Card>
 
-      {/* Validation Rules */}
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4">Active Validation Rules</h3>
         <div className="space-y-2 text-sm">
