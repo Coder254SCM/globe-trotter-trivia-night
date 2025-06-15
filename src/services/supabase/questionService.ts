@@ -15,8 +15,21 @@ export class QuestionService {
   static transformToFrontendQuestion = QuestionFetcher.transformToFrontendQuestion;
 
   // Question saving operations
-  static saveQuestions = QuestionSaver.saveQuestions;
-  static validateQuestion = QuestionSaver.validateQuestion;
+  /**
+   * Saves questions to the database.
+   * This now properly calls QuestionSaver.saveQuestions to maintain the correct `this` context.
+   */
+  static saveQuestions(questions: any[]) {
+    return QuestionSaver.saveQuestions(questions);
+  }
+
+  /**
+   * Validates a question.
+   * This now properly calls QuestionSaver.validateQuestion to maintain the correct `this` context.
+   */
+  static validateQuestion(question: any) {
+    return QuestionSaver.validateQuestion(question);
+  }
 
   // Statistics operations
   static getCountryStats = QuestionStatsService.getCountryStats;
