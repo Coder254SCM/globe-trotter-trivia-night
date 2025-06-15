@@ -76,7 +76,7 @@ export const getCategoriesForCountry = (countryName: string, continent: string):
   const additionalCategories: QuestionCategory[] = [
     'Science', 'Education', 'Healthcare', 'Geography',
     'Tourism', 'Culture', 'Culture', 'History', 'Demographics',
-    'Geography', 'Natural Parks', 'Economy', 'Industry', 'Culture'
+    'Geography', 'National Parks', 'Economy', 'Industry', 'Culture'
   ];
   
   for (const category of additionalCategories) {
