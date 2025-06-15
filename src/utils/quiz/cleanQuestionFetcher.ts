@@ -3,7 +3,7 @@ import { Question } from "../../types/quiz";
 import { QuestionService } from "../../services/supabase/questionService";
 
 /**
- * Simplified and reliable question fetcher
+ * Clean and reliable question fetcher with better error handling
  */
 export const getCleanQuizQuestions = async (
   countryId: string,
@@ -13,7 +13,7 @@ export const getCleanQuizQuestions = async (
   console.log(`🔍 [CleanFetcher] Fetching ${count} ${difficulty} questions for countryId: ${countryId}`);
   
   try {
-    // Strategy 1: Try exact match first
+    // Try to get questions with the specified difficulty
     let questions = await QuestionService.getFilteredQuestions({
       countryId,
       difficulty,
@@ -21,32 +21,27 @@ export const getCleanQuizQuestions = async (
       validateContent: true
     });
     
-    console.log(`📋 [CleanFetcher] Found ${questions.length} questions with exact match`);
+    console.log(`📋 [CleanFetcher] Found ${questions.length} questions with difficulty: ${difficulty}`);
     
-    // Strategy 2: If not enough, try any difficulty for the country
+    // If we don't have enough questions with the specified difficulty, try any difficulty
     if (questions.length < count) {
-      const additionalQuestions = await QuestionService.getFilteredQuestions({
+      console.log(`🔄 [CleanFetcher] Not enough questions, trying any difficulty...`);
+      
+      const fallbackQuestions = await QuestionService.getFilteredQuestions({
         countryId,
-        limit: count - questions.length,
+        limit: count,
         validateContent: true
       });
       
-      // Add unique questions only
+      // Merge results, avoiding duplicates
       const existingIds = new Set(questions.map(q => q.id));
-      const newQuestions = additionalQuestions.filter(q => !existingIds.has(q.id));
-      questions = [...questions, ...newQuestions];
+      const newQuestions = fallbackQuestions.filter(q => !existingIds.has(q.id));
+      questions = [...questions, ...newQuestions].slice(0, count);
       
       console.log(`📋 [CleanFetcher] After fallback: ${questions.length} total questions`);
     }
-    
-    // Strategy 3: If still no questions, try basic fetch
-    if (questions.length === 0) {
-      console.log(`🔄 [CleanFetcher] Trying basic fetch...`);
-      questions = await QuestionService.getQuestions(countryId, difficulty, count);
-      console.log(`📋 [CleanFetcher] Basic fetch returned: ${questions.length} questions`);
-    }
 
-    return questions.slice(0, count);
+    return questions;
 
   } catch (error) {
     console.error('❌ [CleanFetcher] Error fetching questions:', error);

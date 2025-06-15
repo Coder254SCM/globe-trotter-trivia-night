@@ -19,7 +19,6 @@ export default function QuizPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Force scroll to top
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
 
     const loadQuizData = async () => {
@@ -45,14 +44,13 @@ export default function QuizPage() {
 
         console.log(`[QuizPage] Loading ${count} questions for ${country.name} (${country.difficulty})`);
         
-        // Try to get questions
+        // Try to get existing questions
         let questions = await getCleanQuizQuestions(country.id, country.difficulty, count);
+        console.log(`[QuizPage] Found ${questions.length} existing questions`);
 
-        console.log(`[QuizPage] Found ${questions.length} questions`);
-
-        // If no questions, generate some immediately
-        if (questions.length === 0) {
-          console.log(`[QuizPage] No questions found, generating...`);
+        // If we don't have enough questions, generate some
+        if (questions.length < Math.min(count, 5)) {
+          console.log(`[QuizPage] Not enough questions (${questions.length}), generating more...`);
           setGeneratingQuestions(true);
           
           toast({
@@ -61,7 +59,7 @@ export default function QuizPage() {
           });
 
           try {
-            // Get country data for generation
+            // Get the country data for generation
             const serviceCountries = await CountryService.getAllServiceCountries();
             const countryData = serviceCountries.find(c => c.id === country.id);
 
@@ -70,28 +68,41 @@ export default function QuizPage() {
               await TemplateQuestionService.generateQuestions(
                 countryData,
                 country.difficulty,
-                Math.max(count, 5),
+                Math.max(count, 10),
                 'Geography'
               );
 
-              // Wait and try fetching again
-              await new Promise(resolve => setTimeout(resolve, 1000));
+              // Wait a moment then try fetching again
+              await new Promise(resolve => setTimeout(resolve, 1500));
               questions = await getCleanQuizQuestions(country.id, country.difficulty, count);
               
               console.log(`[QuizPage] After generation: ${questions.length} questions`);
+              
+              if (questions.length > 0) {
+                toast({
+                  title: "Questions Generated!",
+                  description: `Created ${questions.length} questions for ${country.name}`,
+                });
+              }
             }
           } catch (generationError) {
             console.error('[QuizPage] Generation failed:', generationError);
+            toast({
+              title: "Generation Failed",
+              description: "Failed to generate questions. Please try a different country.",
+              variant: "destructive",
+            });
           } finally {
             setGeneratingQuestions(false);
           }
         }
 
+        // Final check
         if (questions.length === 0) {
           console.warn(`[QuizPage] Still no questions for ${country.name}`);
           toast({
             title: "No Questions Available",
-            description: `No questions found for ${country.name}. Please try a different country.`,
+            description: `No questions found for ${country.name}. Please try a different country or difficulty.`,
             variant: "destructive",
           });
           navigate('/');
@@ -138,7 +149,7 @@ export default function QuizPage() {
           </h2>
           <p className="text-muted-foreground">
             {generatingQuestions 
-              ? `Creating questions for ${selectedCountry?.name ?? "—"}`
+              ? `Creating questions for ${selectedCountry?.name ?? "selected country"}`
               : `Preparing your quiz`
             }
           </p>

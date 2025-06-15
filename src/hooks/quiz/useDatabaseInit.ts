@@ -25,36 +25,38 @@ export const useDatabaseInit = () => {
           console.log(`✅ Database already has ${supabaseCountries.length} countries`);
         }
         
-        // Check if we have any questions at all
+        // Check if we have basic questions
         const stats = await CountryService.getDatabaseStats();
         console.log('📊 Database stats:', stats);
         
-        if (stats.totalQuestions < 100) {
-          console.log('🚀 Starting basic question generation...');
+        if (stats.totalQuestions < 50) {
+          console.log('🚀 Generating basic question set...');
           
           toast({
             title: "Generating Questions",
-            description: "Setting up basic questions for the quiz system...",
+            description: "Setting up basic questions for popular countries...",
           });
 
           try {
-            // Get first 10 countries for initial generation
+            // Generate questions for top 5 most popular countries first
             const serviceCountries = await CountryService.getAllServiceCountries();
-            const firstCountries = serviceCountries.slice(0, 10);
+            const popularCountries = serviceCountries.filter(c => 
+              ['united-states', 'united-kingdom', 'france', 'germany', 'japan'].includes(c.id)
+            );
             
-            console.log(`🎯 Generating questions for ${firstCountries.length} countries...`);
+            console.log(`🎯 Generating questions for ${popularCountries.length} popular countries...`);
             
-            for (const country of firstCountries) {
+            for (const country of popularCountries) {
               try {
                 console.log(`🔧 Generating for ${country.name}...`);
                 
-                // Generate a few questions for each difficulty
-                await TemplateQuestionService.generateQuestions(country, 'easy', 2, 'Geography');
-                await TemplateQuestionService.generateQuestions(country, 'medium', 2, 'Geography');
-                await TemplateQuestionService.generateQuestions(country, 'hard', 2, 'Culture');
+                // Generate questions for each difficulty
+                await TemplateQuestionService.generateQuestions(country, 'easy', 3, 'Geography');
+                await TemplateQuestionService.generateQuestions(country, 'medium', 3, 'Geography');
+                await TemplateQuestionService.generateQuestions(country, 'hard', 3, 'Geography');
                 
-                // Small delay to avoid overwhelming the system
-                await new Promise(resolve => setTimeout(resolve, 100));
+                // Small delay
+                await new Promise(resolve => setTimeout(resolve, 200));
                 
               } catch (error) {
                 console.error(`❌ Failed to generate for ${country.name}:`, error);
@@ -63,7 +65,7 @@ export const useDatabaseInit = () => {
             
             toast({
               title: "Questions Ready!",
-              description: `Basic question set generated. You can now start quizzes!`,
+              description: `Basic question set generated for popular countries.`,
             });
             
           } catch(e) {
