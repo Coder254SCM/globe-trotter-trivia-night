@@ -11,9 +11,12 @@ import { useNavigate } from "react-router-dom";
 import { Country } from "@/types/quiz";
 
 export default function Index() {
+  console.log('🔄 Index component loading...');
+  
   const [weeklyChallenge, setWeeklyChallenge] = useState<{questions: any[], challengeId: string} | null>(null);
   const navigate = useNavigate();
   
+  console.log('🔄 Initializing useQuizManager...');
   const {
     allCountries,
     selectedCountry,
@@ -29,16 +32,21 @@ export default function Index() {
     handleStartQuizWithCount
   } = useQuizManager();
 
+  console.log('🔄 useQuizManager initialized, countries count:', allCountries?.length || 0);
+
   const handleWeeklyChallengeStart = (questions: any[], challengeId: string) => {
+    console.log('🔄 Starting weekly challenge:', challengeId);
     setWeeklyChallenge({ questions, challengeId });
   };
 
   const handleWeeklyChallengeBack = () => {
+    console.log('🔄 Going back from weekly challenge');
     setWeeklyChallenge(null);
   };
 
   // Navigate to weekly challenges page
   const handleStartWeeklyChallenge = () => {
+    console.log('🔄 Navigating to weekly challenges');
     navigate('/weekly-challenges');
   };
 
@@ -53,7 +61,16 @@ export default function Index() {
     navigate('/quiz-settings');
   };
 
+  console.log('🔄 Index component rendering, state:', {
+    weeklyChallenge: !!weeklyChallenge,
+    showSettings,
+    showQuiz,
+    quizResult: !!quizResult,
+    selectedCountry: selectedCountry?.name
+  });
+
   if (weeklyChallenge) {
+    console.log('🔄 Rendering weekly challenge quiz');
     return (
       <Quiz
         country={null}
@@ -67,6 +84,7 @@ export default function Index() {
   }
 
   if (showSettings && selectedCountry) {
+    console.log('🔄 Rendering quiz settings');
     return (
       <QuizSettings
         countryName={selectedCountry.name}
@@ -78,6 +96,7 @@ export default function Index() {
   }
 
   if (showQuiz && selectedCountry && quizQuestions.length > 0) {
+    console.log('🔄 Rendering quiz');
     return (
       <Quiz
         country={selectedCountry}
@@ -89,6 +108,7 @@ export default function Index() {
   }
 
   if (quizResult) {
+    console.log('🔄 Rendering quiz result');
     return (
       <QuizResult
         result={quizResult}
@@ -99,10 +119,11 @@ export default function Index() {
     );
   }
 
+  console.log('🔄 Rendering main globe view');
   return (
     <MainLayout>
       <AppHeader 
-        countriesCount={allCountries.length} 
+        countriesCount={allCountries?.length || 0} 
         isGeneratingQuestions={isGeneratingQuestions}
       />
       
