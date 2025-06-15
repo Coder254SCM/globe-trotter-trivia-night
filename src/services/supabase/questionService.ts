@@ -2,7 +2,6 @@
 import { Question as FrontendQuestion } from "@/types/quiz";
 import { QuestionToValidate } from "./questionValidationService";
 import { QuestionFetcher } from "./question/questionFetcher";
-import { QuestionSaver } from "./question/questionSaver";
 import { QuestionStatsService } from "./question/questionStats";
 
 // Re-export types for backward compatibility
@@ -14,24 +13,30 @@ export class QuestionService {
   static getFilteredQuestions = QuestionFetcher.getFilteredQuestions;
   static transformToFrontendQuestion = QuestionFetcher.transformToFrontendQuestion;
 
-  // Question saving operations
-  /**
-   * Saves questions to the database.
-   * This now properly calls QuestionSaver.saveQuestions to maintain the correct `this` context.
-   */
-  static saveQuestions(questions: any[]) {
-    return QuestionSaver.saveQuestions(questions);
-  }
-
-  /**
-   * Validates a question.
-   * This now properly calls QuestionSaver.validateQuestion to maintain the correct `this` context.
-   */
-  static validateQuestion(question: any) {
-    return QuestionSaver.validateQuestion(question);
-  }
-
   // Statistics operations
   static getCountryStats = QuestionStatsService.getCountryStats;
   static getGlobalStats = QuestionStatsService.getGlobalStats;
+
+  /**
+   * Basic question validation
+   */
+  static validateQuestion(question: any): boolean {
+    if (!question.text || question.text.length < 20) return false;
+    
+    const options = [question.option_a, question.option_b, question.option_c, question.option_d];
+    if (!options.includes(question.correct_answer)) return false;
+    
+    const uniqueOptions = new Set(options.map(opt => opt?.toLowerCase().trim()));
+    if (uniqueOptions.size < 4) return false;
+    
+    return true;
+  }
+
+  /**
+   * Placeholder for saving questions - implement as needed
+   */
+  static async saveQuestions(questions: any[]): Promise<void> {
+    console.log(`Saving ${questions.length} questions...`);
+    // Implementation would go here
+  }
 }

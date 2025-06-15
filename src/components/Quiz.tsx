@@ -2,9 +2,16 @@
 import { useEffect } from "react";
 import { QuizResult, Country, Question } from "../types/quiz";
 import { useQuizController } from "@/hooks/quiz/useQuizController";
-import { isQuestionInvalid } from "@/utils/quiz/questionValidator";
 import { QuizError } from "./quiz/QuizError";
 import { QuizView } from "./quiz/QuizView";
+
+// Simple inline question validation
+const isQuestionInvalid = (question: Question): boolean => {
+  if (!question) return true;
+  if (!question.text || question.text.length < 10) return true;
+  if (!question.choices || question.choices.length !== 4) return true;
+  return false;
+};
 
 interface QuizProps {
   country: Country | null;
@@ -84,4 +91,3 @@ const Quiz = ({ country, questions, onFinish, onBack, isWeeklyChallenge = false,
 };
 
 export default Quiz;
-
