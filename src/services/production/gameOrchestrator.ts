@@ -1,4 +1,3 @@
-import { QuestionGeneratorService, GenerationRequest } from "../ai/questionGenerator";
 import { AutomatedAuditService, QualityReport } from "../quality/automatedAudit";
 import { supabase } from "@/integrations/supabase/client";
 import countries from "@/data/countries";
