@@ -56,7 +56,7 @@ export class QuestionFetcher {
 
       // Limit results
       if (filter.limit) {
-        query = query.limit(filter.limit);
+        query = query.limit(filter.limit * 3); // Get more to allow for deduplication
       }
 
       // Order by creation date (newest first)
@@ -86,6 +86,15 @@ export class QuestionFetcher {
         const beforeValidation = transformedQuestions.length;
         transformedQuestions = this.validateQuestionContent(transformedQuestions);
         console.log(`✅ [QuestionFetcher] After validation: ${transformedQuestions.length}/${beforeValidation} questions passed`);
+      }
+
+      // Deduplicate questions
+      transformedQuestions = this.deduplicateQuestions(transformedQuestions);
+      console.log(`🔄 [QuestionFetcher] After deduplication: ${transformedQuestions.length} unique questions`);
+
+      // Limit to requested amount
+      if (filter.limit && transformedQuestions.length > filter.limit) {
+        transformedQuestions = transformedQuestions.slice(0, filter.limit);
       }
 
       console.log(`✅ [QuestionFetcher] Returning ${transformedQuestions.length} final questions`);
@@ -141,7 +150,7 @@ export class QuestionFetcher {
   /**
    * Validate question content for quality
    */
-  private static validateQuestionContent(questions: FrontendQuestion[]): FrontendQuestion[] {
+  static validateQuestionContent(questions: FrontendQuestion[]): FrontendQuestion[] {
     const placeholderPatterns = [
       /placeholder/i,
       /methodology [a-d]/i,
@@ -174,5 +183,26 @@ export class QuestionFetcher {
 
       return true;
     });
+  }
+
+  /**
+   * Remove duplicate questions based on text content
+   */
+  static deduplicateQuestions(questions: FrontendQuestion[]): FrontendQuestion[] {
+    const seen = new Set<string>();
+    const uniqueQuestions: FrontendQuestion[] = [];
+
+    questions.forEach(question => {
+      const questionFingerprint = question.text.toLowerCase().trim();
+      
+      if (!seen.has(questionFingerprint)) {
+        seen.add(questionFingerprint);
+        uniqueQuestions.push(question);
+      } else {
+        console.warn('🔄 [QuestionFetcher] Removed duplicate question:', question.text.substring(0, 50));
+      }
+    });
+
+    return uniqueQuestions;
   }
 }
