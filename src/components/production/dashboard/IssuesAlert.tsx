@@ -1,5 +1,4 @@
 
-```tsx
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ProductionStatus } from "@/services/production/gameOrchestrator";
 import { AlertTriangle } from "lucide-react";
@@ -27,4 +26,3 @@ export const IssuesAlert = ({ status }: IssuesAlertProps) => {
     </Alert>
   );
 };
-```

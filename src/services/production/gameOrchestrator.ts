@@ -3,7 +3,7 @@ import { ProductionConfigService, ProductionConfig } from "./orchestrator/config
 import { ProductionStatusService, ProductionStatus } from "./orchestrator/status";
 import { QuestionMaintenanceService } from "./orchestrator/maintenance";
 
-export { ProductionStatus };
+export type { ProductionStatus };
 
 export class GameOrchestrator {
   private static instance: GameOrchestrator;
@@ -12,7 +12,7 @@ export class GameOrchestrator {
   private maintenanceService: QuestionMaintenanceService;
   private isRunning: boolean = false;
   private lastAudit: QualityReport | null = null;
-  private auditInterval: number | null = null;
+  private auditInterval: any = null;
 
   private constructor() {
     this.configService = new ProductionConfigService();

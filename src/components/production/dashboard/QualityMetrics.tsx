@@ -1,5 +1,4 @@
 
-```tsx
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -50,4 +49,3 @@ export const QualityMetrics = ({ report }: QualityMetricsProps) => (
     </Card>
   </div>
 );
-```

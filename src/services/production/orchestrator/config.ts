@@ -1,5 +1,4 @@
 
-```typescript
 export interface ProductionConfig {
   minQuestionsPerDifficulty: number;
   qualityThreshold: number;
@@ -32,4 +31,3 @@ export class ProductionConfigService {
     console.log("⚙️ Updated system configuration:", newConfig);
   }
 }
-```

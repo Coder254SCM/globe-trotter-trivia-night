@@ -1,5 +1,3 @@
-
-```typescript
 import { useState, useEffect } from "react";
 import { GameOrchestrator, ProductionStatus } from "@/services/production/gameOrchestrator";
 import { AutomatedAuditService, QualityReport } from "@/services/quality/automatedAudit";
@@ -133,4 +131,3 @@ export default function ProductionDashboard() {
     </div>
   );
 }
-```
