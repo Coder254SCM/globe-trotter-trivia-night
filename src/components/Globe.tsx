@@ -49,18 +49,23 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
 
   const handleStartQuiz = useCallback((difficulty: DifficultyLevel) => {
     if (selectedCountry) {
-      console.log('🎯 Globe: Starting quiz for:', selectedCountry.name, 'with difficulty:', difficulty);
-      
       const countryWithDifficulty = {
         ...selectedCountry,
         difficulty: difficulty
       };
       
-      // Close the country card and pass to parent for routing
+      console.log(`🌍 Globe: Navigating to settings for ${countryWithDifficulty.name}`);
+      
+      // Store selected country in session storage to pass it to the settings page
+      sessionStorage.setItem('selectedCountry', JSON.stringify(countryWithDifficulty));
+      
+      // Navigate to the quiz settings page to use the full-page quiz view
+      navigate('/quiz-settings');
+
+      // Close the country card
       setSelectedCountry(null);
-      onCountrySelect(countryWithDifficulty);
     }
-  }, [selectedCountry, onCountrySelect]);
+  }, [selectedCountry, navigate, onCountrySelect]);
 
   const handleCloseCard = useCallback(() => {
     setSelectedCountry(null);
