@@ -47,7 +47,7 @@ export const CountryCard = ({ country, onClose, onStartQuiz }: CountryCardProps)
 
   return (
     <div className="absolute inset-0 flex items-center justify-center z-10 animate-fade-in">
-      <div className="absolute inset-0 bg-background/70 backdrop-blur-sm" onClick={onClose}></div>
+      <div className="absolute inset-0 bg-background/90 backdrop-blur-md" onClick={onClose}></div>
       <Card className="w-full max-w-md p-6 relative z-20 border-primary/20 shadow-lg shadow-primary/20">
         <div className="flex items-center gap-4 mb-6">
           {getIcon()}
