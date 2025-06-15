@@ -12,7 +12,8 @@ import {
   Search,
   Settings,
   BarChart3,
-  UserCheck
+  UserCheck,
+  Target
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -97,6 +98,12 @@ export const ProductionDashboard = () => {
             System Tools
           </h3>
           <div className="space-y-3">
+            <Link to="/production-dashboard">
+              <Button className="w-full justify-start" variant="outline">
+                <Target className="h-4 w-4 mr-2" />
+                Production Control Center
+              </Button>
+            </Link>
             <Button className="w-full justify-start" variant="outline">
               <Database className="h-4 w-4 mr-2" />
               Rotation Management
