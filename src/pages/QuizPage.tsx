@@ -14,7 +14,6 @@ export default function QuizPage() {
   const [questionCount, setQuestionCount] = useState<number>(10);
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
-  const [generatingQuestions, setGeneratingQuestions] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -48,10 +47,9 @@ export default function QuizPage() {
         let questions = await getCleanQuizQuestions(country.id, country.difficulty, count);
         console.log(`[QuizPage] Found ${questions.length} existing questions`);
 
-        // If we don't have enough questions, generate some
-        if (questions.length < Math.min(count, 5)) {
-          console.log(`[QuizPage] Not enough questions (${questions.length}), generating more...`);
-          setGeneratingQuestions(true);
+        // If no questions exist, generate them
+        if (questions.length === 0) {
+          console.log(`[QuizPage] No questions found, generating for ${country.name}...`);
           
           toast({
             title: "Generating Questions",
@@ -64,24 +62,24 @@ export default function QuizPage() {
             const countryData = serviceCountries.find(c => c.id === country.id);
 
             if (countryData) {
-              // Generate questions for the selected difficulty
+              // Generate questions
               await TemplateQuestionService.generateQuestions(
                 countryData,
                 country.difficulty,
-                Math.max(count, 10),
+                count,
                 'Geography'
               );
 
-              // Wait a moment then try fetching again
-              await new Promise(resolve => setTimeout(resolve, 1500));
+              // Wait and try fetching again
+              await new Promise(resolve => setTimeout(resolve, 2000));
               questions = await getCleanQuizQuestions(country.id, country.difficulty, count);
               
               console.log(`[QuizPage] After generation: ${questions.length} questions`);
               
               if (questions.length > 0) {
                 toast({
-                  title: "Questions Generated!",
-                  description: `Created ${questions.length} questions for ${country.name}`,
+                  title: "Questions Ready!",
+                  description: `Generated ${questions.length} questions for ${country.name}`,
                 });
               }
             }
@@ -89,20 +87,18 @@ export default function QuizPage() {
             console.error('[QuizPage] Generation failed:', generationError);
             toast({
               title: "Generation Failed",
-              description: "Failed to generate questions. Please try a different country.",
+              description: "Could not generate questions. Please try a different country.",
               variant: "destructive",
             });
-          } finally {
-            setGeneratingQuestions(false);
           }
         }
 
         // Final check
         if (questions.length === 0) {
-          console.warn(`[QuizPage] Still no questions for ${country.name}`);
+          console.warn(`[QuizPage] No questions available for ${country.name}`);
           toast({
             title: "No Questions Available",
-            description: `No questions found for ${country.name}. Please try a different country or difficulty.`,
+            description: `No questions found for ${country.name}. Please try a different country.`,
             variant: "destructive",
           });
           navigate('/');
@@ -139,19 +135,14 @@ export default function QuizPage() {
     navigate('/');
   };
 
-  if (loading || generatingQuestions) {
+  if (loading) {
     return (
       <div className="fixed inset-0 bg-background flex items-center justify-center z-50 min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold mb-2">
-            {generatingQuestions ? "Generating Questions..." : "Loading Quiz..."}
-          </h2>
+          <h2 className="text-xl font-semibold mb-2">Loading Quiz...</h2>
           <p className="text-muted-foreground">
-            {generatingQuestions 
-              ? `Creating questions for ${selectedCountry?.name ?? "selected country"}`
-              : `Preparing your quiz`
-            }
+            Preparing your quiz for {selectedCountry?.name || "selected country"}
           </p>
         </div>
       </div>

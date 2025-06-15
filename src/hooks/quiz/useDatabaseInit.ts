@@ -2,7 +2,6 @@
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { CountryService } from "@/services/supabase/countryService";
-import { TemplateQuestionService } from "@/services/templateQuestionService";
 
 export const useDatabaseInit = () => {
   const { toast } = useToast();
@@ -25,63 +24,14 @@ export const useDatabaseInit = () => {
           console.log(`✅ Database already has ${supabaseCountries.length} countries`);
         }
         
-        // Check if we have basic questions
+        // Check basic stats
         const stats = await CountryService.getDatabaseStats();
         console.log('📊 Database stats:', stats);
         
-        if (stats.totalQuestions < 50) {
-          console.log('🚀 Generating basic question set...');
-          
-          toast({
-            title: "Generating Questions",
-            description: "Setting up basic questions for popular countries...",
-          });
-
-          try {
-            // Generate questions for top 5 most popular countries first
-            const serviceCountries = await CountryService.getAllServiceCountries();
-            const popularCountries = serviceCountries.filter(c => 
-              ['united-states', 'united-kingdom', 'france', 'germany', 'japan'].includes(c.id)
-            );
-            
-            console.log(`🎯 Generating questions for ${popularCountries.length} popular countries...`);
-            
-            for (const country of popularCountries) {
-              try {
-                console.log(`🔧 Generating for ${country.name}...`);
-                
-                // Generate questions for each difficulty
-                await TemplateQuestionService.generateQuestions(country, 'easy', 3, 'Geography');
-                await TemplateQuestionService.generateQuestions(country, 'medium', 3, 'Geography');
-                await TemplateQuestionService.generateQuestions(country, 'hard', 3, 'Geography');
-                
-                // Small delay
-                await new Promise(resolve => setTimeout(resolve, 200));
-                
-              } catch (error) {
-                console.error(`❌ Failed to generate for ${country.name}:`, error);
-              }
-            }
-            
-            toast({
-              title: "Questions Ready!",
-              description: `Basic question set generated for popular countries.`,
-            });
-            
-          } catch(e) {
-             console.error('❌ Failed to generate initial questions:', e);
-             toast({
-              title: "Generation Issue",
-              description: "Some questions may be missing. The system will generate them as needed.",
-              variant: "destructive",
-            });
-          }
-        } else {
-          toast({
-            title: "System Ready",
-            description: `${stats.totalQuestions} questions available across ${stats.totalCountries} countries`,
-          });
-        }
+        toast({
+          title: "System Ready",
+          description: `${stats.totalQuestions} questions available across ${stats.totalCountries} countries`,
+        });
         
       } catch (error) {
         console.error('❌ Failed to initialize database:', error);

@@ -1,18 +1,30 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Question as FrontendQuestion } from "@/types/quiz";
-import { QuestionToValidate } from "./questionValidationService";
-import { QuestionFetcher } from "./question/questionFetcher";
+import { SimpleQuestionFetcher } from "./question/simpleQuestionFetcher";
 import { QuestionStatsService } from "./question/questionStats";
 
 // Re-export types for backward compatibility
 export type { Question } from "./question/questionTypes";
 
 export class QuestionService {
-  // Enhanced question fetching operations
-  static getQuestions = QuestionFetcher.getQuestions;
-  static getFilteredQuestions = QuestionFetcher.getFilteredQuestions;
-  static transformToFrontendQuestion = QuestionFetcher.transformToFrontendQuestion;
+  // Use simple question fetching operations
+  static getFilteredQuestions = SimpleQuestionFetcher.getFilteredQuestions;
+  static transformToFrontendQuestion = SimpleQuestionFetcher.transformToFrontendQuestion;
+
+  // Legacy method for backward compatibility
+  static async getQuestions(
+    countryId?: string,
+    difficulty?: string,
+    limit: number = 10
+  ): Promise<FrontendQuestion[]> {
+    return SimpleQuestionFetcher.getFilteredQuestions({
+      countryId,
+      difficulty,
+      limit,
+      validateContent: false
+    });
+  }
 
   // Statistics operations
   static getCountryStats = QuestionStatsService.getCountryStats;
@@ -44,7 +56,6 @@ export class QuestionService {
       return;
     }
 
-    // Use upsert to avoid duplicate questions if regeneration is attempted
     const { error } = await supabase.from('questions').upsert(questions, {
       onConflict: 'id',
     });
