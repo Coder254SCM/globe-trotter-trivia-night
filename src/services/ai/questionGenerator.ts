@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import countries from "@/data/countries";
 
@@ -89,9 +88,8 @@ STRICT REQUIREMENTS:
 
 Country Context:
 - Name: ${country.name}
-- Capital: ${country.capital}
 - Continent: ${country.continent}
-- Population: ${country.population?.toLocaleString() || 'Unknown'}
+- Region: ${country.region || 'Unknown'}
 
 Format: Return ONLY a JSON object with: text, option_a, option_b, option_c, option_d, correct_answer, explanation`;
   }
@@ -106,13 +104,13 @@ Format: Return ONLY a JSON object with: text, option_a, option_b, option_c, opti
     
     // Mock generation - replace with actual AI call
     const mockQuestion: GeneratedQuestion = {
-      text: `What is the capital city of ${country.name}?`,
-      option_a: country.capital || "Unknown",
-      option_b: "Paris",
-      option_c: "London", 
-      option_d: "Rome",
-      correct_answer: country.capital || "Unknown",
-      explanation: `${country.capital} is the capital and largest city of ${country.name}.`,
+      text: `What continent is ${country.name} located in?`,
+      option_a: country.continent || "Unknown",
+      option_b: "Europe",
+      option_c: "Asia", 
+      option_d: "Africa",
+      correct_answer: country.continent || "Unknown",
+      explanation: `${country.name} is located in ${country.continent}.`,
       country_id: request.countryId,
       category: request.category,
       difficulty: request.difficulty
