@@ -1,4 +1,5 @@
 
+import { supabase } from "@/integrations/supabase/client";
 import { Question as FrontendQuestion } from "@/types/quiz";
 import { QuestionToValidate } from "./questionValidationService";
 import { QuestionFetcher } from "./question/questionFetcher";
@@ -33,10 +34,26 @@ export class QuestionService {
   }
 
   /**
-   * Placeholder for saving questions - implement as needed
+   * Saves questions to the database.
    */
   static async saveQuestions(questions: any[]): Promise<void> {
     console.log(`Saving ${questions.length} questions...`);
-    // Implementation would go here
+
+    if (questions.length === 0) {
+      console.log("No questions to save.");
+      return;
+    }
+
+    // Use upsert to avoid duplicate questions if regeneration is attempted
+    const { error } = await supabase.from('questions').upsert(questions, {
+      onConflict: 'id',
+    });
+
+    if (error) {
+      console.error('Failed to save questions:', error);
+      throw error;
+    }
+
+    console.log(`✅ Successfully saved ${questions.length} questions.`);
   }
 }
