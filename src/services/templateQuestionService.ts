@@ -14,7 +14,8 @@ export class TemplateQuestionService {
     console.log(`🔧 [TemplateService] Generating ${count} ${difficulty} questions for ${country.name} in category ${category}`);
     
     try {
-      const questions = buildValidQuestions(country, difficulty, count, category);
+      // Fix: Add await here since buildValidQuestions is async
+      const questions = await buildValidQuestions(country, difficulty, count, category);
 
       if (questions.length > 0) {
         console.log(`👉 [TemplateService] Generated ${questions.length} valid questions for ${country.name}:`);
