@@ -1,8 +1,10 @@
+
 import { useToast } from "@/hooks/use-toast";
 import { QuestionService } from "@/services/supabase/questionService";
-import { RotationService } from "@/services/supabase/rotationService";
 import { Country } from "@/types/quiz";
 import { QuizManagerActions } from "./types";
+import { randomizeQuestions, getRandomQuestions } from "@/utils/quiz/questionRandomizer";
+import { BulkQuestionGenerator } from "@/services/simple/bulkQuestionGenerator";
 
 interface UseQuizActionsProps {
   selectedCountry: Country | null;
@@ -73,36 +75,84 @@ export const useQuizActions = ({
 
         if (cachedQuestions && (Date.now() - cacheTime) < cacheTimeout) {
           console.log(`✅ Using cached questions for ${targetCountry.name}`);
-          setQuizQuestions(cachedQuestions);
+          const randomizedQuestions = randomizeQuestions(cachedQuestions);
+          setQuizQuestions(randomizedQuestions);
           setShowQuiz(true);
           setQuizResult(null);
           return;
         }
 
-        const questions = await QuestionService.getFilteredQuestions({
+        let questions = await QuestionService.getFilteredQuestions({
           countryId: targetCountry.id,
           difficulty: targetCountry.difficulty,
-          limit: targetCount,
+          limit: Math.max(targetCount * 2, 100), // Get more questions for better randomization
           validateContent: true
         });
         
         if (questions.length === 0) {
+          console.log(`🔄 No questions found, generating for ${targetCountry.name}...`);
+          
+          toast({
+            title: "Generating Questions",
+            description: `Creating 50+ unique questions for ${targetCountry.name}...`,
+          });
+
+          // Generate questions using the simple template system
+          try {
+            const { CountryService } = await import("@/services/supabase/countryService");
+            const serviceCountries = await CountryService.getAllServiceCountries();
+            const countryData = serviceCountries.find(c => c.id === targetCountry.id);
+
+            if (countryData) {
+              await BulkQuestionGenerator.generateForCountry(countryData, 50);
+              
+              // Wait and fetch again
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              questions = await QuestionService.getFilteredQuestions({
+                countryId: targetCountry.id,
+                difficulty: targetCountry.difficulty,
+                limit: Math.max(targetCount * 2, 100),
+                validateContent: true
+              });
+              
+              if (questions.length > 0) {
+                toast({
+                  title: "Questions Ready!",
+                  description: `Generated ${questions.length} unique questions for ${targetCountry.name}`,
+                });
+              }
+            }
+          } catch (generationError) {
+            console.error('Generation failed:', generationError);
+            toast({
+              title: "Generation Failed",
+              description: "Could not generate questions. Please try a different country.",
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+        
+        if (questions.length === 0) {
           toast({
             title: "No Questions Available",
-            description: `No '${targetCountry.difficulty}' questions found for ${targetCountry.name}. Try generating some!`,
+            description: `No questions found for ${targetCountry.name}. Try generating some!`,
             variant: "destructive",
           });
           return;
         }
         
+        // Get random subset and randomize order
+        const finalQuestions = getRandomQuestions(questions, targetCount);
+        
         // Cache the questions
         questionCache.set(cacheKey, questions);
         cacheTimestamps.set(cacheKey, Date.now());
         
-        setQuizQuestions(questions);
+        setQuizQuestions(finalQuestions);
         setShowQuiz(true);
         setQuizResult(null);
-        console.log(`✅ Loaded ${questions.length} ${targetCountry.difficulty} questions for ${targetCountry.name}`);
+        console.log(`✅ Loaded ${finalQuestions.length} randomized questions for ${targetCountry.name}`);
         
       } catch (error) {
         console.error('Failed to load quiz questions:', error);

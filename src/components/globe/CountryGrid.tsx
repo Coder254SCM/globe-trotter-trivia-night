@@ -1,9 +1,11 @@
+
 import { useState } from 'react';
 import { Country } from '@/types/quiz';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Users, Globe, Trophy } from 'lucide-react';
+import { useAlphabeticalCountries } from '@/hooks/useAlphabeticalCountries';
 
 interface CountryGridProps {
   countries: Country[];
@@ -19,6 +21,9 @@ export const CountryGrid = ({
   selectedCategory 
 }: CountryGridProps) => {
   const [hoveredCountry, setHoveredCountry] = useState<string | null>(null);
+  
+  // Sort countries alphabetically
+  const sortedCountries = useAlphabeticalCountries(countries);
 
   const getCountryIcon = (continent: string) => {
     switch (continent?.toLowerCase()) {
@@ -50,6 +55,9 @@ export const CountryGrid = ({
         <p className="text-muted-foreground">
           Select any country to start your geography quiz adventure
         </p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {sortedCountries.length} countries available (A-Z order)
+        </p>
         {(selectedContinent || selectedCategory) && (
           <div className="flex justify-center gap-2 mt-4">
             {selectedContinent && (
@@ -67,7 +75,7 @@ export const CountryGrid = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {countries.map((country) => (
+        {sortedCountries.map((country) => (
           <Card
             key={country.id}
             className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-2 ${
@@ -109,7 +117,7 @@ export const CountryGrid = ({
                   </Badge>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Trophy className="w-3 h-3" />
-                    {country.categories.length} categories
+                    50+ questions
                   </div>
                 </div>
 
@@ -142,7 +150,7 @@ export const CountryGrid = ({
         ))}
       </div>
 
-      {countries.length === 0 && (
+      {sortedCountries.length === 0 && (
         <div className="text-center py-12">
           <Globe className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-foreground mb-2">

@@ -1,59 +1,35 @@
 
 import { useState, useEffect } from "react";
 import { MonitoringDashboard } from "@/components/monitoring/MonitoringDashboard";
-import { UnifiedQuestionGenerationService } from "@/services/unified/questionGenerationService";
 import { CountryService } from "@/services/supabase/countryService";
+import { BulkQuestionGenerator } from "@/services/simple/bulkQuestionGenerator";
 import { useToast } from "@/hooks/use-toast";
 import { UnifiedErrorBoundary } from "@/components/error/UnifiedErrorBoundary";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Target, RefreshCw, Play } from "lucide-react";
+import { Target, RefreshCw, Play, Zap } from "lucide-react";
 
 export default function ProductionDashboard() {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
   const handleBulkGeneration = async () => {
-    if (!confirm('Generate questions for all countries? This may take several minutes.')) return;
+    if (!confirm('Generate 50+ questions for all countries? This will create a comprehensive question database.')) return;
     
     setIsGenerating(true);
     try {
       const countries = await CountryService.getAllServiceCountries();
-      const batchSize = 5;
-      let completed = 0;
       
       toast({
         title: "Starting Bulk Generation",
-        description: `Processing ${countries.length} countries in batches...`,
+        description: `Processing ${countries.length} countries with 50+ questions each...`,
       });
 
-      for (let i = 0; i < countries.length; i += batchSize) {
-        const batch = countries.slice(i, i + batchSize);
-        
-        await Promise.all(batch.map(async (country) => {
-          try {
-            await UnifiedQuestionGenerationService.generateQuestions(
-              country,
-              'medium',
-              5,
-              'Geography',
-              { primaryMode: 'template', fallbackEnabled: true }
-            );
-            completed++;
-          } catch (error) {
-            console.error(`Failed to generate for ${country.name}:`, error);
-          }
-        }));
-
-        // Short delay between batches
-        if (i + batchSize < countries.length) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      }
+      await BulkQuestionGenerator.generateForAllCountries(countries, 50);
 
       toast({
-        title: "Bulk Generation Complete",
-        description: `Successfully processed ${completed}/${countries.length} countries`,
+        title: "Bulk Generation Complete!",
+        description: `Successfully generated questions for all countries`,
       });
     } catch (error) {
       console.error('Bulk generation failed:', error);
@@ -79,7 +55,7 @@ export default function ProductionDashboard() {
                   Production Control Center
                 </h1>
                 <p className="text-muted-foreground mt-2">
-                  Unified question generation and system monitoring
+                  Simple template-based question generation system
                 </p>
               </div>
               
@@ -92,9 +68,9 @@ export default function ProductionDashboard() {
                   {isGenerating ? (
                     <RefreshCw className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Play className="h-4 w-4" />
+                    <Zap className="h-4 w-4" />
                   )}
-                  {isGenerating ? 'Generating...' : 'Bulk Generate'}
+                  {isGenerating ? 'Generating...' : 'Generate All Questions'}
                 </Button>
               </div>
             </div>
@@ -102,19 +78,19 @@ export default function ProductionDashboard() {
 
           {/* System Overview */}
           <Card className="p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-4">System Architecture</h2>
+            <h2 className="text-xl font-semibold mb-4">Simple Template System</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div className="p-3 bg-green-50 rounded">
-                <h3 className="font-medium text-green-800">Primary: Template-Based</h3>
-                <p className="text-green-700">Reliable, consistent question generation</p>
-              </div>
-              <div className="p-3 bg-yellow-50 rounded">
-                <h3 className="font-medium text-yellow-800">Fallback: Simple Templates</h3>
-                <p className="text-yellow-700">Safety net for failed generations</p>
+                <h3 className="font-medium text-green-800">✅ Template-Based</h3>
+                <p className="text-green-700">50+ unique questions per country</p>
               </div>
               <div className="p-3 bg-blue-50 rounded">
-                <h3 className="font-medium text-blue-800">Monitoring: Real-time</h3>
-                <p className="text-blue-700">System health and performance tracking</p>
+                <h3 className="font-medium text-blue-800">🔄 Randomized</h3>
+                <p className="text-blue-700">Questions randomized every quiz</p>
+              </div>
+              <div className="p-3 bg-purple-50 rounded">
+                <h3 className="font-medium text-purple-800">📝 No Hardcoding</h3>
+                <p className="text-purple-700">Dynamic generation from templates</p>
               </div>
             </div>
           </Card>
