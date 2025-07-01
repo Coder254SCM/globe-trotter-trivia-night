@@ -1,48 +1,60 @@
 
 import { Question } from "@/types/quiz";
 import { Country } from "./supabase/country/countryTypes";
-import { buildValidQuestions } from "./template/questionBuilder";
-import { saveQuestionsToSupabase } from "./template/databaseSaver";
+import { UnifiedQuestionGenerationService } from "./unified/questionGenerationService";
+import { SystemMonitor } from "./monitoring/systemMonitor";
 
 export class TemplateQuestionService {
+  /**
+   * @deprecated Use UnifiedQuestionGenerationService.generateQuestions instead
+   * This method is kept for backward compatibility
+   */
   public static async generateQuestions(
     country: Country,
     difficulty: 'easy' | 'medium' | 'hard',
     count: number,
     category: string
   ): Promise<void> {
-    console.log(`🔧 [TemplateService] Generating ${count} ${difficulty} questions for ${country.name} in category ${category}`);
+    console.log(`🔧 [TemplateService] Delegating to UnifiedQuestionGenerationService...`);
     
     try {
-      // Fix: Add await here since buildValidQuestions is async
-      const questions = await buildValidQuestions(country, difficulty, count, category);
+      const result = await UnifiedQuestionGenerationService.generateQuestions(
+        country,
+        difficulty,
+        count,
+        category,
+        { primaryMode: 'template', fallbackEnabled: true }
+      );
 
-      if (questions.length > 0) {
-        console.log(`👉 [TemplateService] Generated ${questions.length} valid questions for ${country.name}:`);
-        questions.forEach(q => {
-          console.log(`- ${q.text.substring(0, 60)}... [${q.category}, ${q.difficulty}]`);
-        });
-        
-        await saveQuestionsToSupabase(questions, country, difficulty);
-        console.log(`✅ [TemplateService] Successfully saved ${questions.length} questions for ${country.name}`);
+      // Record metrics
+      if (result.success) {
+        SystemMonitor.recordGeneration('template', result.timeTaken, result.questionsGenerated);
+        console.log(`✅ [TemplateService] Successfully generated ${result.questionsGenerated} questions`);
       } else {
-        console.log(`❌ [TemplateService] No valid questions generated for ${country.name} (${difficulty}, ${category})`);
+        SystemMonitor.recordGeneration('failed', result.timeTaken, 0);
+        console.error(`❌ [TemplateService] Generation failed:`, result.errors);
+        throw new Error(result.errors.join(', '));
+      }
+
+      if (result.warnings.length > 0) {
+        console.warn(`⚠️ [TemplateService] Warnings:`, result.warnings);
       }
     } catch (error) {
+      SystemMonitor.recordGeneration('failed', 0, 0);
       console.error(`❌ [TemplateService] Error generating questions for ${country.name}:`, error);
       throw error;
     }
   }
 
   /**
-   * Generate questions for all difficulties for a country
+   * @deprecated Use UnifiedQuestionGenerationService.generateQuestions instead
    */
   public static async generateAllDifficulties(
     country: Country,
     category: string = 'Geography',
     questionsPerDifficulty: number = 5
   ): Promise<void> {
-    console.log(`🎯 [TemplateService] Generating all difficulties for ${country.name}`);
+    console.log(`🎯 [TemplateService] Generating all difficulties for ${country.name} using unified service`);
     
     const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
     

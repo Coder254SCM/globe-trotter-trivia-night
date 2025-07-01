@@ -1,133 +1,128 @@
+
 import { useState, useEffect } from "react";
-import { GameOrchestrator, ProductionStatus } from "@/services/production/gameOrchestrator";
-import { AutomatedAuditService, QualityReport } from "@/services/quality/automatedAudit";
+import { MonitoringDashboard } from "@/components/monitoring/MonitoringDashboard";
+import { UnifiedQuestionGenerationService } from "@/services/unified/questionGenerationService";
+import { CountryService } from "@/services/supabase/countryService";
 import { useToast } from "@/hooks/use-toast";
-import { DashboardHeader } from "@/components/production/dashboard/Header";
-import { StatusCards } from "@/components/production/dashboard/StatusCards";
-import { IssuesAlert } from "@/components/production/dashboard/IssuesAlert";
-import { QualityMetrics } from "@/components/production/dashboard/QualityMetrics";
-import { ActionPanel } from "@/components/production/dashboard/ActionPanel";
-import { CountryBreakdown } from "@/components/production/dashboard/CountryBreakdown";
-import { Skeleton } from "@/components/ui/skeleton";
+import { UnifiedErrorBoundary } from "@/components/error/UnifiedErrorBoundary";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Target, RefreshCw, Play } from "lucide-react";
 
 export default function ProductionDashboard() {
-  const [status, setStatus] = useState<ProductionStatus | null>(null);
-  const [qualityReport, setQualityReport] = useState<QualityReport | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isInitializing, setIsInitializing] = useState(false);
-  const [orchestrator] = useState(() => GameOrchestrator.getInstance());
+  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadDashboardData();
-    const interval = setInterval(loadDashboardData, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadDashboardData = async () => {
-    if (!status) setIsLoading(true);
+  const handleBulkGeneration = async () => {
+    if (!confirm('Generate questions for all countries? This may take several minutes.')) return;
+    
+    setIsGenerating(true);
     try {
-      const [statusData, auditData] = await Promise.all([
-        orchestrator.getProductionStatus(),
-        AutomatedAuditService.runFullAudit()
-      ]);
-      setStatus(statusData);
-      setQualityReport(auditData);
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error);
+      const countries = await CountryService.getAllServiceCountries();
+      const batchSize = 5;
+      let completed = 0;
+      
       toast({
-        title: "Error",
-        description: "Failed to load dashboard data",
+        title: "Starting Bulk Generation",
+        description: `Processing ${countries.length} countries in batches...`,
+      });
+
+      for (let i = 0; i < countries.length; i += batchSize) {
+        const batch = countries.slice(i, i + batchSize);
+        
+        await Promise.all(batch.map(async (country) => {
+          try {
+            await UnifiedQuestionGenerationService.generateQuestions(
+              country,
+              'medium',
+              5,
+              'Geography',
+              { primaryMode: 'template', fallbackEnabled: true }
+            );
+            completed++;
+          } catch (error) {
+            console.error(`Failed to generate for ${country.name}:`, error);
+          }
+        }));
+
+        // Short delay between batches
+        if (i + batchSize < countries.length) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+
+      toast({
+        title: "Bulk Generation Complete",
+        description: `Successfully processed ${completed}/${countries.length} countries`,
+      });
+    } catch (error) {
+      console.error('Bulk generation failed:', error);
+      toast({
+        title: "Generation Failed",
+        description: "An error occurred during bulk generation",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   };
-
-  const initializeSystem = async () => {
-    setIsInitializing(true);
-    try {
-      await orchestrator.initialize();
-      toast({
-        title: "System Initialized",
-        description: "Production system is now running.",
-      });
-      await loadDashboardData();
-    } catch (error) {
-      console.error('Failed to initialize system:', error);
-      toast({
-        title: "Initialization Failed",
-        variant: "destructive",
-      });
-    } finally {
-      setIsInitializing(false);
-    }
-  };
-
-  const triggerFullRegeneration = async () => {
-    if (!confirm('This will regenerate ALL questions. This may take several minutes. Continue?')) return;
-    setIsLoading(true);
-    try {
-      await orchestrator.ensureFullCoverage();
-      toast({
-        title: "Regeneration Complete",
-        description: "All questions have been regenerated.",
-      });
-      await loadDashboardData();
-    } catch (error) {
-      console.error('Failed to regenerate questions:', error);
-      toast({
-        title: "Regeneration Failed",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const DashboardSkeleton = () => (
-    <div className="space-y-8">
-      <Skeleton className="h-16 w-1/2" />
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Skeleton className="h-24 w-full" /><Skeleton className="h-24 w-full" />
-        <Skeleton className="h-24 w-full" /><Skeleton className="h-24 w-full" />
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Skeleton className="h-48 w-full" /><Skeleton className="h-48 w-full" />
-      </div>
-      <Skeleton className="h-64 w-full" />
-    </div>
-  );
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto">
-        <DashboardHeader
-          isLoading={isLoading && !status}
-          isInitializing={isInitializing}
-          onRefresh={loadDashboardData}
-          onInitialize={initializeSystem}
-        />
-        {isLoading && !status ? (
-          <DashboardSkeleton />
-        ) : (
-          <>
-            {status && <StatusCards status={status} />}
-            {status && <IssuesAlert status={status} />}
-            {qualityReport && <QualityMetrics report={qualityReport} />}
-            {status && (
-              <ActionPanel 
-                status={status}
-                isLoading={isLoading}
-                onRegenerate={triggerFullRegeneration}
-                onAudit={loadDashboardData}
-              />
-            )}
-            {qualityReport && <CountryBreakdown report={qualityReport} />}
-          </>
-        )}
+    <UnifiedErrorBoundary>
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto p-6">
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold flex items-center gap-3">
+                  <Target className="h-8 w-8 text-primary" />
+                  Production Control Center
+                </h1>
+                <p className="text-muted-foreground mt-2">
+                  Unified question generation and system monitoring
+                </p>
+              </div>
+              
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleBulkGeneration}
+                  disabled={isGenerating}
+                  className="flex items-center gap-2"
+                >
+                  {isGenerating ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Play className="h-4 w-4" />
+                  )}
+                  {isGenerating ? 'Generating...' : 'Bulk Generate'}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* System Overview */}
+          <Card className="p-6 mb-8">
+            <h2 className="text-xl font-semibold mb-4">System Architecture</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="p-3 bg-green-50 rounded">
+                <h3 className="font-medium text-green-800">Primary: Template-Based</h3>
+                <p className="text-green-700">Reliable, consistent question generation</p>
+              </div>
+              <div className="p-3 bg-yellow-50 rounded">
+                <h3 className="font-medium text-yellow-800">Fallback: Simple Templates</h3>
+                <p className="text-yellow-700">Safety net for failed generations</p>
+              </div>
+              <div className="p-3 bg-blue-50 rounded">
+                <h3 className="font-medium text-blue-800">Monitoring: Real-time</h3>
+                <p className="text-blue-700">System health and performance tracking</p>
+              </div>
+            </div>
+          </Card>
+
+          {/* Monitoring Dashboard */}
+          <MonitoringDashboard />
+        </div>
       </div>
-    </div>
+    </UnifiedErrorBoundary>
   );
 }
