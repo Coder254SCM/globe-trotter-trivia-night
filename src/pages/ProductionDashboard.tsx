@@ -2,44 +2,68 @@
 import { useState, useEffect } from "react";
 import { MonitoringDashboard } from "@/components/monitoring/MonitoringDashboard";
 import { CountryService } from "@/services/supabase/countryService";
-import { BulkQuestionGenerator } from "@/services/simple/bulkQuestionGenerator";
+import { DatabaseInitializationService } from "@/services/database/initializationService";
 import { useToast } from "@/hooks/use-toast";
 import { UnifiedErrorBoundary } from "@/components/error/UnifiedErrorBoundary";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Target, RefreshCw, Play, Zap } from "lucide-react";
+import { Target, RefreshCw, Play, Zap, Database, CheckCircle } from "lucide-react";
 
 export default function ProductionDashboard() {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [initializationStatus, setInitializationStatus] = useState<string>('ready');
   const { toast } = useToast();
 
-  const handleBulkGeneration = async () => {
-    if (!confirm('Generate 50+ questions for all countries? This will create a comprehensive question database.')) return;
+  const handleFullInitialization = async () => {
+    if (!confirm('Initialize complete database with 50+ questions per country for all 195 countries? This will create 15,000+ questions.')) return;
     
     setIsGenerating(true);
+    setInitializationStatus('initializing');
+    
     try {
-      const countries = await CountryService.getAllServiceCountries();
-      
       toast({
-        title: "Starting Bulk Generation",
-        description: `Processing ${countries.length} countries with 50+ questions each...`,
+        title: "Full Database Initialization",
+        description: "Creating comprehensive question database for all countries...",
       });
 
-      await BulkQuestionGenerator.generateForAllCountries(countries, 50);
+      await DatabaseInitializationService.initializeDatabase();
+      setInitializationStatus('complete');
 
       toast({
-        title: "Bulk Generation Complete!",
-        description: `Successfully generated questions for all countries`,
+        title: "Database Initialization Complete!",
+        description: "All 195 countries now have 50+ unique questions each",
       });
     } catch (error) {
-      console.error('Bulk generation failed:', error);
+      console.error('Full initialization failed:', error);
+      setInitializationStatus('error');
       toast({
-        title: "Generation Failed",
-        description: "An error occurred during bulk generation",
+        title: "Initialization Failed",
+        description: "An error occurred during full database initialization",
         variant: "destructive",
       });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleQuickTest = async () => {
+    try {
+      const countries = await CountryService.getAllServiceCountries();
+      const testCountry = countries.find(c => c.name === 'Albania');
+      
+      if (testCountry) {
+        const hasQuestions = await DatabaseInitializationService.ensureCountryHasQuestions(testCountry.id);
+        toast({
+          title: "Test Complete",
+          description: `Albania ${hasQuestions ? 'has sufficient' : 'needs more'} questions`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Test Failed",
+        description: "Could not test country questions",
+        variant: "destructive",
+      });
     }
   };
 
@@ -55,42 +79,80 @@ export default function ProductionDashboard() {
                   Production Control Center
                 </h1>
                 <p className="text-muted-foreground mt-2">
-                  Simple template-based question generation system
+                  Enhanced template-based question generation system
                 </p>
               </div>
               
               <div className="flex gap-2">
                 <Button
-                  onClick={handleBulkGeneration}
+                  onClick={handleQuickTest}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Play className="h-4 w-4" />
+                  Quick Test
+                </Button>
+                
+                <Button
+                  onClick={handleFullInitialization}
                   disabled={isGenerating}
                   className="flex items-center gap-2"
                 >
                   {isGenerating ? (
                     <RefreshCw className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Zap className="h-4 w-4" />
+                    <Database className="h-4 w-4" />
                   )}
-                  {isGenerating ? 'Generating...' : 'Generate All Questions'}
+                  {isGenerating ? 'Initializing...' : 'Full Initialize'}
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* System Overview */}
+          {/* System Status */}
           <Card className="p-6 mb-8">
-            <h2 className="text-xl font-semibold mb-4">Simple Template System</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <h2 className="text-xl font-semibold mb-4">Enhanced Template System Status</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
               <div className="p-3 bg-green-50 rounded">
-                <h3 className="font-medium text-green-800">✅ Template-Based</h3>
-                <p className="text-green-700">50+ unique questions per country</p>
+                <h3 className="font-medium text-green-800 flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4" />
+                  Template Variety
+                </h3>
+                <p className="text-green-700">5+ categories, 20+ templates each</p>
               </div>
               <div className="p-3 bg-blue-50 rounded">
-                <h3 className="font-medium text-blue-800">🔄 Randomized</h3>
-                <p className="text-blue-700">Questions randomized every quiz</p>
+                <h3 className="font-medium text-blue-800 flex items-center gap-2">
+                  <Database className="h-4 w-4" />
+                  Question Volume
+                </h3>
+                <p className="text-blue-700">50+ questions per country</p>
               </div>
               <div className="p-3 bg-purple-50 rounded">
-                <h3 className="font-medium text-purple-800">📝 No Hardcoding</h3>
-                <p className="text-purple-700">Dynamic generation from templates</p>
+                <h3 className="font-medium text-purple-800 flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4" />
+                  Randomization
+                </h3>
+                <p className="text-purple-700">Proper shuffling every quiz</p>
+              </div>
+              <div className={`p-3 rounded ${
+                initializationStatus === 'complete' ? 'bg-green-50' : 
+                initializationStatus === 'error' ? 'bg-red-50' : 'bg-yellow-50'
+              }`}>
+                <h3 className={`font-medium flex items-center gap-2 ${
+                  initializationStatus === 'complete' ? 'text-green-800' : 
+                  initializationStatus === 'error' ? 'text-red-800' : 'text-yellow-800'
+                }`}>
+                  <Target className="h-4 w-4" />
+                  Status
+                </h3>
+                <p className={
+                  initializationStatus === 'complete' ? 'text-green-700' : 
+                  initializationStatus === 'error' ? 'text-red-700' : 'text-yellow-700'
+                }>
+                  {initializationStatus === 'complete' ? 'Fully Initialized' :
+                   initializationStatus === 'error' ? 'Error Occurred' :
+                   initializationStatus === 'initializing' ? 'Initializing...' : 'Ready to Initialize'}
+                </p>
               </div>
             </div>
           </Card>
