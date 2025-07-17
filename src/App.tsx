@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "./components/ui/toaster";
 import Index from "./pages/Index";
@@ -9,13 +8,22 @@ import WeeklyChallenges from "./pages/WeeklyChallenges";
 import UltimateQuiz from "./pages/UltimateQuiz";
 import QuestionValidation from "./pages/QuestionValidation";
 import ProductionDashboard from "./pages/ProductionDashboard";
+import Auth from "./pages/Auth";
+import { AutoInitializer } from "./components/initialization/AutoInitializer";
+import { useAuth } from "./hooks/useAuth";
 
 function App() {
+  const { user } = useAuth();
+
   return (
     <Router>
       <div className="min-h-screen bg-background">
+        {/* Auto-initialize database on app start */}
+        <AutoInitializer />
+        
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/quiz-settings" element={<QuizSettings />} />
           <Route path="/quiz" element={<QuizPage />} />
           <Route path="/quiz-results" element={<QuizResults />} />

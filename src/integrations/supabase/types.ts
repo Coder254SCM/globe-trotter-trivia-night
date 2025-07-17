@@ -7,8 +7,46 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instanciate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "12.2.3 (519615d)"
+  }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          badge_color: string | null
+          created_at: string | null
+          description: string | null
+          icon_url: string | null
+          id: string
+          name: string
+          requirement_type: string
+          requirement_value: number
+        }
+        Insert: {
+          badge_color?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          name: string
+          requirement_type: string
+          requirement_value: number
+        }
+        Update: {
+          badge_color?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon_url?: string | null
+          id?: string
+          name?: string
+          requirement_type?: string
+          requirement_value?: number
+        }
+        Relationships: []
+      }
       community_questions: {
         Row: {
           category: string
@@ -186,6 +224,48 @@ export type Database = {
           },
         ]
       }
+      friendships: {
+        Row: {
+          accepted_at: string | null
+          addressee_id: string
+          created_at: string | null
+          id: string
+          requester_id: string
+          status: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          addressee_id: string
+          created_at?: string | null
+          id?: string
+          requester_id: string
+          status?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          addressee_id?: string
+          created_at?: string | null
+          id?: string
+          requester_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friendships_addressee_id_fkey"
+            columns: ["addressee_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "friendships_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       groups: {
         Row: {
           created_at: string | null
@@ -226,6 +306,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      leaderboard_snapshots: {
+        Row: {
+          created_at: string | null
+          id: string
+          period_end: string
+          period_start: string
+          period_type: string
+          rankings: Json
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          period_end: string
+          period_start: string
+          period_type: string
+          rankings: Json
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          period_end?: string
+          period_start?: string
+          period_type?: string
+          rankings?: Json
+        }
+        Relationships: []
       }
       leaderboards: {
         Row: {
@@ -285,6 +392,101 @@ export type Database = {
           },
         ]
       }
+      multiplayer_participants: {
+        Row: {
+          current_position: number | null
+          current_score: number | null
+          id: string
+          is_ready: boolean | null
+          joined_at: string | null
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          current_position?: number | null
+          current_score?: number | null
+          id?: string
+          is_ready?: boolean | null
+          joined_at?: string | null
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          current_position?: number | null
+          current_score?: number | null
+          id?: string
+          is_ready?: boolean | null
+          joined_at?: string | null
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "multiplayer_participants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "multiplayer_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "multiplayer_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      multiplayer_sessions: {
+        Row: {
+          created_at: string | null
+          current_players: number | null
+          ended_at: string | null
+          host_id: string
+          id: string
+          max_players: number | null
+          questions_per_round: number | null
+          room_code: string
+          started_at: string | null
+          status: string | null
+          time_per_question: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_players?: number | null
+          ended_at?: string | null
+          host_id: string
+          id?: string
+          max_players?: number | null
+          questions_per_round?: number | null
+          room_code: string
+          started_at?: string | null
+          status?: string | null
+          time_per_question?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          current_players?: number | null
+          ended_at?: string | null
+          host_id?: string
+          id?: string
+          max_players?: number | null
+          questions_per_round?: number | null
+          room_code?: string
+          started_at?: string | null
+          status?: string | null
+          time_per_question?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "multiplayer_sessions_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       question_rotations: {
         Row: {
           country_id: string
@@ -316,6 +518,44 @@ export type Database = {
             columns: ["country_id"]
             isOneToOne: false
             referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      question_stats: {
+        Row: {
+          average_time_seconds: number | null
+          difficulty_rating: number | null
+          id: string
+          last_updated: string | null
+          question_id: string
+          times_asked: number | null
+          times_correct: number | null
+        }
+        Insert: {
+          average_time_seconds?: number | null
+          difficulty_rating?: number | null
+          id?: string
+          last_updated?: string | null
+          question_id: string
+          times_asked?: number | null
+          times_correct?: number | null
+        }
+        Update: {
+          average_time_seconds?: number | null
+          difficulty_rating?: number | null
+          id?: string
+          last_updated?: string | null
+          question_id?: string
+          times_asked?: number | null
+          times_correct?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_stats_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
             referencedColumns: ["id"]
           },
         ]
@@ -419,45 +659,61 @@ export type Database = {
       }
       quiz_sessions: {
         Row: {
+          challenge_id: string | null
           completed_at: string | null
           correct_answers: number
           country_id: string | null
           difficulty: string | null
           id: string
+          quiz_type: string | null
           score: number
           session_type: string | null
           started_at: string | null
+          started_by: string | null
           time_taken: number | null
           total_questions: number
           user_id: string | null
         }
         Insert: {
+          challenge_id?: string | null
           completed_at?: string | null
           correct_answers: number
           country_id?: string | null
           difficulty?: string | null
           id?: string
+          quiz_type?: string | null
           score: number
           session_type?: string | null
           started_at?: string | null
+          started_by?: string | null
           time_taken?: number | null
           total_questions: number
           user_id?: string | null
         }
         Update: {
+          challenge_id?: string | null
           completed_at?: string | null
           correct_answers?: number
           country_id?: string | null
           difficulty?: string | null
           id?: string
+          quiz_type?: string | null
           score?: number
           session_type?: string | null
           started_at?: string | null
+          started_by?: string | null
           time_taken?: number | null
           total_questions?: number
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "quiz_sessions_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_challenges"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quiz_sessions_country_id_fkey"
             columns: ["country_id"]
@@ -466,7 +722,53 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "quiz_sessions_started_by_fkey"
+            columns: ["started_by"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "quiz_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          earned_at: string | null
+          id: string
+          progress: number | null
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          earned_at?: string | null
+          id?: string
+          progress?: number | null
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          earned_at?: string | null
+          id?: string
+          progress?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_achievements_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
@@ -583,6 +885,50 @@ export type Database = {
         }
         Relationships: []
       }
+      user_stats: {
+        Row: {
+          average_score: number | null
+          current_streak: number | null
+          favorite_category: string | null
+          id: string
+          last_quiz_date: string | null
+          longest_streak: number | null
+          total_time_played: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          average_score?: number | null
+          current_streak?: number | null
+          favorite_category?: string | null
+          id?: string
+          last_quiz_date?: string | null
+          longest_streak?: number | null
+          total_time_played?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          average_score?: number | null
+          current_streak?: number | null
+          favorite_category?: string | null
+          id?: string
+          last_quiz_date?: string | null
+          longest_streak?: number | null
+          total_time_played?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_stats_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weekly_challenges: {
         Row: {
           created_at: string | null
@@ -645,21 +991,25 @@ export type Database = {
   }
 }
 
-type DefaultSchema = Database[Extract<keyof Database, "public">]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
@@ -677,14 +1027,16 @@ export type Tables<
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
@@ -700,14 +1052,16 @@ export type TablesInsert<
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
@@ -723,14 +1077,16 @@ export type TablesUpdate<
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
@@ -738,14 +1094,16 @@ export type Enums<
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
