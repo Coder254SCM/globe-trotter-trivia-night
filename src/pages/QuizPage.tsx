@@ -4,8 +4,7 @@ import { Country, Question } from "@/types/quiz";
 import Quiz from "@/components/Quiz";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { getCleanQuizQuestions } from "@/utils/quiz/cleanQuestionFetcher";
-import { TemplateQuestionService } from "@/services/templateQuestionService";
-import { CountryService } from "@/services/supabase/countryService";
+import { FactualQuizService } from "@/services/factual/factualQuizService";
 import { useToast } from "@/hooks/use-toast";
 
 export default function QuizPage() {
@@ -46,40 +45,47 @@ export default function QuizPage() {
         let questions = await getCleanQuizQuestions(country.id, country.difficulty, count);
         console.log(`[QuizPage] Found ${questions.length} questions after duplicate filtering`);
 
-        // If still no questions, try generating them
+        // If no questions or wrong questions, generate factual ones
         if (questions.length === 0) {
-          console.log(`[QuizPage] No questions available, generating for ${country.name}...`);
+          console.log(`[QuizPage] Generating factual questions for ${country.name}...`);
           
           toast({
-            title: "Generating Questions",
-            description: `Creating new questions for ${country.name}...`,
+            title: "Generating Factual Questions",
+            description: `Creating accurate questions for ${country.name}...`,
           });
 
           try {
-            const serviceCountries = await CountryService.getAllServiceCountries();
-            const countryData = serviceCountries.find(c => c.id === country.id);
+            // Clean up wrong questions and generate factual ones
+            const factualQuestions = await FactualQuizService.cleanAndGenerateQuestions(
+              country.id,
+              country.difficulty,
+              count
+            );
 
-            if (countryData) {
-              await TemplateQuestionService.generateQuestions(
-                countryData,
-                country.difficulty,
-                count,
-                'Geography'
-              );
-
-              // Wait and fetch again
-              await new Promise(resolve => setTimeout(resolve, 2000));
-              questions = await getCleanQuizQuestions(country.id, country.difficulty, count);
+            if (factualQuestions.length > 0) {
+              // Convert to frontend format
+              questions = factualQuestions.map(q => ({
+                id: q.id || `factual-${Date.now()}`,
+                type: 'multiple-choice' as const,
+                text: q.text,
+                choices: [
+                  { id: 'a', text: q.option_a, isCorrect: q.correct_answer === q.option_a },
+                  { id: 'b', text: q.option_b, isCorrect: q.correct_answer === q.option_b },
+                  { id: 'c', text: q.option_c, isCorrect: q.correct_answer === q.option_c },
+                  { id: 'd', text: q.option_d, isCorrect: q.correct_answer === q.option_d },
+                ],
+                category: q.category as any,
+                explanation: q.explanation,
+                difficulty: q.difficulty as any,
+              }));
               
-              if (questions.length > 0) {
-                toast({
-                  title: "Questions Ready!",
-                  description: `Generated ${questions.length} fresh questions for ${country.name}`,
-                });
-              }
+              toast({
+                title: "Factual Questions Ready!",
+                description: `Generated ${questions.length} accurate questions for ${country.name}`,
+              });
             }
           } catch (generationError) {
-            console.error('[QuizPage] Generation failed:', generationError);
+            console.error('[QuizPage] Factual generation failed:', generationError);
             toast({
               title: "Generation Failed",
               description: "Could not generate questions. Please try a different country.",
