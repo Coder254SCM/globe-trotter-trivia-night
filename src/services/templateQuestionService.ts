@@ -1,71 +1,103 @@
-
+import { supabase } from "@/integrations/supabase/client";
 import { Question } from "@/types/quiz";
 import { Country } from "./supabase/country/countryTypes";
-import { UnifiedQuestionGenerationService } from "./unified/questionGenerationService";
-import { SystemMonitor } from "./monitoring/systemMonitor";
+import { EnhancedQuestionGenerator } from "./template/enhancedQuestionGenerator";
+import { QuestionQualityService } from "./quality/questionQualityService";
 
 export class TemplateQuestionService {
-  /**
-   * @deprecated Use UnifiedQuestionGenerationService.generateQuestions instead
-   * This method is kept for backward compatibility
-   */
-  public static async generateQuestions(
-    country: Country,
-    difficulty: 'easy' | 'medium' | 'hard',
-    count: number,
+  static async saveQuestions(
+    questions: Question[],
+    countryId: string,
+    difficulty: string,
     category: string
-  ): Promise<void> {
-    console.log(`🔧 [TemplateService] Delegating to UnifiedQuestionGenerationService...`);
-    
+  ): Promise<boolean> {
     try {
-      const result = await UnifiedQuestionGenerationService.generateQuestions(
-        country,
-        difficulty,
-        count,
-        category,
-        { primaryMode: 'template', fallbackEnabled: true }
-      );
+      const questionsToInsert = questions.map(q => ({
+        text: q.text,
+        option_a: q.choices[0].text,
+        option_b: q.choices[1].text,
+        option_c: q.choices[2].text,
+        option_d: q.choices[3].text,
+        correct_answer: q.choices.find(c => c.isCorrect)?.text,
+        explanation: q.explanation,
+        category: category,
+        difficulty: difficulty,
+        country_id: countryId,
+        image_url: q.imageUrl
+      }));
 
-      // Record metrics
-      if (result.success) {
-        SystemMonitor.recordGeneration('template', result.timeTaken, result.questionsGenerated);
-        console.log(`✅ [TemplateService] Successfully generated ${result.questionsGenerated} questions`);
-      } else {
-        SystemMonitor.recordGeneration('failed', result.timeTaken, 0);
-        console.error(`❌ [TemplateService] Generation failed:`, result.errors);
-        throw new Error(result.errors.join(', '));
+      const { error } = await supabase
+        .from('questions')
+        .insert(questionsToInsert);
+
+      if (error) {
+        console.error('Failed to save questions to Supabase:', error);
+        return false;
       }
 
-      if (result.warnings.length > 0) {
-        console.warn(`⚠️ [TemplateService] Warnings:`, result.warnings);
-      }
+      return true;
     } catch (error) {
-      SystemMonitor.recordGeneration('failed', 0, 0);
-      console.error(`❌ [TemplateService] Error generating questions for ${country.name}:`, error);
-      throw error;
+      console.error('Error saving questions:', error);
+      return false;
     }
   }
 
-  /**
-   * @deprecated Use UnifiedQuestionGenerationService.generateQuestions instead
-   */
-  public static async generateAllDifficulties(
+  static async generateQuestions(
     country: Country,
-    category: string = 'Geography',
-    questionsPerDifficulty: number = 5
-  ): Promise<void> {
-    console.log(`🎯 [TemplateService] Generating all difficulties for ${country.name} using unified service`);
-    
-    const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
-    
-    for (const difficulty of difficulties) {
-      try {
-        await this.generateQuestions(country, difficulty, questionsPerDifficulty, category);
-      } catch (error) {
-        console.error(`❌ [TemplateService] Failed to generate ${difficulty} questions for ${country.name}:`, error);
+    difficulty: 'easy' | 'medium' | 'hard',
+    count: number = 50,
+    category: string = 'Geography'
+  ): Promise<boolean> {
+    try {
+      console.log(`🎯 Generating ${count} enhanced questions for ${country.name}...`);
+      
+      const questions: Question[] = [];
+      const maxAttempts = count * 3;
+
+      for (let attempt = 0; attempt < maxAttempts && questions.length < count; attempt++) {
+        // Use enhanced generator for better quality
+        const questionData = EnhancedQuestionGenerator.generateGeographyQuestion(
+          country,
+          difficulty,
+          attempt
+        );
+
+        if (questionData && questionData.validated) {
+          const question: Question = {
+            id: `enhanced-${country.id}-${difficulty}-${Date.now()}-${attempt}`,
+            type: 'multiple-choice',
+            text: questionData.text,
+            choices: questionData.options.map((option, index) => ({
+              id: String.fromCharCode(97 + index),
+              text: option,
+              isCorrect: option === questionData.correct,
+            })),
+            category: questionData.category as any,
+            explanation: questionData.explanation,
+            difficulty: questionData.difficulty as any,
+          };
+
+          // Quality check before adding
+          if (questionData.qualityScore >= 80) {
+            questions.push(question);
+          }
+        }
       }
+
+      if (questions.length === 0) {
+        console.warn(`❌ No quality questions generated for ${country.name}`);
+        return false;
+      }
+
+      // Save to database
+      await this.saveQuestions(questions, country.id, difficulty, category);
+      
+      console.log(`✅ Generated and saved ${questions.length} enhanced questions for ${country.name}`);
+      return true;
+
+    } catch (error) {
+      console.error(`❌ Failed to generate questions for ${country.name}:`, error);
+      return false;
     }
-    
-    console.log(`✅ [TemplateService] Completed generation for all difficulties for ${country.name}`);
   }
 }
