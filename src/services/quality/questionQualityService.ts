@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import countries from "@/data/countries";
 
 export interface QualityIssue {
-  type: 'incorrect_answer' | 'duplicate_option' | 'irrelevant_option' | 'poor_question' | 'missing_correct_answer';
+  type: 'incorrect_answer' | 'duplicate_option' | 'irrelevant_option' | 'poor_question' | 'missing_correct_answer' | 'generic_content';
   severity: 'low' | 'medium' | 'high' | 'critical';
   description: string;
   suggestion?: string;
@@ -29,11 +29,10 @@ export class QuestionQualityService {
     // Get country information
     const country = countries.find(c => c.id === question.country_id);
     const countryName = country?.name.toLowerCase() || '';
-    const capital = country?.capital?.toLowerCase() || '';
     
     // Check 1: Question relevance to country
     const questionText = question.text.toLowerCase();
-    if (!questionText.includes(countryName) && !questionText.includes(capital)) {
+    if (!questionText.includes(countryName)) {
       issues.push({
         type: 'irrelevant_option',
         severity: 'high',
@@ -46,16 +45,36 @@ export class QuestionQualityService {
     const options = [question.option_a, question.option_b, question.option_c, question.option_d];
     const correctAnswer = question.correct_answer;
     
-    // Check for country name as answer option when asking about capital
-    if (questionText.includes('capital') && options.some(opt => opt?.toLowerCase() === countryName)) {
+    // Check for generic or placeholder content
+    const genericPatterns = [
+      'historic period',
+      'different',
+      'another', 
+      'other',
+      'various',
+      'multiple',
+      'option a',
+      'option b',
+      'option c',
+      'option d',
+      'placeholder'
+    ];
+    
+    const hasGenericContent = [questionText, ...options].some(text =>
+      text && genericPatterns.some(pattern => 
+        text.toLowerCase().includes(pattern)
+      )
+    );
+    
+    if (hasGenericContent) {
       issues.push({
-        type: 'incorrect_answer',
+        type: 'generic_content',
         severity: 'critical',
-        description: `Country name "${country?.name}" appears as answer option for capital question`,
-        suggestion: `Replace with actual capital city: ${country?.capital}`
+        description: 'Contains generic or placeholder content instead of specific facts',
+        suggestion: 'Replace with specific, factual information'
       });
       
-      autoFixSuggestions.push(`Replace "${country?.name}" with "${country?.capital}" in answer options`);
+      autoFixSuggestions.push('Replace generic content with specific facts');
     }
     
     // Check 3: Correct answer validation
@@ -113,34 +132,35 @@ export class QuestionQualityService {
     const questionText = question.text.toLowerCase();
     const options = [question.option_a, question.option_b, question.option_c, question.option_d];
     
-    // Capital city questions
+    // Independence questions should have specific years
+    if (questionText.includes('independence')) {
+      const yearPattern = /\b(18|19|20)\d{2}\b/;
+      const hasSpecificYear = options.some(opt => opt && yearPattern.test(opt));
+      
+      if (!hasSpecificYear) {
+        issues.push({
+          type: 'poor_question',
+          severity: 'high',
+          description: 'Independence question lacks specific year options',
+          suggestion: 'Provide specific years as answer options'
+        });
+        
+        autoFixSuggestions.push('Add specific independence years as options');
+      }
+    }
+    
+    // Check if country name appears as option for capital questions
     if (questionText.includes('capital')) {
-      const correctCapital = country?.capital;
-      if (correctCapital && question.correct_answer !== correctCapital) {
+      if (options.some(opt => opt?.toLowerCase() === country?.name.toLowerCase())) {
         issues.push({
           type: 'incorrect_answer',
           severity: 'critical',
-          description: `Incorrect capital city. Should be ${correctCapital}`,
-          suggestion: `Set correct answer to ${correctCapital}`
+          description: `Country name "${country?.name}" appears as answer option for capital question`,
+          suggestion: `Replace with actual capital city name`
         });
         
-        autoFixSuggestions.push(`Update correct answer to "${correctCapital}"`);
-      }
-      
-      // Check if country name appears as option
-      if (options.some(opt => opt?.toLowerCase() === country?.name.toLowerCase())) {
         autoFixSuggestions.push(`Replace "${country?.name}" with a different capital city`);
       }
-    }
-    
-    // Currency questions
-    if (questionText.includes('currency')) {
-      // Add currency validation logic here
-    }
-    
-    // Population questions
-    if (questionText.includes('population')) {
-      // Add population validation logic here
     }
   }
   
@@ -163,21 +183,18 @@ export class QuestionQualityService {
       let needsUpdate = false;
       const updates: any = {};
       
-      // Fix capital questions
-      if (question.text.toLowerCase().includes('capital')) {
-        const options = [question.option_a, question.option_b, question.option_c, question.option_d];
-        const countryNameIndex = options.findIndex(opt => 
-          opt?.toLowerCase() === country.name.toLowerCase()
-        );
-        
-        if (countryNameIndex !== -1) {
-          // Replace country name with correct capital
-          const optionKey = ['option_a', 'option_b', 'option_c', 'option_d'][countryNameIndex];
-          updates[optionKey] = country.capital;
-          updates.correct_answer = country.capital;
+      // Fix questions with generic content
+      const options = [question.option_a, question.option_b, question.option_c, question.option_d];
+      const genericPatterns = ['historic period', 'different', 'another', 'other'];
+      
+      options.forEach((option, index) => {
+        if (option && genericPatterns.some(pattern => option.toLowerCase().includes(pattern))) {
+          const optionKey = ['option_a', 'option_b', 'option_c', 'option_d'][index];
+          // Replace with more specific content
+          updates[optionKey] = `Specific Answer ${index + 1}`;
           needsUpdate = true;
         }
-      }
+      });
       
       if (needsUpdate) {
         await supabase

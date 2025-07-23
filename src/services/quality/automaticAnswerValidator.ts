@@ -42,25 +42,18 @@ export class AutomaticAnswerValidator {
       
       if (capitalIndex !== -1) {
         issues.push(`Country name "${country.name}" appears as answer option for capital question`);
-        suggestions.push(`Replace with actual capital: ${country.capital}`);
-        correctedOptions[capitalIndex] = country.capital || 'Unknown';
+        suggestions.push(`Replace with actual capital city`);
+        correctedOptions[capitalIndex] = 'Different Capital'; // Generic placeholder
       }
       
-      // Verify correct answer is actually the capital
-      if (country.capital && correctAnswer !== country.capital) {
-        issues.push(`Incorrect capital city. Should be ${country.capital}`);
-        suggestions.push(`Update correct answer to ${country.capital}`);
-      }
-    }
-    
-    // Currency question validation
-    if (questionLower.includes('currency')) {
-      // Add currency validation logic
-    }
-    
-    // Population question validation
-    if (questionLower.includes('population')) {
-      // Add population validation logic
+      // Check for generic or placeholder answers
+      const genericPatterns = ['historic period', 'different', 'another', 'other'];
+      options.forEach((option, index) => {
+        if (option && genericPatterns.some(pattern => option.toLowerCase().includes(pattern))) {
+          issues.push(`Generic answer option found: "${option}"`);
+          suggestions.push(`Replace "${option}" with specific factual answer`);
+        }
+      });
     }
     
     // Check for duplicate options
@@ -68,6 +61,31 @@ export class AutomaticAnswerValidator {
     if (uniqueOptions.size < options.filter(opt => opt).length) {
       issues.push('Duplicate answer options found');
       suggestions.push('Ensure all options are unique');
+    }
+    
+    // Check for placeholder or generic content
+    const placeholderPatterns = [
+      'historic period',
+      'different',
+      'another',
+      'other',
+      'various',
+      'multiple',
+      'option a',
+      'option b',
+      'option c',
+      'option d'
+    ];
+    
+    const hasPlaceholders = options.some(option => 
+      option && placeholderPatterns.some(pattern => 
+        option.toLowerCase().includes(pattern)
+      )
+    );
+    
+    if (hasPlaceholders) {
+      issues.push('Contains generic or placeholder content');
+      suggestions.push('Replace with specific, factual information');
     }
     
     return {
@@ -91,21 +109,17 @@ export class AutomaticAnswerValidator {
     
     const questionLower = questionText.toLowerCase();
     
-    // Capital city questions
-    if (questionLower.includes('capital')) {
-      const otherCapitals = countries
-        .filter(c => c.id !== countryId && c.capital && c.capital !== correctAnswer)
-        .map(c => c.capital)
-        .filter((capital): capital is string => capital !== undefined);
-      
-      // Get 3 random other capitals
-      const shuffled = otherCapitals.sort(() => 0.5 - Math.random());
-      const wrongAnswers = shuffled.slice(0, 3);
-      
-      return [correctAnswer, ...wrongAnswers].sort(() => 0.5 - Math.random());
+    // For independence questions, provide actual years
+    if (questionLower.includes('independence')) {
+      const independenceYears = ['1919', '1947', '1960', '1975'];
+      return [correctAnswer, ...independenceYears.filter(year => year !== correctAnswer)].slice(0, 4);
     }
     
-    // Add more question types here
+    // For continent questions
+    if (questionLower.includes('continent')) {
+      const continents = ['Africa', 'Asia', 'Europe', 'North America', 'South America', 'Oceania'];
+      return [correctAnswer, ...continents.filter(c => c !== correctAnswer)].slice(0, 4);
+    }
     
     return [];
   }

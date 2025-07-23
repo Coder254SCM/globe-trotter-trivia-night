@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Question } from "@/types/quiz";
 import { Country } from "./supabase/country/countryTypes";
@@ -13,17 +14,20 @@ export class TemplateQuestionService {
   ): Promise<boolean> {
     try {
       const questionsToInsert = questions.map(q => ({
+        id: q.id,
         text: q.text,
         option_a: q.choices[0].text,
         option_b: q.choices[1].text,
         option_c: q.choices[2].text,
         option_d: q.choices[3].text,
-        correct_answer: q.choices.find(c => c.isCorrect)?.text,
+        correct_answer: q.choices.find(c => c.isCorrect)?.text || '',
         explanation: q.explanation,
         category: category,
         difficulty: difficulty,
         country_id: countryId,
-        image_url: q.imageUrl
+        image_url: q.imageUrl || null,
+        ai_generated: false,
+        month_rotation: new Date().getMonth() + 1
       }));
 
       const { error } = await supabase
