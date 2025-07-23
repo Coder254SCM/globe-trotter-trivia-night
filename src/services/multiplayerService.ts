@@ -56,7 +56,7 @@ export class MultiplayerService {
     // Host joins their own session
     await this.joinSession(data.id, hostId);
 
-    return { session: data, roomCode };
+    return { session: data as MultiplayerSession, roomCode };
   }
 
   static async joinSession(sessionId: string, userId: string): Promise<{ error?: string }> {
@@ -72,8 +72,19 @@ export class MultiplayerService {
       return { error: error.message };
     }
 
-    // Update participant count
-    await supabase.rpc('increment_session_players', { session_id: sessionId });
+    // Update participant count - get current count and increment
+    const { data: session } = await supabase
+      .from('multiplayer_sessions')
+      .select('current_players')
+      .eq('id', sessionId)
+      .single();
+    
+    if (session) {
+      await supabase
+        .from('multiplayer_sessions')
+        .update({ current_players: session.current_players + 1 })
+        .eq('id', sessionId);
+    }
 
     return {};
   }
@@ -90,8 +101,19 @@ export class MultiplayerService {
       return { error: error.message };
     }
 
-    // Update participant count
-    await supabase.rpc('decrement_session_players', { session_id: sessionId });
+    // Update participant count - get current count and decrement
+    const { data: session } = await supabase
+      .from('multiplayer_sessions')
+      .select('current_players')
+      .eq('id', sessionId)
+      .single();
+    
+    if (session) {
+      await supabase
+        .from('multiplayer_sessions')
+        .update({ current_players: Math.max(0, session.current_players - 1) })
+        .eq('id', sessionId);
+    }
 
     return {};
   }
@@ -109,7 +131,7 @@ export class MultiplayerService {
       return null;
     }
 
-    return data;
+    return data as MultiplayerSession;
   }
 
   static async getSessionParticipants(sessionId: string): Promise<MultiplayerParticipant[]> {

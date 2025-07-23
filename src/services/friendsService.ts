@@ -108,7 +108,7 @@ export class FriendsService {
       return [];
     }
 
-    return data || [];
+    return (data || []) as Friendship[];
   }
 
   static async getPendingRequests(userId: string): Promise<Friendship[]> {
@@ -127,7 +127,7 @@ export class FriendsService {
       return [];
     }
 
-    return data || [];
+    return (data || []) as Friendship[];
   }
 
   static async removeFriend(friendshipId: string): Promise<{ error?: string }> {

@@ -961,12 +961,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrement_session_players: {
+        Args: { session_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
+      }
+      increment_session_players: {
+        Args: { session_id: string }
+        Returns: undefined
       }
       pre_validate_question: {
         Args: {

@@ -55,6 +55,16 @@ function IndexContent() {
           isGeneratingQuestions={false}
         />
         
+        {/* Add auth link if not authenticated */}
+        <div className="text-center mb-4">
+          <a 
+            href="/auth" 
+            className="text-primary hover:underline"
+          >
+            Sign in to track your progress
+          </a>
+        </div>
+        
         <Globe
           onCountrySelect={handleCountrySelectFromGlobe}
           onStartWeeklyChallenge={handleStartWeeklyChallenge}
