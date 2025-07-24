@@ -9,8 +9,16 @@ import UltimateQuiz from "./pages/UltimateQuiz";
 import QuestionValidation from "./pages/QuestionValidation";
 import ProductionDashboard from "./pages/ProductionDashboard";
 import Auth from "./pages/Auth";
+import Admin from "./pages/Admin";
+import Moderation from "./pages/Moderation";
+import QuestionAudit from "./pages/QuestionAudit";
+import EasyQuestions from "./pages/EasyQuestions";
+import MediumQuestions from "./pages/MediumQuestions";
+import ManualHardQuestions from "./pages/ManualHardQuestions";
+import ComprehensiveAudit from "./pages/ComprehensiveAudit";
 import { AutoInitializer } from "./components/initialization/AutoInitializer";
 import { useAuth } from "./hooks/useAuth";
+import { AdminGuard, ModeratorGuard } from "./components/auth/AuthGuard";
 
 function App() {
   const { user } = useAuth();
@@ -29,8 +37,19 @@ function App() {
           <Route path="/quiz-results" element={<QuizResults />} />
           <Route path="/weekly-challenges" element={<WeeklyChallenges />} />
           <Route path="/ultimate-quiz" element={<UltimateQuiz />} />
-          <Route path="/question-validation" element={<QuestionValidation />} />
-          <Route path="/production-dashboard" element={<ProductionDashboard />} />
+          
+          {/* Admin Protected Routes */}
+          <Route path="/admin" element={<AdminGuard><Admin /></AdminGuard>} />
+          <Route path="/admin/easy-questions" element={<AdminGuard><EasyQuestions /></AdminGuard>} />
+          <Route path="/admin/medium-questions" element={<AdminGuard><MediumQuestions /></AdminGuard>} />
+          <Route path="/admin/manual-hard-questions" element={<AdminGuard><ManualHardQuestions /></AdminGuard>} />
+          <Route path="/admin/question-audit" element={<AdminGuard><QuestionAudit /></AdminGuard>} />
+          <Route path="/admin/comprehensive-audit" element={<AdminGuard><ComprehensiveAudit /></AdminGuard>} />
+          <Route path="/question-validation" element={<AdminGuard><QuestionValidation /></AdminGuard>} />
+          <Route path="/production-dashboard" element={<AdminGuard><ProductionDashboard /></AdminGuard>} />
+          
+          {/* Moderator Protected Routes */}
+          <Route path="/admin/moderation" element={<ModeratorGuard><Moderation /></ModeratorGuard>} />
         </Routes>
         <Toaster />
       </div>

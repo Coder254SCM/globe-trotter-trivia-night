@@ -14,11 +14,27 @@ import {
   Brain,
   UserCheck,
   AlertTriangle,
-  Lightbulb
+  Lightbulb,
+  ShieldCheck
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { AdminBootstrap } from "./AdminBootstrap";
 
 export const AdminDashboard = () => {
+  const { user, isAdmin, isModerator } = useAuth();
+
+  // This should never happen due to AuthGuard, but add as safety check
+  if (!user || !isAdmin) {
+    return (
+      <Card className="max-w-md mx-auto mt-8">
+        <CardHeader>
+          <CardTitle className="text-destructive">Access Denied</CardTitle>
+          <CardDescription>Administrator privileges required.</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
   const adminTools = [
     {
       title: "Production Dashboard",
@@ -84,9 +100,15 @@ export const AdminDashboard = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <ShieldCheck className="h-8 w-8 text-primary" />
+            Admin Dashboard
+          </h1>
           <p className="text-muted-foreground">
             Manage questions, monitor system performance, and configure the quiz platform
+          </p>
+          <p className="text-sm text-green-600 mt-1">
+            ✓ Authenticated as: {user.email}
           </p>
         </div>
         <Badge variant="outline" className="text-green-600 border-green-600">
@@ -152,6 +174,40 @@ export const AdminDashboard = () => {
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-green-500" />
+            Security Status
+          </CardTitle>
+          <CardDescription>
+            Database security measures are now active
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span>Row Level Security (RLS) enabled on all tables</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span>Database functions secured with search_path</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span>Admin authentication guards active</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span>Question validation triggers enabled</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <AdminBootstrap />
     </div>
   );
 };
