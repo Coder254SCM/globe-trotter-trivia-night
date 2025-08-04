@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
@@ -392,6 +392,33 @@ export type Database = {
           },
         ]
       }
+      moderation_actions: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          moderator_id: string
+          question_id: string
+          reason: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          moderator_id: string
+          question_id: string
+          reason: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          moderator_id?: string
+          question_id?: string
+          reason?: string
+        }
+        Relationships: []
+      }
       multiplayer_participants: {
         Row: {
           current_position: number | null
@@ -486,6 +513,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      quality_reports: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          issue_type: string
+          moderated_at: string | null
+          moderated_by: string | null
+          question_id: string
+          reported_by: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          issue_type: string
+          moderated_at?: string | null
+          moderated_by?: string | null
+          question_id: string
+          reported_by: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          issue_type?: string
+          moderated_at?: string | null
+          moderated_by?: string | null
+          question_id?: string
+          reported_by?: string
+          status?: string
+        }
+        Relationships: []
       }
       question_rotations: {
         Row: {

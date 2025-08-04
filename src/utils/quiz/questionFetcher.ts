@@ -63,7 +63,7 @@ export const getQuizQuestions = async (
     const questionPool = await aggregateQuestions(
       countryId, 
       continentId, 
-      count, 
+      count * 2, // Request more to account for filtering
       difficulty
     );
     
@@ -72,8 +72,16 @@ export const getQuizQuestions = async (
     
     if (processedQuestions.length === 0) {
       console.warn(`⚠️ No questions found for country: ${countryId}, difficulty: ${difficulty}`);
+      
+      // Final fallback: try any questions for the country
+      if (countryId) {
+        console.log(`🔄 Final fallback: any questions for ${countryId}...`);
+        const anyQuestions = await aggregateQuestions(countryId, undefined, count * 3);
+        return processQuestionPool(anyQuestions, count);
+      }
     }
     
+    console.log(`✅ Returning ${processedQuestions.length} processed questions`);
     return processedQuestions;
   } catch (error) {
     console.error('💥 Error fetching quiz questions:', error);
