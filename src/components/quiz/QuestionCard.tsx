@@ -2,6 +2,7 @@
 import { useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Question } from "@/types/quiz";
+import { QuestionVoting } from "./QuestionVoting";
 
 interface QuestionCardProps {
   question: Question;
@@ -22,9 +23,16 @@ export const QuestionCard = ({ question, isMobile }: QuestionCardProps) => {
 
   return (
     <div className={isMobile ? "mb-6" : "mb-8"}>
-      <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-medium mb-2`}>
-        {question.text}
-      </h2>
+      <div className="flex justify-between items-start gap-4 mb-2">
+        <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-medium flex-1`}>
+          {question.text}
+        </h2>
+        <QuestionVoting 
+          questionId={question.id} 
+          questionText={question.text}
+          className="flex-shrink-0"
+        />
+      </div>
       
       {question.imageUrl && (
         <div className={`${isMobile ? 'mt-3 mb-4' : 'mt-4 mb-6'} flex justify-center`}>

@@ -15,14 +15,18 @@ import {
   UserCheck,
   AlertTriangle,
   Lightbulb,
-  ShieldCheck
+  ShieldCheck,
+  Trash2
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminBootstrap } from "./AdminBootstrap";
+import { DatabaseCleanupDashboard } from "./DatabaseCleanupDashboard";
+import { useState } from "react";
 
 export const AdminDashboard = () => {
   const { user, isAdmin, isModerator } = useAuth();
+  const [activeView, setActiveView] = useState("dashboard");
 
   // This should never happen due to AuthGuard, but add as safety check
   if (!user || !isAdmin) {
@@ -83,6 +87,15 @@ export const AdminDashboard = () => {
       href: "/admin/moderation",
       variant: "outline" as const,
       status: "Active"
+    },
+    {
+      title: "Database Cleanup",
+      description: "Remove duplicates and invalid questions",
+      icon: Trash2,
+      href: "#",
+      variant: "destructive" as const,
+      status: "Critical",
+      onClick: () => setActiveView("cleanup")
     }
   ];
 
@@ -95,6 +108,20 @@ export const AdminDashboard = () => {
       default: return "bg-gray-500";
     }
   };
+
+  if (activeView === "cleanup") {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={() => setActiveView("dashboard")}>
+            ← Back to Dashboard
+          </Button>
+          <h1 className="text-3xl font-bold">Database Cleanup</h1>
+        </div>
+        <DatabaseCleanupDashboard />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -136,11 +163,17 @@ export const AdminDashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Link to={tool.href}>
-                <Button variant={tool.variant} className="w-full">
+              {tool.onClick ? (
+                <Button variant={tool.variant} className="w-full" onClick={tool.onClick}>
                   Open Tool
                 </Button>
-              </Link>
+              ) : (
+                <Link to={tool.href}>
+                  <Button variant={tool.variant} className="w-full">
+                    Open Tool
+                  </Button>
+                </Link>
+              )}
             </CardContent>
           </Card>
         ))}
