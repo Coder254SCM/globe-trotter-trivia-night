@@ -447,6 +447,68 @@ export class ApiService {
   }
 
   /**
+   * Batch upsert questions via Edge Function (uses service role on server)
+   */
+  static async upsertQuestionsBatch(payload: {
+    countryId?: string;
+    replaceForCountry?: boolean;
+    questions: Array<{
+      id: string;
+      text: string;
+      option_a: string;
+      option_b: string;
+      option_c: string;
+      option_d: string;
+      correct_answer: string;
+      explanation?: string;
+      category: string;
+      difficulty: 'easy' | 'medium' | 'hard';
+      country_id: string | null;
+      image_url?: string;
+      ai_generated?: boolean;
+      month_rotation?: number;
+    }>;
+  }): Promise<ApiResponse<{ inserted: number; skipped: number; deleted?: number }>> {
+    try {
+      const url = `https://qonnpyaemjpudtptsuyt.functions.supabase.co/questions-batch-upsert`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': (await supabase.auth.getSession()).data.session?.access_token || '',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || ''}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        return {
+          success: false,
+          error: {
+            code: 'EDGE_FUNCTION_ERROR',
+            message: data?.error || 'Failed to upsert questions'
+          }
+        };
+      }
+
+      return {
+        success: true,
+        data: { inserted: data.inserted, skipped: data.skipped, deleted: data.deleted }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'NETWORK_ERROR',
+          message: 'Failed to reach upsert function',
+          details: error
+        }
+      };
+    }
+  }
+
+  /**
    * Create question fingerprint for duplicate detection
    */
   private static createQuestionFingerprint(question: any): string {

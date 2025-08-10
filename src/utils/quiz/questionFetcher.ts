@@ -11,6 +11,7 @@ import {
   getCountryRelevanceScore
 } from "./questionStats";
 import { QuestionService } from "@/services/supabase/questionService";
+import { FactualQuizService } from "@/services/factual/factualQuizService";
 
 // Main question fetching function with improved error handling
 export const getQuizQuestions = async (
@@ -37,9 +38,26 @@ export const getQuizQuestions = async (
         count
       );
       
+      if (supabaseQuestions.length >= count) {
+        console.log(`✅ Found ${supabaseQuestions.length} questions from Supabase (enough)`);
+        return supabaseQuestions.slice(0, count);
+      }
+
       if (supabaseQuestions.length > 0) {
-        console.log(`✅ Found ${supabaseQuestions.length} questions from Supabase`);
-        return supabaseQuestions;
+        console.log(`ℹ️ Only ${supabaseQuestions.length}/${count} found. Topping up with factual generator...`);
+        try {
+          const missing = count - supabaseQuestions.length;
+          await FactualQuizService.cleanAndGenerateQuestions(
+            countryId,
+            (difficulty as 'easy' | 'medium' | 'hard') || 'medium',
+            missing
+          );
+          const topped = await QuestionService.getQuestions(countryId, difficulty, count);
+          if (topped.length >= count) return topped.slice(0, count);
+          if (topped.length > supabaseQuestions.length) return topped;
+        } catch (e) {
+          console.warn('⚠️ Top-up generation failed:', e);
+        }
       }
       
       // Fallback: try without difficulty filter
@@ -51,9 +69,22 @@ export const getQuizQuestions = async (
           count
         );
         
+        if (fallbackQuestions.length >= count) {
+          console.log(`✅ Found ${fallbackQuestions.length} fallback questions (enough)`);
+          return fallbackQuestions.slice(0, count);
+        }
+        
         if (fallbackQuestions.length > 0) {
-          console.log(`✅ Found ${fallbackQuestions.length} fallback questions`);
-          return fallbackQuestions;
+          console.log(`ℹ️ Only ${fallbackQuestions.length}/${count} fallback found. Topping up...`);
+          try {
+            const missing = count - fallbackQuestions.length;
+            await FactualQuizService.cleanAndGenerateQuestions(countryId, 'medium', missing);
+            const topped = await QuestionService.getQuestions(countryId, undefined, count);
+            if (topped.length >= count) return topped.slice(0, count);
+            if (topped.length > fallbackQuestions.length) return topped;
+          } catch (e) {
+            console.warn('⚠️ Fallback top-up failed:', e);
+          }
         }
       }
     }

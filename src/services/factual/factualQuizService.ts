@@ -9,15 +9,8 @@ export class FactualQuizService {
     console.log(`🧹 Cleaning and generating factual questions for ${countryId}`);
     
     try {
-      // Delete existing wrong questions for this country
-      const { error: deleteError } = await supabase
-        .from('questions')
-        .delete()
-        .eq('country_id', countryId);
-
-      if (deleteError) {
-        console.warn('Failed to delete old questions:', deleteError);
-      }
+      // Replace existing country questions server-side via Edge Function
+      console.log('🧹 Preparing to replace existing questions via server function (no client-side deletes)');
 
       // Generate new factual questions
       const questions = FactualQuestionGenerator.generateQuestions(countryId, difficulty, count);
@@ -27,7 +20,7 @@ export class FactualQuizService {
         return [];
       }
 
-      // Save to database
+      // Map to DB shape
       const questionsToSave = questions.map(q => ({
         id: q.id,
         text: q.text,
@@ -38,20 +31,24 @@ export class FactualQuizService {
         correct_answer: q.correct_answer,
         explanation: q.explanation,
         category: q.category,
-        difficulty: q.difficulty,
+        difficulty: q.difficulty as 'easy' | 'medium' | 'hard',
         country_id: q.country_id,
         image_url: q.image_url || '',
         ai_generated: false,
         month_rotation: 1
       }));
 
-      const { error } = await supabase
-        .from('questions')
-        .insert(questionsToSave);
+      // Use Edge Function (service role) to validate + upsert
+      const { ApiService } = await import('@/services/api/apiService');
+      const result = await ApiService.upsertQuestionsBatch({
+        countryId,
+        replaceForCountry: true,
+        questions: questionsToSave
+      });
 
-      if (error) {
-        console.error('❌ Database insert error:', error);
-        return questions; // Return questions even if save fails
+      if (!result.success) {
+        console.error('❌ Upsert error:', result.error);
+        return questions; // Return generated for immediate use even if save fails
       }
 
       console.log(`✅ Generated and saved ${questions.length} factual questions for ${countryId}`);
