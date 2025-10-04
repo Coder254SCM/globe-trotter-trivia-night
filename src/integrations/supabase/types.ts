@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -266,6 +266,98 @@ export type Database = {
           },
         ]
       }
+      game_rooms: {
+        Row: {
+          country_filter: string | null
+          created_at: string | null
+          current_players: number | null
+          difficulty_filter: string | null
+          ended_at: string | null
+          host_id: string | null
+          id: string
+          max_players: number | null
+          questions_per_game: number | null
+          room_code: string
+          settings: Json | null
+          started_at: string | null
+          status: string | null
+          time_per_question: number | null
+        }
+        Insert: {
+          country_filter?: string | null
+          created_at?: string | null
+          current_players?: number | null
+          difficulty_filter?: string | null
+          ended_at?: string | null
+          host_id?: string | null
+          id?: string
+          max_players?: number | null
+          questions_per_game?: number | null
+          room_code: string
+          settings?: Json | null
+          started_at?: string | null
+          status?: string | null
+          time_per_question?: number | null
+        }
+        Update: {
+          country_filter?: string | null
+          created_at?: string | null
+          current_players?: number | null
+          difficulty_filter?: string | null
+          ended_at?: string | null
+          host_id?: string | null
+          id?: string
+          max_players?: number | null
+          questions_per_game?: number | null
+          room_code?: string
+          settings?: Json | null
+          started_at?: string | null
+          status?: string | null
+          time_per_question?: number | null
+        }
+        Relationships: []
+      }
+      game_sessions_v2: {
+        Row: {
+          current_question_index: number | null
+          ended_at: string | null
+          id: string
+          question_set: Json
+          room_id: string | null
+          settings: Json | null
+          started_at: string | null
+          total_questions: number | null
+        }
+        Insert: {
+          current_question_index?: number | null
+          ended_at?: string | null
+          id?: string
+          question_set?: Json
+          room_id?: string | null
+          settings?: Json | null
+          started_at?: string | null
+          total_questions?: number | null
+        }
+        Update: {
+          current_question_index?: number | null
+          ended_at?: string | null
+          id?: string
+          question_set?: Json
+          room_id?: string | null
+          settings?: Json | null
+          started_at?: string | null
+          total_questions?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_sessions_v2_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "game_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       groups: {
         Row: {
           created_at: string | null
@@ -514,6 +606,63 @@ export type Database = {
           },
         ]
       }
+      player_responses: {
+        Row: {
+          answer_choice: string | null
+          id: string
+          is_correct: boolean | null
+          player_id: string | null
+          points_earned: number | null
+          question_id: string
+          question_index: number
+          response_time: number | null
+          room_id: string | null
+          session_id: string | null
+          submitted_at: string | null
+        }
+        Insert: {
+          answer_choice?: string | null
+          id?: string
+          is_correct?: boolean | null
+          player_id?: string | null
+          points_earned?: number | null
+          question_id: string
+          question_index: number
+          response_time?: number | null
+          room_id?: string | null
+          session_id?: string | null
+          submitted_at?: string | null
+        }
+        Update: {
+          answer_choice?: string | null
+          id?: string
+          is_correct?: boolean | null
+          player_id?: string | null
+          points_earned?: number | null
+          question_id?: string
+          question_index?: number
+          response_time?: number | null
+          room_id?: string | null
+          session_id?: string | null
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_responses_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "game_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions_v2"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quality_reports: {
         Row: {
           created_at: string
@@ -720,6 +869,63 @@ export type Database = {
           },
         ]
       }
+      questions_backup: {
+        Row: {
+          ai_generated: boolean | null
+          category: string | null
+          correct_answer: string | null
+          country_id: string | null
+          created_at: string | null
+          difficulty: string | null
+          explanation: string | null
+          id: string | null
+          image_url: string | null
+          month_rotation: number | null
+          option_a: string | null
+          option_b: string | null
+          option_c: string | null
+          option_d: string | null
+          text: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ai_generated?: boolean | null
+          category?: string | null
+          correct_answer?: string | null
+          country_id?: string | null
+          created_at?: string | null
+          difficulty?: string | null
+          explanation?: string | null
+          id?: string | null
+          image_url?: string | null
+          month_rotation?: number | null
+          option_a?: string | null
+          option_b?: string | null
+          option_c?: string | null
+          option_d?: string | null
+          text?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ai_generated?: boolean | null
+          category?: string | null
+          correct_answer?: string | null
+          country_id?: string | null
+          created_at?: string | null
+          difficulty?: string | null
+          explanation?: string | null
+          id?: string | null
+          image_url?: string | null
+          month_rotation?: number | null
+          option_a?: string | null
+          option_b?: string | null
+          option_c?: string | null
+          option_d?: string | null
+          text?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       quiz_sessions: {
         Row: {
           challenge_id: string | null
@@ -796,6 +1002,47 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_participants: {
+        Row: {
+          current_rank: number | null
+          current_score: number | null
+          id: string
+          is_connected: boolean | null
+          is_ready: boolean | null
+          joined_at: string | null
+          player_id: string | null
+          room_id: string | null
+        }
+        Insert: {
+          current_rank?: number | null
+          current_score?: number | null
+          id?: string
+          is_connected?: boolean | null
+          is_ready?: boolean | null
+          joined_at?: string | null
+          player_id?: string | null
+          room_id?: string | null
+        }
+        Update: {
+          current_rank?: number | null
+          current_score?: number | null
+          id?: string
+          is_connected?: boolean | null
+          is_ready?: boolean | null
+          joined_at?: string | null
+          player_id?: string | null
+          room_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_participants_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "game_rooms"
             referencedColumns: ["id"]
           },
         ]
@@ -1034,8 +1281,8 @@ export type Database = {
       }
       has_role: {
         Args: {
-          _user_id: string
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
         }
         Returns: boolean
       }
@@ -1045,14 +1292,14 @@ export type Database = {
       }
       pre_validate_question: {
         Args: {
-          p_text: string
+          p_correct_answer: string
+          p_country_id?: string
+          p_difficulty?: string
           p_option_a: string
           p_option_b: string
           p_option_c: string
           p_option_d: string
-          p_correct_answer: string
-          p_difficulty?: string
-          p_country_id?: string
+          p_text: string
         }
         Returns: Json
       }
