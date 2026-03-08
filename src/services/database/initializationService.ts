@@ -1,35 +1,43 @@
 
 import { CountryService } from "@/services/supabase/countryService";
-import { BulkQuestionGenerator } from "@/services/simple/bulkQuestionGenerator";
 import { QuestionService } from "@/services/supabase/questionService";
+import { generateAndSaveRealQuestions } from "@/services/simple/realQuestionGenerator";
 
 export class DatabaseInitializationService {
   static async initializeDatabase(): Promise<void> {
-    console.log("🚀 Starting database initialization...");
+    console.log("🚀 Starting database initialization with REAL data...");
     
     try {
-      // Step 1: Clear existing questions to start fresh
-      await this.clearExistingQuestions();
-      
-      // Step 2: Get all countries
       const countries = await CountryService.getAllServiceCountries();
       console.log(`📊 Found ${countries.length} countries to process`);
       
-      // Step 3: Generate questions for all countries
-      await BulkQuestionGenerator.generateForAllCountries(countries, 50);
+      let generated = 0;
+      const difficulties: Array<'easy' | 'medium' | 'hard'> = ['easy', 'medium', 'hard'];
       
-      console.log("✅ Database initialization complete!");
+      // Process in small batches to avoid overwhelming the DB
+      for (let i = 0; i < countries.length; i++) {
+        const country = countries[i];
+        
+        for (const difficulty of difficulties) {
+          const count = await generateAndSaveRealQuestions(
+            { id: country.id, name: country.name, continent: country.continent, capital: country.capital },
+            difficulty,
+            5  // 5 questions per difficulty = 15 per country
+          );
+          generated += count;
+        }
+        
+        if ((i + 1) % 20 === 0) {
+          console.log(`✅ Completed ${i + 1}/${countries.length}: ${generated} total questions`);
+        }
+      }
+      
+      console.log(`✅ Database initialization complete! Generated ${generated} questions for ${countries.length} countries`);
       
     } catch (error) {
       console.error("❌ Database initialization failed:", error);
       throw error;
     }
-  }
-  
-  private static async clearExistingQuestions(): Promise<void> {
-    console.log("🧹 Clearing existing questions...");
-    // We'll clear through the service to ensure clean slate
-    // This prevents duplicate questions from accumulating
   }
   
   static async ensureCountryHasQuestions(countryId: string): Promise<boolean> {
@@ -40,20 +48,25 @@ export class DatabaseInitializationService {
         validateContent: false
       });
       
-      console.log(`📊 ${countryId} has ${questions.length} questions`);
-      
-      if (questions.length < 10) {
-        console.log(`🔄 Generating questions for ${countryId}...`);
+      if (questions.length < 5) {
+        console.log(`🔄 Generating real questions for ${countryId}...`);
         const countries = await CountryService.getAllServiceCountries();
         const country = countries.find(c => c.id === countryId);
         
         if (country) {
-          await BulkQuestionGenerator.generateForCountry(country, 50);
+          const difficulties: Array<'easy' | 'medium' | 'hard'> = ['easy', 'medium', 'hard'];
+          for (const diff of difficulties) {
+            await generateAndSaveRealQuestions(
+              { id: country.id, name: country.name, continent: country.continent, capital: country.capital },
+              diff,
+              5
+            );
+          }
           return true;
         }
       }
       
-      return questions.length >= 10;
+      return questions.length >= 5;
     } catch (error) {
       console.error(`❌ Failed to ensure questions for ${countryId}:`, error);
       return false;
