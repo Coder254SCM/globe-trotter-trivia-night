@@ -229,7 +229,7 @@ export async function generateAndSaveRealQuestions(
   
   if (questions.length === 0) return 0;
 
-  const { QuestionService } = await import("../services/supabase/questionService");
+  const { QuestionService } = await import("../supabase/questionService");
   const currentMonth = new Date().getMonth() + 1;
 
   const questionsToInsert = questions.map(q => ({
