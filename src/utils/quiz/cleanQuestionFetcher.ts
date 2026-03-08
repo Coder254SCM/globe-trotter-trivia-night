@@ -18,14 +18,25 @@ export const getCleanQuizQuestions = async (
     // Fetch more questions than needed to allow for filtering out used ones
     const fetchCount = Math.max(count * 3, 30);
 
-    const allQuestions = await QuestionService.getFilteredQuestions({
+    let allQuestions = await QuestionService.getFilteredQuestions({
       countryId,
       difficulty,
       limit: fetchCount,
       validateContent: false
     });
 
-    console.log(`📋 [CleanFetcher] Found ${allQuestions.length} total questions`);
+    console.log(`📋 [CleanFetcher] Found ${allQuestions.length} ${difficulty} questions`);
+
+    // Fallback: if requested difficulty is empty, use any available difficulty for this country
+    if (allQuestions.length === 0 && difficulty) {
+      console.warn(`⚠️ [CleanFetcher] No ${difficulty} questions for ${countryId}, falling back to any difficulty`);
+      allQuestions = await QuestionService.getFilteredQuestions({
+        countryId,
+        limit: fetchCount,
+        validateContent: false
+      });
+      console.log(`📋 [CleanFetcher] Fallback found ${allQuestions.length} questions across all difficulties`);
+    }
 
     if (allQuestions.length === 0) {
       return [];
