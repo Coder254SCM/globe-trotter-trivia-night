@@ -85,6 +85,22 @@ export const useQuizActions = ({
           limit: Math.max(targetCount * 3, 150), // Get 3x more for good randomization
           validateContent: true
         });
+
+        if (questions.length === 0 && targetCountry.difficulty) {
+          console.warn(`⚠️ No ${targetCountry.difficulty} questions for ${targetCountry.name}; falling back to any difficulty`);
+          questions = await QuestionService.getFilteredQuestions({
+            countryId: targetCountry.id,
+            limit: Math.max(targetCount * 3, 150),
+            validateContent: true
+          });
+
+          if (questions.length > 0) {
+            toast({
+              title: "Difficulty Adjusted",
+              description: `No ${targetCountry.difficulty} questions were available, so mixed difficulty questions were loaded.`,
+            });
+          }
+        }
         
         console.log(`📊 Found ${questions.length} questions for ${targetCountry.name}`);
         
