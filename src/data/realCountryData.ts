@@ -13,7 +13,9 @@ export interface CountryFactData {
   dish: string;
   independence?: string;
   historicalEmpire?: string;
-  population?: string; // approximate range
+  population: number; // approximate population
+  neighbors: string[]; // bordering countries
+  flagColors: string; // description of flag colors/design
   hemisphere: 'Northern' | 'Southern' | 'Both';
 }
 
