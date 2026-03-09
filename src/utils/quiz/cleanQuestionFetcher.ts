@@ -3,9 +3,11 @@ import { Question } from "../../types/quiz";
 import { QuestionService } from "../../services/supabase/questionService";
 import { markQuestionsAsUsed, getUnusedQuestions } from "./questionCache";
 import { deduplicateQuestions } from "./questionDeduplication";
+import { generateRealQuestions } from "../../services/simple/realQuestionGenerator";
 
 /**
- * Simple and reliable question fetcher with duplicate prevention
+ * Simple and reliable question fetcher with duplicate prevention.
+ * Falls back to client-side generation if DB has no questions.
  */
 export const getCleanQuizQuestions = async (
   countryId: string,
@@ -15,7 +17,6 @@ export const getCleanQuizQuestions = async (
   console.log(`🔍 [CleanFetcher] Fetching ${count} ${difficulty} questions for ${countryId}`);
 
   try {
-    // Fetch more questions than needed to allow for filtering out used ones
     const fetchCount = Math.max(count * 3, 30);
 
     let allQuestions = await QuestionService.getFilteredQuestions({
@@ -25,50 +26,67 @@ export const getCleanQuizQuestions = async (
       validateContent: false
     });
 
-    console.log(`📋 [CleanFetcher] Found ${allQuestions.length} ${difficulty} questions`);
+    console.log(`📋 [CleanFetcher] Found ${allQuestions.length} ${difficulty} questions from DB`);
 
-    // Fallback: if requested difficulty is empty, use any available difficulty for this country
+    // Fallback: if requested difficulty is empty, use any available difficulty
     if (allQuestions.length === 0 && difficulty) {
-      console.warn(`⚠️ [CleanFetcher] No ${difficulty} questions for ${countryId}, falling back to any difficulty`);
       allQuestions = await QuestionService.getFilteredQuestions({
         countryId,
         limit: fetchCount,
         validateContent: false
       });
-      console.log(`📋 [CleanFetcher] Fallback found ${allQuestions.length} questions across all difficulties`);
     }
 
+    // If DB has no questions, generate client-side from real data
     if (allQuestions.length === 0) {
+      console.log(`🔄 [CleanFetcher] No DB questions, generating client-side for ${countryId}`);
+      const countryName = countryId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      
+      // Try all difficulties if specific one yields nothing
+      const difficultiesToTry = difficulty 
+        ? [difficulty as 'easy' | 'medium' | 'hard', 'easy', 'medium', 'hard'] 
+        : ['easy', 'medium', 'hard'] as const;
+      
+      for (const diff of difficultiesToTry) {
+        const generated = generateRealQuestions(
+          { id: countryId, name: countryName, continent: '' },
+          diff,
+          count
+        );
+        if (generated.length > 0) {
+          console.log(`✅ [CleanFetcher] Generated ${generated.length} ${diff} questions client-side`);
+          return generated;
+        }
+      }
       return [];
     }
 
     // Filter out previously used questions
     let unusedQuestions = getUnusedQuestions(allQuestions);
-
-    // Deduplicate unused questions by text
     unusedQuestions = deduplicateQuestions(unusedQuestions);
-    console.log(`🔄 [CleanFetcher] ${unusedQuestions.length} deduped & unused questions available`);
 
     let questionsToReturn: Question[];
     if (unusedQuestions.length >= count) {
       questionsToReturn = unusedQuestions.slice(0, count);
     } else {
-      // Not enough unused unique questions, fall back to all deduped questions
       const allDeduped = deduplicateQuestions(allQuestions);
       questionsToReturn = allDeduped.slice(0, count);
     }
 
-    // Mark these questions as used
     markQuestionsAsUsed(questionsToReturn.map(q => q.id));
-
-    console.log(
-      `✅ [CleanFetcher] Returning ${questionsToReturn.length} unique questions (${questionsToReturn.length} newly used)`
-    );
     return questionsToReturn;
 
   } catch (error) {
     console.error('❌ [CleanFetcher] Error fetching questions:', error);
-    return [];
+    
+    // Last resort: generate client-side
+    console.log(`🔄 [CleanFetcher] Falling back to client-side generation after error`);
+    const countryName = countryId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    return generateRealQuestions(
+      { id: countryId, name: countryName, continent: '' },
+      (difficulty as 'easy' | 'medium' | 'hard') || 'medium',
+      count
+    );
   }
 };
 
