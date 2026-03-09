@@ -96,9 +96,9 @@ export const getCleanQuizQuestions = async (
     
     // Last resort: generate client-side
     console.log(`🔄 [CleanFetcher] Falling back to client-side generation after error`);
-    const countryName = resolveCountryName(countryId);
+    const resolvedName = countryName || resolveCountryName(countryId);
     return generateRealQuestions(
-      { id: countryId, name: countryName, continent: '' },
+      { id: countryId, name: resolvedName, continent: '' },
       (difficulty as Difficulty) || 'medium',
       count
     );
