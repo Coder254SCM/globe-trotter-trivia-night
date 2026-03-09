@@ -95,10 +95,10 @@ export const getCleanQuizQuestions = async (
     
     // Last resort: generate client-side
     console.log(`🔄 [CleanFetcher] Falling back to client-side generation after error`);
-    const countryName = countryId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    const countryName = resolveCountryName(countryId);
     return generateRealQuestions(
       { id: countryId, name: countryName, continent: '' },
-      (difficulty as 'easy' | 'medium' | 'hard') || 'medium',
+      (difficulty as Difficulty) || 'medium',
       count
     );
   }
