@@ -3,19 +3,36 @@ import { Question } from "../../types/quiz";
 import { QuestionService } from "../../services/supabase/questionService";
 import { markQuestionsAsUsed, getUnusedQuestions } from "./questionCache";
 import { deduplicateQuestions } from "./questionDeduplication";
+import { generateRealQuestions } from "../../services/simple/realQuestionGenerator";
+import { REAL_COUNTRY_DATA } from "../../data/realCountryData";
+
+function resolveCountryName(countryId: string): string {
+  // Try to find the country name from REAL_COUNTRY_DATA by matching the id pattern
+  for (const name of Object.keys(REAL_COUNTRY_DATA)) {
+    const idFromName = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    if (idFromName === countryId || name.toLowerCase() === countryId.toLowerCase()) {
+      return name;
+    }
+  }
+  // Fallback: capitalize the id
+  return countryId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
+type Difficulty = 'easy' | 'medium' | 'hard';
 
 /**
- * Simple and reliable question fetcher with duplicate prevention
+ * Simple and reliable question fetcher with duplicate prevention.
+ * Falls back to client-side generation if DB has no questions.
  */
 export const getCleanQuizQuestions = async (
   countryId: string,
   difficulty: string,
-  count: number = 10
+  count: number = 10,
+  countryName?: string
 ): Promise<Question[]> => {
   console.log(`🔍 [CleanFetcher] Fetching ${count} ${difficulty} questions for ${countryId}`);
 
   try {
-    // Fetch more questions than needed to allow for filtering out used ones
     const fetchCount = Math.max(count * 3, 30);
 
     let allQuestions = await QuestionService.getFilteredQuestions({
@@ -25,50 +42,66 @@ export const getCleanQuizQuestions = async (
       validateContent: false
     });
 
-    console.log(`📋 [CleanFetcher] Found ${allQuestions.length} ${difficulty} questions`);
+    console.log(`📋 [CleanFetcher] Found ${allQuestions.length} ${difficulty} questions from DB`);
 
-    // Fallback: if requested difficulty is empty, use any available difficulty for this country
+    // Fallback: if requested difficulty is empty, use any available difficulty
     if (allQuestions.length === 0 && difficulty) {
-      console.warn(`⚠️ [CleanFetcher] No ${difficulty} questions for ${countryId}, falling back to any difficulty`);
       allQuestions = await QuestionService.getFilteredQuestions({
         countryId,
         limit: fetchCount,
         validateContent: false
       });
-      console.log(`📋 [CleanFetcher] Fallback found ${allQuestions.length} questions across all difficulties`);
     }
 
+    // If DB has no questions, generate client-side from real data
     if (allQuestions.length === 0) {
+      console.log(`🔄 [CleanFetcher] No DB questions, generating client-side for ${countryId}`);
+      const resolvedName = countryName || resolveCountryName(countryId);
+      
+      const difficultiesToTry: Difficulty[] = difficulty 
+        ? [difficulty as Difficulty, 'easy', 'medium', 'hard'] 
+        : ['easy', 'medium', 'hard'];
+      
+      for (const diff of difficultiesToTry) {
+        const generated = generateRealQuestions(
+          { id: countryId, name: resolvedName, continent: '' },
+          diff,
+          count
+        );
+        if (generated.length > 0) {
+          console.log(`✅ [CleanFetcher] Generated ${generated.length} ${diff} questions client-side`);
+          return generated;
+        }
+      }
       return [];
     }
 
     // Filter out previously used questions
     let unusedQuestions = getUnusedQuestions(allQuestions);
-
-    // Deduplicate unused questions by text
     unusedQuestions = deduplicateQuestions(unusedQuestions);
-    console.log(`🔄 [CleanFetcher] ${unusedQuestions.length} deduped & unused questions available`);
 
     let questionsToReturn: Question[];
     if (unusedQuestions.length >= count) {
       questionsToReturn = unusedQuestions.slice(0, count);
     } else {
-      // Not enough unused unique questions, fall back to all deduped questions
       const allDeduped = deduplicateQuestions(allQuestions);
       questionsToReturn = allDeduped.slice(0, count);
     }
 
-    // Mark these questions as used
     markQuestionsAsUsed(questionsToReturn.map(q => q.id));
-
-    console.log(
-      `✅ [CleanFetcher] Returning ${questionsToReturn.length} unique questions (${questionsToReturn.length} newly used)`
-    );
     return questionsToReturn;
 
   } catch (error) {
     console.error('❌ [CleanFetcher] Error fetching questions:', error);
-    return [];
+    
+    // Last resort: generate client-side
+    console.log(`🔄 [CleanFetcher] Falling back to client-side generation after error`);
+    const resolvedName = countryName || resolveCountryName(countryId);
+    return generateRealQuestions(
+      { id: countryId, name: resolvedName, continent: '' },
+      (difficulty as Difficulty) || 'medium',
+      count
+    );
   }
 };
 

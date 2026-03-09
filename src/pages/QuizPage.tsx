@@ -42,7 +42,7 @@ export default function QuizPage() {
         console.log(`[QuizPage] Loading ${count} questions for ${country.name} (${country.difficulty})`);
         
         // Get questions with duplicate prevention
-        let questions = await getCleanQuizQuestions(country.id, country.difficulty, count);
+        let questions = await getCleanQuizQuestions(country.id, country.difficulty, count, country.name);
         console.log(`[QuizPage] Found ${questions.length} questions after duplicate filtering`);
 
         // If no questions or wrong questions, generate factual ones
