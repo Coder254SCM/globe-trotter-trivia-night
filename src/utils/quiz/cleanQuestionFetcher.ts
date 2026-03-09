@@ -4,6 +4,21 @@ import { QuestionService } from "../../services/supabase/questionService";
 import { markQuestionsAsUsed, getUnusedQuestions } from "./questionCache";
 import { deduplicateQuestions } from "./questionDeduplication";
 import { generateRealQuestions } from "../../services/simple/realQuestionGenerator";
+import { REAL_COUNTRY_DATA } from "../../data/realCountryData";
+
+function resolveCountryName(countryId: string): string {
+  // Try to find the country name from REAL_COUNTRY_DATA by matching the id pattern
+  for (const name of Object.keys(REAL_COUNTRY_DATA)) {
+    const idFromName = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    if (idFromName === countryId || name.toLowerCase() === countryId.toLowerCase()) {
+      return name;
+    }
+  }
+  // Fallback: capitalize the id
+  return countryId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
+type Difficulty = 'easy' | 'medium' | 'hard';
 
 /**
  * Simple and reliable question fetcher with duplicate prevention.
