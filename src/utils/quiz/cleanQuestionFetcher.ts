@@ -27,7 +27,8 @@ type Difficulty = 'easy' | 'medium' | 'hard';
 export const getCleanQuizQuestions = async (
   countryId: string,
   difficulty: string,
-  count: number = 10
+  count: number = 10,
+  countryName?: string
 ): Promise<Question[]> => {
   console.log(`🔍 [CleanFetcher] Fetching ${count} ${difficulty} questions for ${countryId}`);
 
