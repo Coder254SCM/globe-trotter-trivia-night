@@ -56,7 +56,7 @@ export const getCleanQuizQuestions = async (
     // If DB has no questions, generate client-side from real data
     if (allQuestions.length === 0) {
       console.log(`🔄 [CleanFetcher] No DB questions, generating client-side for ${countryId}`);
-      const countryName = resolveCountryName(countryId);
+      const resolvedName = countryName || resolveCountryName(countryId);
       
       const difficultiesToTry: Difficulty[] = difficulty 
         ? [difficulty as Difficulty, 'easy', 'medium', 'hard'] 
