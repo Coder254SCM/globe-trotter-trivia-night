@@ -64,7 +64,7 @@ export const getCleanQuizQuestions = async (
       
       for (const diff of difficultiesToTry) {
         const generated = generateRealQuestions(
-          { id: countryId, name: countryName, continent: '' },
+          { id: countryId, name: resolvedName, continent: '' },
           diff,
           count
         );
