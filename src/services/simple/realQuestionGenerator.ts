@@ -372,6 +372,32 @@ export function generateRealQuestions(
   return questions;
 }
 
+export function getQuestionCounts(countryName: string): { easy: number; medium: number; hard: number; total: number } {
+  const data = REAL_COUNTRY_DATA[countryName];
+  if (!data) return { easy: 0, medium: 0, hard: 0, total: 0 };
+
+  const mockCountry: CountryInput = {
+    id: countryName.toLowerCase().replace(/\s+/g, '-'),
+    name: countryName,
+    continent: '',
+  };
+
+  const countValid = (templates: QuestionTemplate[]) =>
+    templates.reduce((n, t) => {
+      try {
+        const r = t(mockCountry, data);
+        return r ? n + 1 : n;
+      } catch {
+        return n;
+      }
+    }, 0);
+
+  const easy = countValid(EASY_TEMPLATES);
+  const medium = countValid(MEDIUM_TEMPLATES);
+  const hard = countValid(HARD_TEMPLATES);
+  return { easy, medium, hard, total: easy + medium + hard };
+}
+
 export async function generateAndSaveRealQuestions(
   country: CountryInput,
   difficulty: 'easy' | 'medium' | 'hard',
