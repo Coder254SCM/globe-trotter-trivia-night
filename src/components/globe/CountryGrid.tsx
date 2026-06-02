@@ -76,7 +76,9 @@ export const CountryGrid = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {sortedCountries.map((country) => (
+        {sortedCountries.map((country) => {
+          const counts = getQuestionCounts(country.name);
+          return (
           <Card
             key={country.id}
             className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 border-2 ${
