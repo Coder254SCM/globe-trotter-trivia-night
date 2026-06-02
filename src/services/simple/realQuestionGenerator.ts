@@ -357,16 +357,37 @@ export function generateRealQuestions(
     return [];
   }
 
-  const templates = difficulty === 'easy' ? EASY_TEMPLATES
-    : difficulty === 'hard' ? HARD_TEMPLATES
-    : MEDIUM_TEMPLATES;
+  const buildUniqueFromTemplates = (
+    templates: QuestionTemplate[],
+    diff: 'easy' | 'medium' | 'hard',
+    seenTexts: Set<string>,
+    out: Question[]
+  ) => {
+    for (let i = 0; i < templates.length && out.length < targetCount; i++) {
+      const q = buildQuestion(country, data, templates[i], diff, out.length);
+      if (!q) continue;
+      const key = q.text.trim().toLowerCase();
+      if (seenTexts.has(key)) continue;
+      seenTexts.add(key);
+      out.push(q);
+    }
+  };
 
   const questions: Question[] = [];
-  
-  for (let i = 0; i < targetCount * 2 && questions.length < targetCount; i++) {
-    const template = templates[i % templates.length];
-    const q = buildQuestion(country, data, template, difficulty, i);
-    if (q) questions.push(q);
+  const seen = new Set<string>();
+
+  // Priority: requested difficulty, then top up from the others so the user
+  // always gets `targetCount` distinct questions (no repeats within a quiz).
+  const order: Array<'easy' | 'medium' | 'hard'> = difficulty === 'easy'
+    ? ['easy', 'medium', 'hard']
+    : difficulty === 'hard'
+      ? ['hard', 'medium', 'easy']
+      : ['medium', 'easy', 'hard'];
+
+  for (const d of order) {
+    if (questions.length >= targetCount) break;
+    const templates = d === 'easy' ? EASY_TEMPLATES : d === 'hard' ? HARD_TEMPLATES : MEDIUM_TEMPLATES;
+    buildUniqueFromTemplates(templates, d, seen, questions);
   }
 
   return questions;
