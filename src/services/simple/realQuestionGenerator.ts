@@ -379,7 +379,7 @@ export function getQuestionCounts(countryName: string): { easy: number; medium: 
   const mockCountry: CountryInput = {
     id: countryName.toLowerCase().replace(/\s+/g, '-'),
     name: countryName,
-    continent: data.continent || '',
+    continent: '',
   };
 
   const countValid = (templates: QuestionTemplate[]) =>
