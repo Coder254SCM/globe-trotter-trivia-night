@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Users, Globe, Trophy } from 'lucide-react';
 import { useAlphabeticalCountries } from '@/hooks/useAlphabeticalCountries';
+import { getQuestionCounts } from '@/services/simple/realQuestionGenerator';
 
 interface CountryGridProps {
   countries: Country[];
