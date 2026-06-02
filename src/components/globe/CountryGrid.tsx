@@ -115,12 +115,24 @@ export const CountryGrid = ({
             <CardContent className="pt-0">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Badge className={getDifficultyColor(country.difficulty)}>
-                    {country.difficulty}
-                  </Badge>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Trophy className="w-3 h-3" />
-                    50+ questions
+                    {counts.total} questions
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-1.5">
+                  <div className="flex flex-col items-center py-1.5 rounded border bg-green-50 border-green-200">
+                    <span className="text-[10px] font-medium text-green-700 uppercase">Easy</span>
+                    <span className="text-sm font-bold text-green-800">{counts.easy}</span>
+                  </div>
+                  <div className="flex flex-col items-center py-1.5 rounded border bg-yellow-50 border-yellow-200">
+                    <span className="text-[10px] font-medium text-yellow-700 uppercase">Medium</span>
+                    <span className="text-sm font-bold text-yellow-800">{counts.medium}</span>
+                  </div>
+                  <div className="flex flex-col items-center py-1.5 rounded border bg-red-50 border-red-200">
+                    <span className="text-[10px] font-medium text-red-700 uppercase">Hard</span>
+                    <span className="text-sm font-bold text-red-800">{counts.hard}</span>
                   </div>
                 </div>
 
@@ -150,7 +162,8 @@ export const CountryGrid = ({
               </div>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       {sortedCountries.length === 0 && (
