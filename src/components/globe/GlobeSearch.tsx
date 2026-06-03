@@ -51,11 +51,13 @@ export const GlobeSearch: React.FC<GlobeSearchProps> = ({
     <>
       <Button 
         variant="outline"
-        className="fixed right-4 top-4 flex items-center gap-2 bg-background/90 backdrop-blur-sm z-20 shadow-lg"
+        size="sm"
+        className="fixed right-3 bottom-20 sm:right-4 sm:top-4 sm:bottom-auto flex items-center gap-2 bg-background/95 backdrop-blur-sm z-20 shadow-lg rounded-full sm:rounded-md h-11 w-11 sm:h-9 sm:w-auto p-0 sm:px-3"
         onClick={() => setOpen(true)}
+        aria-label="Search countries"
       >
         <Search className="h-4 w-4" />
-        <span>Search Countries</span>
+        <span className="hidden sm:inline">Search Countries</span>
         <kbd className="hidden md:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-xs font-medium opacity-100">
           <span className="text-xs">⌘</span>K
         </kbd>
