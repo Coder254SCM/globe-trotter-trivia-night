@@ -48,34 +48,34 @@ export const CountryGrid = ({
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="mb-6 text-center">
-        <h2 className="text-3xl font-bold text-foreground mb-2">
+    <div className="container mx-auto px-3 sm:px-6 py-4 sm:py-6">
+      <div className="mb-4 sm:mb-6 text-center">
+        <h2 className="text-xl sm:text-3xl font-bold text-foreground mb-1 sm:mb-2">
           Choose Your Country
         </h2>
-        <p className="text-muted-foreground">
-          Select any country to start your geography quiz adventure
+        <p className="text-xs sm:text-base text-muted-foreground">
+          Tap a country to start your geography quiz
         </p>
-        <p className="text-sm text-muted-foreground mt-1">
-          {sortedCountries.length} countries available (A-Z order)
+        <p className="text-[11px] sm:text-sm text-muted-foreground mt-1">
+          {sortedCountries.length} countries available
         </p>
         {(selectedContinent || selectedCategory) && (
-          <div className="flex justify-center gap-2 mt-4">
+          <div className="flex flex-wrap justify-center gap-2 mt-3">
             {selectedContinent && (
               <Badge variant="secondary">
-                Continent: {selectedContinent}
+                {selectedContinent}
               </Badge>
             )}
             {selectedCategory && (
               <Badge variant="secondary">
-                Category: {selectedCategory}
+                {selectedCategory}
               </Badge>
             )}
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
         {sortedCountries.map((country) => {
           const counts = getQuestionCounts(country.name);
           return (
@@ -90,15 +90,15 @@ export const CountryGrid = ({
             onMouseLeave={() => setHoveredCountry(null)}
             onClick={() => onCountrySelect(country)}
           >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{getCountryIcon(country.continent)}</span>
-                  <div>
-                    <CardTitle className="text-lg font-bold">{country.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />
-                      {country.continent}
+            <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-6">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                  <span className="text-lg sm:text-2xl flex-shrink-0">{getCountryIcon(country.continent)}</span>
+                  <div className="min-w-0">
+                    <CardTitle className="text-sm sm:text-lg font-bold truncate">{country.name}</CardTitle>
+                    <p className="text-[10px] sm:text-sm text-muted-foreground flex items-center gap-1 truncate">
+                      <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                      <span className="truncate">{country.continent}</span>
                     </p>
                   </div>
                 </div>
@@ -106,37 +106,35 @@ export const CountryGrid = ({
                   <img 
                     src={country.flagImageUrl} 
                     alt={`${country.name} flag`}
-                    className="w-8 h-6 object-cover rounded shadow-sm"
+                    className="w-7 h-5 sm:w-8 sm:h-6 object-cover rounded shadow-sm flex-shrink-0"
                   />
                 )}
               </div>
             </CardHeader>
 
-            <CardContent className="pt-0">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Trophy className="w-3 h-3" />
-                    {counts.total} questions
+            <CardContent className="pt-0 p-3 sm:p-6 sm:pt-0">
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex items-center gap-1 text-[11px] sm:text-sm text-muted-foreground">
+                  <Trophy className="w-3 h-3" />
+                  {counts.total} questions
+                </div>
+
+                <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
+                  <div className="flex flex-col items-center py-1 sm:py-1.5 rounded border bg-green-50 border-green-200">
+                    <span className="text-[9px] sm:text-[10px] font-medium text-green-700 uppercase">Easy</span>
+                    <span className="text-xs sm:text-sm font-bold text-green-800">{counts.easy}</span>
+                  </div>
+                  <div className="flex flex-col items-center py-1 sm:py-1.5 rounded border bg-yellow-50 border-yellow-200">
+                    <span className="text-[9px] sm:text-[10px] font-medium text-yellow-700 uppercase">Med</span>
+                    <span className="text-xs sm:text-sm font-bold text-yellow-800">{counts.medium}</span>
+                  </div>
+                  <div className="flex flex-col items-center py-1 sm:py-1.5 rounded border bg-red-50 border-red-200">
+                    <span className="text-[9px] sm:text-[10px] font-medium text-red-700 uppercase">Hard</span>
+                    <span className="text-xs sm:text-sm font-bold text-red-800">{counts.hard}</span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-1.5">
-                  <div className="flex flex-col items-center py-1.5 rounded border bg-green-50 border-green-200">
-                    <span className="text-[10px] font-medium text-green-700 uppercase">Easy</span>
-                    <span className="text-sm font-bold text-green-800">{counts.easy}</span>
-                  </div>
-                  <div className="flex flex-col items-center py-1.5 rounded border bg-yellow-50 border-yellow-200">
-                    <span className="text-[10px] font-medium text-yellow-700 uppercase">Medium</span>
-                    <span className="text-sm font-bold text-yellow-800">{counts.medium}</span>
-                  </div>
-                  <div className="flex flex-col items-center py-1.5 rounded border bg-red-50 border-red-200">
-                    <span className="text-[10px] font-medium text-red-700 uppercase">Hard</span>
-                    <span className="text-sm font-bold text-red-800">{counts.hard}</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-1">
+                <div className="hidden sm:flex flex-wrap gap-1">
                   {country.categories.slice(0, 3).map((category) => (
                     <Badge key={category} variant="outline" className="text-xs">
                       {category}
@@ -150,7 +148,8 @@ export const CountryGrid = ({
                 </div>
 
                 <Button 
-                  className="w-full mt-2" 
+                  size="sm"
+                  className="w-full mt-1 sm:mt-2 text-xs sm:text-sm h-8 sm:h-10" 
                   variant={hoveredCountry === country.id ? "default" : "outline"}
                   onClick={(e) => {
                     e.stopPropagation();

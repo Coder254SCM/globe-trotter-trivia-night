@@ -27,17 +27,18 @@ export const AppHeader = ({ countriesCount, isGeneratingQuestions }: AppHeaderPr
 
   return (
     <header className="bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg border-b border-primary/20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
           {/* Logo and Brand */}
-          <div className="flex items-center space-x-3">
-            <div className="relative">
-              <img src={appIcon} alt="Global Quiz app icon" width={40} height={40} className="h-10 w-10 rounded-lg shadow-md" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-white">Global Quiz Game</h1>
-              <p className="text-xs text-primary-foreground/80">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+            <img src={appIcon} alt="Global Quiz app icon" width={40} height={40} className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg shadow-md flex-shrink-0" />
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-xl font-bold text-white truncate">Global Quiz</h1>
+              <p className="hidden sm:block text-xs text-primary-foreground/80 truncate">
                 Master Geography • Explore {countriesCount} Countries
+              </p>
+              <p className="sm:hidden text-[10px] text-primary-foreground/80 truncate">
+                {countriesCount} countries
               </p>
             </div>
           </div>
