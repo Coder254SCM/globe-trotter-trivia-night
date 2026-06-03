@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { Link, useLocation } from 'react-router-dom';
+import appIcon from '@/assets/app-icon.png';
 
 interface AppHeaderProps {
   countriesCount: number;
@@ -31,8 +32,7 @@ export const AppHeader = ({ countriesCount, isGeneratingQuestions }: AppHeaderPr
           {/* Logo and Brand */}
           <div className="flex items-center space-x-3">
             <div className="relative">
-              <Globe className="h-8 w-8 text-white animate-pulse" />
-              <div className="absolute inset-0 bg-white/20 rounded-full animate-ping" />
+              <img src={appIcon} alt="Global Quiz app icon" width={40} height={40} className="h-10 w-10 rounded-lg shadow-md" />
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">Global Quiz Game</h1>
