@@ -30,13 +30,13 @@ export const GlobeFilters = ({
   const hasActiveFilters = selectedContinent !== "all" || selectedCategory !== "all";
 
   return (
-    <Card className="absolute top-20 left-4 p-4 bg-background/90 backdrop-blur-sm border-primary/20 z-10">
+    <Card className="mx-3 sm:absolute sm:top-20 sm:left-4 sm:mx-0 p-3 sm:p-4 bg-background/90 backdrop-blur-sm border-primary/20 z-10">
       <div className="flex items-center gap-2 mb-3">
         <Filter size={18} className="text-primary" />
         <h3 className="font-medium text-sm">Explore Countries</h3>
       </div>
       
-      <div className="space-y-3 min-w-[200px]">
+      <div className="grid grid-cols-2 sm:block sm:space-y-3 gap-2 sm:gap-0 sm:min-w-[200px]">
         <div>
           <label className="text-xs text-muted-foreground mb-1 block">Continent</label>
           <Select value={selectedContinent} onValueChange={onContinentChange}>
@@ -71,7 +71,7 @@ export const GlobeFilters = ({
           </Select>
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t">
+        <div className="col-span-2 flex items-center justify-between pt-2 border-t">
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Globe size={12} />
             <span>Showing {filteredCountriesCount} of {totalCountriesCount}</span>
