@@ -16,8 +16,8 @@ export const GlobeHeader = ({
   showLabels 
 }: GlobeHeaderProps) => {
   return (
-    <div className="absolute top-4 left-4 right-4 z-10">
-      <div className="flex items-center justify-between">
+    <div className="hidden sm:block absolute top-4 left-4 right-4 z-10">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-background/90 backdrop-blur-sm px-3 py-2 rounded-lg border border-primary/20">
             <Globe className="text-primary" size={24} />
