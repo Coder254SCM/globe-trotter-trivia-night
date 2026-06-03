@@ -111,7 +111,7 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
         showLabels={false}
       />
       
-      <div className="pt-20">
+      <div className="pt-2 sm:pt-4">
         <GlobeSearch 
           onCountrySelect={setSelectedCountry}
           onCountryFocus={handleCountryFocus}
