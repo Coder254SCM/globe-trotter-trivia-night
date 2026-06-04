@@ -50,18 +50,18 @@ export const GlobeSearch: React.FC<GlobeSearchProps> = ({
   return (
     <>
       <Button 
-        variant="outline"
-        size="sm"
-        className="fixed right-3 bottom-20 sm:right-4 sm:top-4 sm:bottom-auto flex items-center gap-2 bg-background/95 backdrop-blur-sm z-20 shadow-lg rounded-full sm:rounded-md h-11 w-11 sm:h-9 sm:w-auto p-0 sm:px-3"
+        variant="default"
+        className="fixed right-4 bottom-20 sm:right-4 sm:top-4 sm:bottom-auto flex items-center gap-2 z-20 shadow-xl rounded-full sm:rounded-md h-14 w-14 sm:h-10 sm:w-auto p-0 sm:px-4"
         onClick={() => setOpen(true)}
         aria-label="Search countries"
       >
-        <Search className="h-4 w-4" />
+        <Search className="h-5 w-5 sm:h-4 sm:w-4" />
         <span className="hidden sm:inline">Search Countries</span>
-        <kbd className="hidden md:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-xs font-medium opacity-100">
+        <kbd className="hidden md:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-xs font-medium text-muted-foreground opacity-100">
           <span className="text-xs">⌘</span>K
         </kbd>
       </Button>
+
 
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput 
