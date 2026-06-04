@@ -75,7 +75,7 @@ export const CountryGrid = ({
         )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         {sortedCountries.map((country) => {
           const counts = getQuestionCounts(country.name);
           return (
@@ -90,14 +90,14 @@ export const CountryGrid = ({
             onMouseLeave={() => setHoveredCountry(null)}
             onClick={() => onCountrySelect(country)}
           >
-            <CardHeader className="pb-2 sm:pb-3 p-3 sm:p-6">
+            <CardHeader className="pb-3 p-4 sm:p-6">
               <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                  <span className="text-lg sm:text-2xl flex-shrink-0">{getCountryIcon(country.continent)}</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-2xl flex-shrink-0">{getCountryIcon(country.continent)}</span>
                   <div className="min-w-0">
-                    <CardTitle className="text-sm sm:text-lg font-bold truncate">{country.name}</CardTitle>
-                    <p className="text-[10px] sm:text-sm text-muted-foreground flex items-center gap-1 truncate">
-                      <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" />
+                    <CardTitle className="text-base sm:text-lg font-bold truncate">{country.name}</CardTitle>
+                    <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1 truncate">
+                      <MapPin className="w-3 h-3 flex-shrink-0" />
                       <span className="truncate">{country.continent}</span>
                     </p>
                   </div>
@@ -106,31 +106,31 @@ export const CountryGrid = ({
                   <img 
                     src={country.flagImageUrl} 
                     alt={`${country.name} flag`}
-                    className="w-7 h-5 sm:w-8 sm:h-6 object-cover rounded shadow-sm flex-shrink-0"
+                    className="w-9 h-6 sm:w-8 sm:h-6 object-cover rounded shadow-sm flex-shrink-0"
                   />
                 )}
               </div>
             </CardHeader>
 
-            <CardContent className="pt-0 p-3 sm:p-6 sm:pt-0">
-              <div className="space-y-2 sm:space-y-3">
-                <div className="flex items-center gap-1 text-[11px] sm:text-sm text-muted-foreground">
+            <CardContent className="pt-0 p-4 sm:p-6 sm:pt-0">
+              <div className="space-y-3">
+                <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
                   <Trophy className="w-3 h-3" />
                   {counts.total} questions
                 </div>
 
-                <div className="grid grid-cols-3 gap-1 sm:gap-1.5">
-                  <div className="flex flex-col items-center py-1 sm:py-1.5 rounded border bg-green-50 border-green-200">
-                    <span className="text-[9px] sm:text-[10px] font-medium text-green-700 uppercase">Easy</span>
-                    <span className="text-xs sm:text-sm font-bold text-green-800">{counts.easy}</span>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="flex flex-col items-center py-2 rounded-md border bg-green-50 border-green-200 min-h-[44px] justify-center">
+                    <span className="text-[10px] sm:text-[11px] font-medium text-green-700 uppercase">Easy</span>
+                    <span className="text-sm font-bold text-green-800">{counts.easy}</span>
                   </div>
-                  <div className="flex flex-col items-center py-1 sm:py-1.5 rounded border bg-yellow-50 border-yellow-200">
-                    <span className="text-[9px] sm:text-[10px] font-medium text-yellow-700 uppercase">Med</span>
-                    <span className="text-xs sm:text-sm font-bold text-yellow-800">{counts.medium}</span>
+                  <div className="flex flex-col items-center py-2 rounded-md border bg-yellow-50 border-yellow-200 min-h-[44px] justify-center">
+                    <span className="text-[10px] sm:text-[11px] font-medium text-yellow-700 uppercase">Med</span>
+                    <span className="text-sm font-bold text-yellow-800">{counts.medium}</span>
                   </div>
-                  <div className="flex flex-col items-center py-1 sm:py-1.5 rounded border bg-red-50 border-red-200">
-                    <span className="text-[9px] sm:text-[10px] font-medium text-red-700 uppercase">Hard</span>
-                    <span className="text-xs sm:text-sm font-bold text-red-800">{counts.hard}</span>
+                  <div className="flex flex-col items-center py-2 rounded-md border bg-red-50 border-red-200 min-h-[44px] justify-center">
+                    <span className="text-[10px] sm:text-[11px] font-medium text-red-700 uppercase">Hard</span>
+                    <span className="text-sm font-bold text-red-800">{counts.hard}</span>
                   </div>
                 </div>
 
@@ -148,8 +148,7 @@ export const CountryGrid = ({
                 </div>
 
                 <Button 
-                  size="sm"
-                  className="w-full mt-1 sm:mt-2 text-xs sm:text-sm h-8 sm:h-10" 
+                  className="w-full mt-2 text-sm h-11 sm:h-10" 
                   variant={hoveredCountry === country.id ? "default" : "outline"}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -160,6 +159,7 @@ export const CountryGrid = ({
                 </Button>
               </div>
             </CardContent>
+
           </Card>
           );
         })}
