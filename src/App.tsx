@@ -41,6 +41,9 @@ function App() {
           <Route path="/quiz-results" element={<QuizResults />} />
           <Route path="/weekly-challenges" element={<WeeklyChallenges />} />
           <Route path="/ultimate-quiz" element={<UltimateQuiz />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/account" element={<Account />} />
           
           {/* Admin Protected Routes */}
           <Route path="/admin" element={<AdminGuard><Admin /></AdminGuard>} />
