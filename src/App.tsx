@@ -16,9 +16,13 @@ import EasyQuestions from "./pages/EasyQuestions";
 import MediumQuestions from "./pages/MediumQuestions";
 import ManualHardQuestions from "./pages/ManualHardQuestions";
 import ComprehensiveAudit from "./pages/ComprehensiveAudit";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Account from "./pages/Account";
 import { AutoInitializer } from "./components/initialization/AutoInitializer";
 import { useAuth } from "./hooks/useAuth";
 import { AdminGuard, ModeratorGuard } from "./components/auth/AuthGuard";
+import { SiteFooter } from "./components/layout/SiteFooter";
 
 function App() {
   const { user } = useAuth();
