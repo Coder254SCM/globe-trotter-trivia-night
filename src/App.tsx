@@ -16,9 +16,13 @@ import EasyQuestions from "./pages/EasyQuestions";
 import MediumQuestions from "./pages/MediumQuestions";
 import ManualHardQuestions from "./pages/ManualHardQuestions";
 import ComprehensiveAudit from "./pages/ComprehensiveAudit";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Account from "./pages/Account";
 import { AutoInitializer } from "./components/initialization/AutoInitializer";
 import { useAuth } from "./hooks/useAuth";
 import { AdminGuard, ModeratorGuard } from "./components/auth/AuthGuard";
+import { SiteFooter } from "./components/layout/SiteFooter";
 
 function App() {
   const { user } = useAuth();
@@ -37,6 +41,9 @@ function App() {
           <Route path="/quiz-results" element={<QuizResults />} />
           <Route path="/weekly-challenges" element={<WeeklyChallenges />} />
           <Route path="/ultimate-quiz" element={<UltimateQuiz />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/account" element={<Account />} />
           
           {/* Admin Protected Routes */}
           <Route path="/admin" element={<AdminGuard><Admin /></AdminGuard>} />
@@ -51,6 +58,7 @@ function App() {
           {/* Moderator Protected Routes */}
           <Route path="/admin/moderation" element={<ModeratorGuard><Moderation /></ModeratorGuard>} />
         </Routes>
+        <SiteFooter />
         <Toaster />
       </div>
     </Router>

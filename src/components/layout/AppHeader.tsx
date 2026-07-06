@@ -73,12 +73,12 @@ export const AppHeader = ({ countriesCount, isGeneratingQuestions }: AppHeaderPr
             )}
             
             {user ? (
-              <div className="flex items-center space-x-2">
+              <Link to="/account" className="flex items-center space-x-2 hover:opacity-80">
                 <Users className="h-4 w-4 text-primary-foreground/80" />
                 <span className="text-sm font-medium text-white truncate max-w-32">
                   {user.email?.split('@')[0]}
                 </span>
-              </div>
+              </Link>
             ) : (
               <Link to="/auth">
                 <Button variant="secondary" size="sm" className="bg-white/20 text-white hover:bg-white/30">
