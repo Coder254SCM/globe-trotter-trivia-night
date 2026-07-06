@@ -58,6 +58,7 @@ function App() {
           {/* Moderator Protected Routes */}
           <Route path="/admin/moderation" element={<ModeratorGuard><Moderation /></ModeratorGuard>} />
         </Routes>
+        <SiteFooter />
         <Toaster />
       </div>
     </Router>
