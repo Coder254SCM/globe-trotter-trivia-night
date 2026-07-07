@@ -187,6 +187,15 @@ export const AuthPage = () => {
               }
             </Button>
           </div>
+
+          {!isLogin && (
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              By creating an account you agree to our{" "}
+              <a href="/terms" className="underline hover:text-foreground">Terms</a>{" "}
+              and{" "}
+              <a href="/privacy" className="underline hover:text-foreground">Privacy Policy</a>.
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>
