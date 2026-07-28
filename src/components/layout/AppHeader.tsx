@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Globe, Trophy, Users, Zap, Menu, X } from 'lucide-react';
+import { Globe, Trophy, Users, Zap, Menu, X, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,6 +19,7 @@ export const AppHeader = ({ countriesCount, isGeneratingQuestions }: AppHeaderPr
 
   const navigationItems = [
     { path: '/', label: 'Globe', icon: Globe },
+    { path: '/picture-quiz', label: 'Do You Know These?', icon: ImageIcon },
     { path: '/weekly-challenges', label: 'Challenges', icon: Trophy },
     { path: '/ultimate-quiz', label: 'Ultimate Quiz', icon: Zap },
   ];
