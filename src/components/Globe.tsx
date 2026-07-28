@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Country, DifficultyLevel } from "../types/quiz";
 import { CountryCard } from "./globe/CountryCard";
-import { GlobeHeader } from "./globe/GlobeHeader";
 import { GlobeFilters } from "./globe/GlobeFilters";
 import { GlobeSearch } from "./globe/GlobeSearch";
 import { CountryGrid } from "./globe/CountryGrid";
@@ -105,12 +104,6 @@ const Globe = ({ onCountrySelect, onStartWeeklyChallenge }: GlobeProps) => {
 
   return (
     <div className={`min-h-screen bg-gradient-to-br from-background via-background to-muted/20 ${isMobile ? 'touch-none' : ''}`}>
-      <GlobeHeader 
-        onToggleLabels={() => {}} // Not needed for card view
-        onStartWeeklyChallenge={handleWeeklyChallengeClick}
-        showLabels={false}
-      />
-      
       <div className="pt-2 sm:pt-4">
         <GlobeSearch 
           onCountrySelect={setSelectedCountry}
