@@ -19,6 +19,7 @@ import ComprehensiveAudit from "./pages/ComprehensiveAudit";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Account from "./pages/Account";
+import PictureQuiz from "./pages/PictureQuiz";
 import { AutoInitializer } from "./components/initialization/AutoInitializer";
 import { useAuth } from "./hooks/useAuth";
 import { AdminGuard, ModeratorGuard } from "./components/auth/AuthGuard";
@@ -44,6 +45,7 @@ function App() {
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/account" element={<Account />} />
+          <Route path="/picture-quiz" element={<PictureQuiz />} />
           
           {/* Admin Protected Routes */}
           <Route path="/admin" element={<AdminGuard><Admin /></AdminGuard>} />
