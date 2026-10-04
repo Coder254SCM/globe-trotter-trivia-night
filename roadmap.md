@@ -9,6 +9,8 @@
 - [x] Verified in browser: all images load, answer reveal + scoring work
 
 ## Backlog
+- [ ] Add Currencies & Banknotes, Sports Team Logos, and Movie Posters picture packs
+- [ ] Play-test all three new packs and random country quizzes
 - Expand each picture pack toward 25+ items
 - Add score persistence for signed-in players on picture quizzes
 
