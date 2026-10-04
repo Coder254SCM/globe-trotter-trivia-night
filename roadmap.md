@@ -1,11 +1,12 @@
 # Roadmap
 
-## In progress
+## Done
 - [x] "Do You Know These?" picture quiz hub (Car Logos, Company Logos, Flags, Landmarks)
 - [x] Replace dead Clearbit logo source with verified Wikimedia Commons image links
-- [ ] Apply the user-supplied Play Store app icon across the app (header, favicon, manifest)
-- [ ] Review picture-quiz screens against Apple-style design principles
-  (reference: https://www.ui-skills.com/skills/emilkowalski/apple-design)
+- [x] Swap wordmark logos for symbol-only artwork so answers aren't given away
+- [x] Apply the user-supplied Play Store app icon (header, favicon, manifest)
+- [x] Restyle picture quiz with Apple-style restraint (light logo tiles, quiet hierarchy, generous spacing)
+- [x] Verified in browser: all images load, answer reveal + scoring work
 
 ## Backlog
 - Expand each picture pack toward 25+ items
