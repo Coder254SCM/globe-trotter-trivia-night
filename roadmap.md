@@ -10,3 +10,8 @@
 ## Backlog
 - Expand each picture pack toward 25+ items
 - Add score persistence for signed-in players on picture quizzes
+
+## Answered (no action)
+- Playable on YouTube/TikTok/Facebook? No — those platforms don't host playable web games
+  (YouTube Playables is invite-only; TikTok/Facebook games were discontinued).
+  Web + Capacitor mobile app remains the distribution path.
