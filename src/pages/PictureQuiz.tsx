@@ -7,14 +7,14 @@ import { ArrowLeft, Check, X, Trophy, ChevronRight } from 'lucide-react';
 
 const shuffle = <T,>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
 
-const ROUNDS_PER_GAME = 10;
+export const ROUNDS_PER_GAME = 10;
 
 interface Round {
   item: PictureItem;
   options: string[];
 }
 
-const buildRounds = (pack: PicturePack): Round[] =>
+export const buildRounds = (pack: PicturePack): Round[] =>
   shuffle(pack.items)
     .slice(0, ROUNDS_PER_GAME)
     .map((item) => ({
@@ -173,7 +173,7 @@ const PictureQuiz = () => {
 
         <div key={current.item.id} className="animate-fade-in">
           <h2 className="mb-6 text-center text-xl font-semibold tracking-tight sm:text-2xl">
-            Which one is this?
+            {pack.questionPrompt}
           </h2>
 
           <div
