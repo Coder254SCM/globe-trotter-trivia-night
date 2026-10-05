@@ -3,7 +3,14 @@
 //  - Logos & landmarks: Wikimedia Commons Special:FilePath (stable redirect)
 //  - Flags: flagcdn.com
 
-export type PicturePackId = 'car-logos' | 'company-logos' | 'flags' | 'landmarks';
+export type PicturePackId =
+  | 'car-logos'
+  | 'company-logos'
+  | 'flags'
+  | 'landmarks'
+  | 'currencies'
+  | 'sports-logos'
+  | 'movie-posters';
 
 export interface PictureItem {
   id: string;
@@ -17,6 +24,7 @@ export interface PicturePack {
   title: string;
   emoji: string;
   description: string;
+  questionPrompt: string;
   /** Logos are mostly flat/dark artwork and need a light tile behind them. */
   lightTile: boolean;
   items: PictureItem[];
@@ -106,11 +114,60 @@ const LANDMARKS: PictureItem[] = [
   { id: 'lm-petra', imageUrl: commons('Petra_Jordan_BW_21.JPG'), answer: 'Petra', distractors: ['Palmyra', 'Baalbek', 'Persepolis'] },
 ];
 
+// Freely licensed banknote photographs from Wikimedia Commons.
+const CURRENCIES: PictureItem[] = [
+  { id: 'money-in', imageUrl: commons('India new 2000 INR, MG series, 2016, obverse.jpg', 700), answer: 'Indian Rupee', distractors: ['Pakistani Rupee', 'Nepalese Rupee', 'Sri Lankan Rupee'] },
+  { id: 'money-jp', imageUrl: commons('10000 yen banknote (Series E), obverse.png', 700), answer: 'Japanese Yen', distractors: ['Chinese Yuan', 'South Korean Won', 'Thai Baht'] },
+  { id: 'money-us', imageUrl: commons('Obverse of the series 2009 $100 Federal Reserve Note.jpg', 700), answer: 'US Dollar', distractors: ['Canadian Dollar', 'Australian Dollar', 'New Zealand Dollar'] },
+  { id: 'money-ch', imageUrl: commons('CHF 1000 9 front.jpg', 700), answer: 'Swiss Franc', distractors: ['Swedish Krona', 'Norwegian Krone', 'Danish Krone'] },
+  { id: 'money-br', imageUrl: commons('100 Brazil real Second Obverse.jpg', 700), answer: 'Brazilian Real', distractors: ['Argentine Peso', 'Mexican Peso', 'Colombian Peso'] },
+  { id: 'money-kr', imageUrl: commons('50000 won banknote.jpg', 700), answer: 'South Korean Won', distractors: ['Japanese Yen', 'Chinese Yuan', 'Vietnamese Dong'] },
+  { id: 'money-ca', imageUrl: commons('Twenty Dollar Bill - Currency from Canada (45287899755).jpg', 700), answer: 'Canadian Dollar', distractors: ['US Dollar', 'Australian Dollar', 'New Zealand Dollar'] },
+  { id: 'money-au', imageUrl: commons('Aud20p.jpg', 700), answer: 'Australian Dollar', distractors: ['Canadian Dollar', 'New Zealand Dollar', 'Singapore Dollar'] },
+  { id: 'money-eu', imageUrl: commons('The Europa series 20 € obverse side.jpg', 700), answer: 'Euro', distractors: ['British Pound', 'Swiss Franc', 'Polish Złoty'] },
+  { id: 'money-ru', imageUrl: commons('100 rubles obverse 2004 and 2022.jpg', 700), answer: 'Russian Ruble', distractors: ['Ukrainian Hryvnia', 'Belarusian Ruble', 'Kazakhstani Tenge'] },
+  { id: 'money-ph', imageUrl: commons('NDS obverse 500 Philippine peso bill.jpg', 700), answer: 'Philippine Peso', distractors: ['Mexican Peso', 'Thai Baht', 'Malaysian Ringgit'] },
+  { id: 'money-id', imageUrl: commons('5000 rupiah bill, 2001 series (2009 date), processed, obverse and reverse.jpg', 700), answer: 'Indonesian Rupiah', distractors: ['Indian Rupee', 'Malaysian Ringgit', 'Vietnamese Dong'] },
+];
+
+// Freely licensed club and franchise marks available on Wikimedia Commons.
+const SPORTS_LOGOS: PictureItem[] = [
+  { id: 'sport-real-madrid', imageUrl: commons('Real de Madrid football 1902-1908 logo.svg'), answer: 'Real Madrid', distractors: ['Barcelona', 'Atlético Madrid', 'Valencia'] },
+  { id: 'sport-bayern', imageUrl: commons('FC Bayern München logo (2024).svg'), answer: 'Bayern Munich', distractors: ['Borussia Dortmund', 'Bayer Leverkusen', 'RB Leipzig'] },
+  { id: 'sport-juventus', imageUrl: commons('Juventus FC - logo black (Italy, 2020).svg'), answer: 'Juventus', distractors: ['AC Milan', 'Inter Milan', 'Napoli'] },
+  { id: 'sport-arsenal', imageUrl: commons('Arsenal Crest Art Deco.svg'), answer: 'Arsenal', distractors: ['Chelsea', 'Liverpool', 'Manchester City'] },
+  { id: 'sport-bulls', imageUrl: commons('Logo of Chicago Bulls.svg'), answer: 'Chicago Bulls', distractors: ['Miami Heat', 'Detroit Pistons', 'Houston Rockets'] },
+  { id: 'sport-yankees', imageUrl: commons('NewYorkYankees caplogo.svg'), answer: 'New York Yankees', distractors: ['New York Mets', 'Boston Red Sox', 'Los Angeles Dodgers'] },
+  { id: 'sport-red-sox', imageUrl: commons('Boston Red Sox cap logo.svg'), answer: 'Boston Red Sox', distractors: ['Chicago Cubs', 'Cincinnati Reds', 'Cleveland Guardians'] },
+  { id: 'sport-packers', imageUrl: commons('Green Bay Packers logo.svg'), answer: 'Green Bay Packers', distractors: ['New York Jets', 'Philadelphia Eagles', 'Seattle Seahawks'] },
+  { id: 'sport-cowboys', imageUrl: commons('Dallas Cowboys.svg'), answer: 'Dallas Cowboys', distractors: ['Houston Texans', 'Denver Broncos', 'Buffalo Bills'] },
+  { id: 'sport-mets', imageUrl: commons('New York Mets Insignia.svg'), answer: 'New York Mets', distractors: ['New York Yankees', 'San Francisco Giants', 'Detroit Tigers'] },
+  { id: 'sport-celtics', imageUrl: commons('Celtics6.png'), answer: 'Boston Celtics', distractors: ['Milwaukee Bucks', 'Philadelphia 76ers', 'Dallas Mavericks'] },
+];
+
+// Public-domain and freely licensed posters for classic films.
+const MOVIE_POSTERS: PictureItem[] = [
+  { id: 'movie-metropolis', imageUrl: commons('Boris Bilinski (1900-1948) Plakat für den Film Metropolis (1).jpg', 600), answer: 'Metropolis', distractors: ['Nosferatu', 'M', 'The Cabinet of Dr. Caligari'] },
+  { id: 'movie-living-dead', imageUrl: commons('Night Of The Living Dead (1968) - Poster.jpg', 600), answer: 'Night of the Living Dead', distractors: ['Dawn of the Dead', 'Carnival of Souls', 'House on Haunted Hill'] },
+  { id: 'movie-general', imageUrl: commons('The General (1926) - Movie Poster 2.png', 600), answer: 'The General', distractors: ['The Navigator', 'Steamboat Bill, Jr.', 'Sherlock Jr.'] },
+  { id: 'movie-sherlock', imageUrl: commons('Sherlock jr poster.jpg', 600), answer: 'Sherlock Jr.', distractors: ['The General', 'The Kid', 'Safety Last!'] },
+  { id: 'movie-his-girl-friday', imageUrl: commons('His Girl Friday (1940 poster).jpg', 600), answer: 'His Girl Friday', distractors: ['Bringing Up Baby', 'The Philadelphia Story', 'Holiday'] },
+  { id: 'movie-the-kid', imageUrl: commons('The Kid (1921) poster.jpg', 600), answer: 'The Kid', distractors: ['City Lights', 'Modern Times', 'The Gold Rush'] },
+  { id: 'movie-gold-rush', imageUrl: commons('Gold rush poster.jpg', 600), answer: 'The Gold Rush', distractors: ['The Kid', 'The Circus', 'City Lights'] },
+  { id: 'movie-moon', imageUrl: commons('Trip-to-moon-1902.jpg', 600), answer: 'A Trip to the Moon', distractors: ['The Impossible Voyage', 'Metropolis', 'The Lost World'] },
+  { id: 'movie-phantom', imageUrl: commons('The Phantom of the Opera (1925).jpg', 600), answer: 'The Phantom of the Opera', distractors: ['Dracula', 'Frankenstein', 'The Hunchback of Notre Dame'] },
+  { id: 'movie-dracula', imageUrl: commons('Dracula (1931 insert poster).jpg', 600), answer: 'Dracula', distractors: ['The Mummy', 'The Wolf Man', 'Frankenstein'] },
+  { id: 'movie-frankenstein', imageUrl: commons('Frankenstein poster 1931.jpg', 600), answer: 'Frankenstein', distractors: ['Dracula', 'The Invisible Man', 'The Mummy'] },
+];
+
 export const PICTURE_PACKS: PicturePack[] = [
-  { id: 'car-logos', title: 'Car Logos', emoji: '🚗', description: 'Guess the car brand from its badge', lightTile: true, items: CARS },
-  { id: 'company-logos', title: 'Company Logos', emoji: '🏢', description: 'Global brands you see every day', lightTile: true, items: COMPANIES },
-  { id: 'flags', title: 'Flags of the World', emoji: '🚩', description: 'Identify the country from its flag', lightTile: false, items: FLAGS },
-  { id: 'landmarks', title: 'Famous Landmarks', emoji: '🗺️', description: 'Iconic places around the globe', lightTile: false, items: LANDMARKS },
+  { id: 'car-logos', title: 'Car Logos', emoji: '🚗', description: 'Guess the car brand from its badge', questionPrompt: 'Which car brand is this?', lightTile: true, items: CARS },
+  { id: 'company-logos', title: 'Company Logos', emoji: '🏢', description: 'Global brands you see every day', questionPrompt: 'Which company is this?', lightTile: true, items: COMPANIES },
+  { id: 'flags', title: 'Flags of the World', emoji: '🚩', description: 'Identify the country from its flag', questionPrompt: 'Which country has this flag?', lightTile: false, items: FLAGS },
+  { id: 'landmarks', title: 'Famous Landmarks', emoji: '🗺️', description: 'Iconic places around the globe', questionPrompt: 'Which landmark is this?', lightTile: false, items: LANDMARKS },
+  { id: 'currencies', title: 'Currencies & Banknotes', emoji: '💵', description: 'Match the banknote to its currency', questionPrompt: 'Which currency is this?', lightTile: true, items: CURRENCIES },
+  { id: 'sports-logos', title: 'Sports Team Logos', emoji: '🏆', description: 'Recognise famous teams from their emblems', questionPrompt: 'Which sports team is this?', lightTile: true, items: SPORTS_LOGOS },
+  { id: 'movie-posters', title: 'Classic Movie Posters', emoji: '🎬', description: 'Name the film from its original poster', questionPrompt: 'Which movie poster is this?', lightTile: false, items: MOVIE_POSTERS },
 ];
 
 export const getPack = (id: PicturePackId) => PICTURE_PACKS.find((p) => p.id === id);

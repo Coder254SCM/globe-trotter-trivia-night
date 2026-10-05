@@ -8,9 +8,11 @@
 - [x] Restyle picture quiz with Apple-style restraint (light logo tiles, quiet hierarchy, generous spacing)
 - [x] Verified in browser: all images load, answer reveal + scoring work
 
-## Backlog
-- [ ] Add Currencies & Banknotes, Sports Team Logos, and Movie Posters picture packs
+## In progress
+- [x] Add Currencies & Banknotes, Sports Team Logos, and Movie Posters picture packs
 - [ ] Play-test all three new packs and random country quizzes
+
+## Backlog
 - Expand each picture pack toward 25+ items
 - Add score persistence for signed-in players on picture quizzes
 
