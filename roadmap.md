@@ -11,6 +11,7 @@
 ## In progress
 - [x] Add Currencies & Banknotes, Sports Team Logos, and Movie Posters picture packs
 - [ ] Play-test all three new packs and random country quizzes
+- [ ] Confirm the uploaded Apple design skill is active and use it to assess the updated picture-quiz design
 
 ## Backlog
 - Expand each picture pack toward 25+ items
