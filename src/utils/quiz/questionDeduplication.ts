@@ -8,11 +8,9 @@ const createQuestionFingerprint = (question: Question): string => {
     .replace(/[^\w\s]/g, '') // Remove punctuation
     .replace(/\s+/g, ' ') // Normalize spaces
     .trim();
-  const choicesFingerprint = question.choices
-    ?.map(choice => choice.text.toLowerCase().replace(/[^\w\s]/g, '').trim())
-    .sort()
-    .join('|') || '';
-  return `${normalizedText}|${choicesFingerprint}|${question.type}`;
+  // Distractors change between generated copies; they must not make an
+  // otherwise identical question appear unique.
+  return `${normalizedText}|${question.type}`;
 };
 
 // Enhanced deduplication that logs all fingerprints and duplicate clusters
