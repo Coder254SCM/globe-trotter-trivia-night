@@ -10,8 +10,8 @@
 
 ## In progress
 - [x] Add Currencies & Banknotes, Sports Team Logos, and Movie Posters picture packs
-- [ ] Play-test all three new packs and random country quizzes
-- [ ] Correct database question deduplication when distractors differ and regression-test it
+- [x] Play-test all three new packs and random country quizzes (South Korea, Burundi, Antigua and Barbuda)
+- [x] Correct database question deduplication when distractors differ and regression-test it (157 tests passed)
 - [ ] Assess design using the uploaded Apple skill — blocked until the user activates it in Settings > Skills
 
 ## Backlog
