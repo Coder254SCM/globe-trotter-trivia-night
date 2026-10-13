@@ -42,7 +42,7 @@ export default function QuizPage() {
         console.log(`[QuizPage] Loading ${count} questions for ${country.name} (${country.difficulty})`);
         
         // Get questions with duplicate prevention
-        let questions = await getCleanQuizQuestions(country.id, country.difficulty, count, country.name);
+        let questions = await getCleanQuizQuestions(country.id, country.difficulty, count, country.name, country.continent);
         console.log(`[QuizPage] Found ${questions.length} questions after duplicate filtering`);
 
         // If no questions or wrong questions, generate factual ones
@@ -112,7 +112,7 @@ export default function QuizPage() {
         if (questions.length < count) {
           toast({
             title: "Fewer Questions Available",
-            description: `Only ${questions.length} unique questions were available for ${country.name}. This may cause repeated or similar questions. Try again later or report missing questions to the admin.`,
+            description: `This round contains ${questions.length} unique questions for ${country.name}.`,
             variant: "default"
           });
         }

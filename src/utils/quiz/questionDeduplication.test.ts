@@ -3,7 +3,7 @@ import { deduplicateQuestions } from './questionDeduplication';
 import { Question } from '@/types/quiz';
 
 const question = (id: string, text: string, wrong: string): Question => ({
-  id, text, type: 'multiple-choice', category: 'Geography',
+  id, text, type: 'multiple-choice', category: 'Geography', difficulty: 'easy', explanation: 'A verified geography fact.',
   choices: [{ id: 'a', text: 'Asia', isCorrect: true }, { id: 'b', text: wrong, isCorrect: false }],
 });
 

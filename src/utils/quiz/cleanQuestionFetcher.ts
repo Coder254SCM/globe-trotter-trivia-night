@@ -28,7 +28,8 @@ export const getCleanQuizQuestions = async (
   countryId: string,
   difficulty: string,
   count: number = 10,
-  countryName?: string
+  countryName?: string,
+  continent: string = ''
 ): Promise<Question[]> => {
   console.log(`🔍 [CleanFetcher] Fetching ${count} ${difficulty} questions for ${countryId}`);
 
@@ -64,7 +65,7 @@ export const getCleanQuizQuestions = async (
       
       for (const diff of difficultiesToTry) {
         const generated = generateRealQuestions(
-          { id: countryId, name: resolvedName, continent: '' },
+          { id: countryId, name: resolvedName, continent },
           diff,
           count
         );
@@ -88,6 +89,15 @@ export const getCleanQuizQuestions = async (
       questionsToReturn = allDeduped.slice(0, count);
     }
 
+    if (questionsToReturn.length < count) {
+      const generated = generateRealQuestions(
+        { id: countryId, name: countryName || resolveCountryName(countryId), continent },
+        (difficulty as Difficulty) || 'medium',
+        count * 3
+      ).filter(q => q.choices.every(choice => choice.text.trim().length > 0));
+      questionsToReturn = deduplicateQuestions([...questionsToReturn, ...generated]).slice(0, count);
+    }
+
     markQuestionsAsUsed(questionsToReturn.map(q => q.id));
     return questionsToReturn;
 
@@ -98,7 +108,7 @@ export const getCleanQuizQuestions = async (
     console.log(`🔄 [CleanFetcher] Falling back to client-side generation after error`);
     const resolvedName = countryName || resolveCountryName(countryId);
     return generateRealQuestions(
-      { id: countryId, name: resolvedName, continent: '' },
+      { id: countryId, name: resolvedName, continent },
       (difficulty as Difficulty) || 'medium',
       count
     );
